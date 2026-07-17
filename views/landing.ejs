@@ -51,14 +51,12 @@
 %>
 
 <nav class="nav" id="nav">
-  <div class="lg"><span class="name"><%= e.nome %></span><span class="by">por Auxiliadora Predial</span></div>
   <div class="links">
     <% if (gal.length) { %><a href="#galeria">Galeria</a><% } %>
     <% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %>
     <% if (e.infra.length) { %><a href="#lazer">Lazer</a><% } %>
     <a href="#local">Localização</a>
   </div>
-  <a href="<%= wa %>" target="_blank" rel="noopener" class="wa"><%- waSvg %><%= e.whatsapp || 'WhatsApp' %></a>
 </nav>
 
 <% if (isPreview) { %><div class="ribbon"><span class="d"></span>Pré-visualização · rascunho não publicado</div><% } %>
