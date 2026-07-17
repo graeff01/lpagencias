@@ -51,7 +51,7 @@
 %>
 
 <nav class="nav" id="nav">
-  <div class="lg"><span class="m"><%- logoSvg %></span><span><%= e.nome %><small>por Auxiliadora Predial</small></span></div>
+  <div class="lg"><span class="name"><%= e.nome %></span><span class="by">por Auxiliadora Predial</span></div>
   <div class="links">
     <% if (gal.length) { %><a href="#galeria">Galeria</a><% } %>
     <% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %>
@@ -209,11 +209,16 @@
 <section class="sec" id="local">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">No endereço mais desejado da região</h2><p class="lead">Tudo ao seu redor: gastronomia, lazer, saúde e educação a poucos minutos de casa.</p></div>
-    <div class="map rv" style="background:linear-gradient(0deg,rgba(14,158,74,.05),rgba(14,158,74,.05)),repeating-linear-gradient(0deg,#e9efe9 0 43px,#e0e8e0 43px 44px),repeating-linear-gradient(90deg,#eef3ee 0 63px,#e3eae3 63px 64px)">
-      <% (e.pois||[]).forEach(function(p){ %><div class="poi" style="<%= p.pos || 'top:20%;left:20%' %>"><%= p.label %></div><% }); %>
-      <div class="pin"><svg viewBox="0 0 24 24" fill="var(--green)"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg></div>
+    <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', ')); %>
+    <div class="map rv">
+      <iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
       <div class="card"><b><%= e.endereco || e.nome %></b><span><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></span></div>
     </div>
+    <% if ((e.pois||[]).length) { %>
+    <div class="poi-list rv">
+      <% e.pois.forEach(function(p){ %><span class="poi-chip"><%= p.label %></span><% }); %>
+    </div>
+    <% } %>
   </div>
 </section>
 
