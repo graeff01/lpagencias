@@ -121,9 +121,10 @@
   // ---------- Paleta de sugestão ----------
   document.querySelectorAll('#sw-list .sw').forEach(function (sw) {
     sw.addEventListener('click', function () {
-      var c = sw.getAttribute('data-c'), c2 = sw.getAttribute('data-c2');
+      var c = sw.getAttribute('data-c'), c2 = sw.getAttribute('data-c2'), c3 = sw.getAttribute('data-c3');
       document.querySelector('input[name="cor_principal"]').value = c;
       document.querySelector('input[name="cor_secundaria"]').value = c2;
+      if (c3) document.querySelector('input[name="cor_accent"]').value = c3;
     });
   });
 

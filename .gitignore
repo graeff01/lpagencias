@@ -3,3 +3,8 @@ node_modules/
 .DS_Store
 npm-debug.log*
 *.log
+
+# material bruto do cliente (não versionar)
+material/
+*.mov
+*.mp4

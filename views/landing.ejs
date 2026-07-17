@@ -13,6 +13,7 @@
     :root{
       --green:<%= e._green %>; --green-deep:<%= e._greenDeep %>;
       --green-bright:<%= e._greenBright %>; --green-ink:<%= e._greenInk %>;
+      --orange:<%= e._accent %>; --orange-deep:<%= e._accentDeep %>;
     }
     .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (e.hero_image) { %>,url("<%= e.hero_image %>")<% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
   </style>

@@ -256,16 +256,17 @@
         <div class="fieldset">
           <div class="leg">Identidade visual da página</div>
           <div class="color-row">
-            <div class="field" style="margin:0"><label>Cor principal</label><input type="color" name="cor_principal" value="<%= v.cor_principal || '#0E9E4A' %>"></div>
-            <div class="field" style="margin:0"><label>Cor secundária</label><input type="color" name="cor_secundaria" value="<%= v.cor_secundaria || '#2BB86A' %>"></div>
+            <div class="field" style="margin:0"><label>Cor principal</label><input type="color" name="cor_principal" value="<%= v.cor_principal || '#0E9E4A' %>"><div class="hint">Estrutura da página</div></div>
+            <div class="field" style="margin:0"><label>Cor secundária</label><input type="color" name="cor_secundaria" value="<%= v.cor_secundaria || '#2BB86A' %>"><div class="hint">Detalhes/gradientes</div></div>
+            <div class="field" style="margin:0"><label>Cor de destaque</label><input type="color" name="cor_accent" value="<%= v.cor_accent || '#F47B20' %>"><div class="hint">Botões e chamadas</div></div>
             <div>
-              <label style="font-size:12.5px;font-weight:560;margin-bottom:6px;display:block">Sugestões</label>
+              <label style="font-size:12.5px;font-weight:560;margin-bottom:6px;display:block">Paletas prontas</label>
               <div class="sw-list" id="sw-list">
-                <span class="sw" data-c="#0E9E4A" data-c2="#2BB86A" style="background:#0E9E4A"></span>
-                <span class="sw" data-c="#F47B20" data-c2="#FBA35A" style="background:#F47B20"></span>
-                <span class="sw" data-c="#1B6CA8" data-c2="#3E9BD6" style="background:#1B6CA8"></span>
-                <span class="sw" data-c="#8A5A2B" data-c2="#C08B4E" style="background:#8A5A2B"></span>
-                <span class="sw" data-c="#4B3A6B" data-c2="#7C63A8" style="background:#4B3A6B"></span>
+                <span class="sw" data-c="#0E9E4A" data-c2="#2BB86A" data-c3="#F47B20" style="background:#0E9E4A" title="Auxiliadora"></span>
+                <span class="sw" data-c="#2C4A38" data-c2="#6E8B5F" data-c3="#B0764A" style="background:#2C4A38" title="Verde & Bronze"></span>
+                <span class="sw" data-c="#1B6CA8" data-c2="#3E9BD6" data-c3="#F0A02A" style="background:#1B6CA8" title="Azul & Âmbar"></span>
+                <span class="sw" data-c="#4B3A6B" data-c2="#7C63A8" data-c3="#D98C4A" style="background:#4B3A6B" title="Roxo & Cobre"></span>
+                <span class="sw" data-c="#8A2B2B" data-c2="#B85C5C" data-c3="#C89A3C" style="background:#8A2B2B" title="Vinho & Ouro"></span>
               </div>
             </div>
           </div>

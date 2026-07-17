@@ -7,6 +7,7 @@ const { asArray, fmtPreco, waLink, shade } = require('../lib/helpers');
 function prep(e) {
   const green = e.cor_principal || '#0E9E4A';
   const green2 = e.cor_secundaria || shade(green, 30);
+  const accent = e.cor_accent || '#F47B20';
   return {
     ...e,
     gallery: asArray(e.gallery),
@@ -21,6 +22,8 @@ function prep(e) {
     _greenDeep: shade(green, -40),
     _greenBright: green2,
     _greenInk: shade(green, -78),
+    _accent: accent,
+    _accentDeep: shade(accent, -34),
     _precoFmt: fmtPreco(e.preco_inicial),
   };
 }
