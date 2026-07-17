@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<%
+  var v = emp || {};
+  var gallery = h.asArray(v.gallery);
+  var infra = h.asArray(v.infra);
+  var plantas = h.asArray(v.plantas);
+  var diferenciais = h.asArray(v.diferenciais);
+  var timeline = h.asArray(v.timeline);
+  var faq = h.asArray(v.faq);
+  var pois = h.asArray(v.pois);
+  var stats = h.asArray(v.construtora_stats);
+  function val(x){ return (x===undefined||x===null)?'':String(x); }
+%>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Cadastro de empreendimento</small></span></a>
+    <div class="sp"></div>
+    <a class="btn btn-ghost btn-sm" href="/admin">Voltar</a>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><%= emp ? 'Editar' : 'Novo' %></div>
+        <h1><%= emp ? emp.nome : 'Novo empreendimento' %></h1>
+        <p>Preencha os dados. Ao publicar, a landing page fica no ar automaticamente.</p>
+      </div>
+      <% if (emp) { %><div class="actions"><a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank">Ver landing</a></div><% } %>
+    </div>
+
+    <% if (!cloudinaryOn) { %>
+    <div class="flash" style="background:#fff6e8;border-color:#f0d19a;color:#9a6a12">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      Cloudinary não configurado — o upload de fotos está desativado. Você pode <b>colar as URLs das imagens</b> normalmente, ou configurar as variáveis CLOUDINARY_* para habilitar o upload.
+    </div>
+    <% } %>
+
+    <form method="POST" action="/admin/salvar" id="empForm">
+      <% if (emp) { %><input type="hidden" name="id" value="<%= emp.id %>"><% } %>
+
+      <div class="form-pane">
+        <!-- IDENTIFICAÇÃO -->
+        <div class="fieldset">
+          <div class="leg">Identificação</div>
+          <div class="frow">
+            <div class="field"><label>Nome do empreendimento <span class="req">*</span></label><input name="nome" value="<%= val(v.nome) %>" required></div>
+            <div class="field"><label>Construtora</label><input name="construtora" value="<%= val(v.construtora) %>"></div>
+          </div>
+          <div class="frow three">
+            <div class="field"><label>Cidade</label><input name="cidade" value="<%= val(v.cidade) %>"></div>
+            <div class="field"><label>Bairro</label><input name="bairro" value="<%= val(v.bairro) %>"></div>
+            <div class="field"><label>Status</label><select name="status">
+              <% ['Lançamento','Pré-lançamento','Em obras','Pronto para morar'].forEach(function(s){ %><option <%= v.status===s?'selected':'' %>><%= s %></option><% }); %>
+            </select></div>
+          </div>
+          <div class="frow one">
+            <div class="field"><label>Endereço</label><input name="endereco" value="<%= val(v.endereco) %>"></div>
+          </div>
+          <div class="field"><label>Logo da construtora</label>
+            <div class="imgfield">
+              <div class="thumb" id="thumb-logo" style="<% if (v.construtora_logo) { %>background-image:url('<%= v.construtora_logo %>')<% } %>"></div>
+              <div class="up">
+                <label class="uplabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Enviar imagem<input type="file" accept="image/*" data-upload="construtora_logo"></label>
+                <input name="construtora_logo" value="<%= val(v.construtora_logo) %>" placeholder="ou cole a URL do logo" style="margin-top:8px">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IMAGEM PRINCIPAL -->
+        <div class="fieldset">
+          <div class="leg">Imagem principal (capa/hero)</div>
+          <div class="imgfield">
+            <div class="thumb" id="thumb-hero" style="width:110px;height:66px;<% if (v.hero_image) { %>background-image:url('<%= v.hero_image %>')<% } %>"></div>
+            <div class="up">
+              <label class="uplabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Enviar foto de capa<input type="file" accept="image/*" data-upload="hero_image"></label>
+              <input name="hero_image" value="<%= val(v.hero_image) %>" placeholder="ou cole a URL da foto" style="margin-top:8px">
+              <div class="upstate" data-state="hero_image"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VALORES -->
+        <div class="fieldset">
+          <div class="leg">Valores &amp; ficha técnica</div>
+          <div class="frow">
+            <div class="field"><label>Preço inicial (só números)</label><div class="inp-prefix"><span class="pf">R$</span><input name="preco_inicial" value="<%= val(v.preco_inicial) %>" inputmode="numeric" placeholder="890000"></div></div>
+            <div class="field"><label>Preço máximo (só números)</label><div class="inp-prefix"><span class="pf">R$</span><input name="preco_maximo" value="<%= val(v.preco_maximo) %>" inputmode="numeric" placeholder="2480000"></div></div>
+          </div>
+          <div class="frow three">
+            <div class="field"><label>Dormitórios</label><input name="dormitorios" value="<%= val(v.dormitorios) %>" placeholder="2 a 4"></div>
+            <div class="field"><label>Banheiros</label><input name="banheiros" value="<%= val(v.banheiros) %>" placeholder="3"></div>
+            <div class="field"><label>Vagas</label><input name="vagas" value="<%= val(v.vagas) %>" placeholder="2"></div>
+          </div>
+          <div class="frow">
+            <div class="field"><label>Área privativa (m²)</label><input name="area" value="<%= val(v.area) %>" placeholder="78 a 164"></div>
+            <div class="field"><label>Entrega prevista</label><input name="entrega" value="<%= val(v.entrega) %>" placeholder="Dezembro / 2027"></div>
+          </div>
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="fieldset">
+          <div class="leg">Descrição</div>
+          <div class="field"><label>Sobre o empreendimento</label><textarea name="descricao"><%= val(v.descricao) %></textarea></div>
+          <div class="field" style="margin-top:14px"><label>Sobre a construtora</label><textarea name="construtora_sobre"><%= val(v.construtora_sobre) %></textarea></div>
+        </div>
+
+        <!-- GALERIA -->
+        <div class="fieldset">
+          <div class="leg">Galeria de fotos</div>
+          <div class="gallery-up" id="gallery-grid">
+            <% gallery.forEach(function(g){ %>
+              <div class="gcell" data-url="<%= g.url %>" style="background-image:url('<%= g.url %>')">
+                <button type="button" class="rm" data-rmg>×</button>
+                <input class="tag" placeholder="Legenda (ex: Fachada)" value="<%= val(g.tag) %>">
+              </div>
+            <% }); %>
+            <div class="gcell add" id="gallery-add"><span>+</span></div>
+          </div>
+          <div class="hint" style="margin-top:8px">Envie fotos ou <a href="#" id="gallery-url" style="color:var(--green);font-weight:600">cole uma URL</a>. A 1ª foto vira o destaque da galeria.</div>
+          <input type="file" accept="image/*" id="gallery-file" style="display:none">
+          <input type="hidden" name="gallery" id="hidden-gallery">
+        </div>
+
+        <!-- MÍDIA -->
+        <div class="fieldset">
+          <div class="leg">Vídeo &amp; Tour</div>
+          <div class="frow">
+            <div class="field"><label>Vídeo (YouTube/Vimeo)</label><input name="video_url" value="<%= val(v.video_url) %>" placeholder="https://youtube.com/..."></div>
+            <div class="field"><label>Tour virtual 360°</label><input name="tour_url" value="<%= val(v.tour_url) %>" placeholder="https://matterport.com/..."></div>
+          </div>
+        </div>
+
+        <!-- INFRA (repetível) -->
+        <div class="fieldset">
+          <div class="leg">Infraestrutura &amp; lazer</div>
+          <div class="rep" data-rep="infra">
+            <% infra.forEach(function(it){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:1fr 1fr">
+                <div><span class="lbl">Item</span><input data-k="titulo" value="<%= val(it.titulo||it) %>"></div>
+                <div><span class="lbl">Detalhe</span><input data-k="sub" value="<%= val(it.sub) %>"></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="infra" style="margin-top:10px">+ Adicionar item de lazer</button>
+          <input type="hidden" name="infra" id="hidden-infra">
+        </div>
+
+        <!-- PLANTAS (repetível) -->
+        <div class="fieldset">
+          <div class="leg">Plantas</div>
+          <div class="rep" data-rep="plantas">
+            <% plantas.forEach(function(p){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">
+                <div><span class="lbl">Título</span><input data-k="titulo" value="<%= val(p.titulo) %>" placeholder="3 dormitórios"></div>
+                <div><span class="lbl">Área</span><input data-k="area" value="<%= val(p.area) %>" placeholder="116 m²"></div>
+                <div><span class="lbl">Quartos</span><input data-k="quartos" value="<%= val(p.quartos) %>"></div>
+                <div><span class="lbl">Banheiros</span><input data-k="banheiros" value="<%= val(p.banheiros) %>"></div>
+                <div><span class="lbl">Vagas</span><input data-k="vagas" value="<%= val(p.vagas) %>"></div>
+                <div><span class="lbl">Etiqueta</span><input data-k="final" value="<%= val(p.final) %>" placeholder="Final 02 · 03"></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="plantas" style="margin-top:10px">+ Adicionar planta</button>
+          <input type="hidden" name="plantas" id="hidden-plantas">
+        </div>
+
+        <!-- DIFERENCIAIS (repetível) -->
+        <div class="fieldset">
+          <div class="leg">Diferenciais</div>
+          <div class="rep" data-rep="diferenciais">
+            <% diferenciais.forEach(function(d){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">
+                <div><span class="lbl">Título</span><input data-k="titulo" value="<%= val(d.titulo) %>"></div>
+                <div><span class="lbl">Texto</span><textarea data-k="texto" rows="2"><%= val(d.texto) %></textarea></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="diferenciais" style="margin-top:10px">+ Adicionar diferencial</button>
+          <input type="hidden" name="diferenciais" id="hidden-diferenciais">
+        </div>
+
+        <!-- TIMELINE (repetível) -->
+        <div class="fieldset">
+          <div class="leg">Andamento da obra</div>
+          <div class="rep" data-rep="timeline">
+            <% timeline.forEach(function(t){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 2fr 1fr">
+                <div><span class="lbl">Etapa</span><input data-k="etapa" value="<%= val(t.etapa) %>"></div>
+                <div><span class="lbl">Detalhe</span><input data-k="sub" value="<%= val(t.sub) %>"></div>
+                <div><span class="lbl">%</span><input data-k="pct" value="<%= val(t.pct) %>"></div>
+                <div style="display:flex;gap:14px;align-items:center;grid-column:1/-1">
+                  <label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" data-k="done" <%= t.done?'checked':'' %>> Concluída</label>
+                  <label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" data-k="act" <%= t.act?'checked':'' %>> Em andamento</label>
+                </div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="timeline" style="margin-top:10px">+ Adicionar etapa</button>
+          <input type="hidden" name="timeline" id="hidden-timeline">
+        </div>
+
+        <!-- FAQ (repetível) -->
+        <div class="fieldset">
+          <div class="leg">Dúvidas frequentes (FAQ)</div>
+          <div class="rep" data-rep="faq">
+            <% faq.forEach(function(f){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">
+                <div><span class="lbl">Pergunta</span><input data-k="q" value="<%= val(f.q) %>"></div>
+                <div><span class="lbl">Resposta</span><textarea data-k="a" rows="2"><%= val(f.a) %></textarea></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="faq" style="margin-top:10px">+ Adicionar pergunta</button>
+          <input type="hidden" name="faq" id="hidden-faq">
+        </div>
+
+        <!-- LOCALIZAÇÃO / POIs -->
+        <div class="fieldset">
+          <div class="leg">Pontos de interesse (mapa)</div>
+          <div class="rep" data-rep="pois">
+            <% pois.forEach(function(p){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">
+                <div><span class="lbl">Texto (com emoji)</span><input data-k="label" value="<%= val(p.label) %>" placeholder="🌳 Parque · 400m"></div>
+                <div><span class="lbl">Posição (CSS)</span><input data-k="pos" value="<%= val(p.pos) %>" placeholder="top:22%;left:16%"></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="pois" style="margin-top:10px">+ Adicionar ponto</button>
+          <input type="hidden" name="pois" id="hidden-pois">
+        </div>
+
+        <!-- CONSTRUTORA STATS -->
+        <div class="fieldset">
+          <div class="leg">Números da construtora</div>
+          <div class="rep" data-rep="construtora_stats">
+            <% stats.forEach(function(s){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:1fr 2fr">
+                <div><span class="lbl">Número</span><input data-k="num" value="<%= val(s.num) %>" placeholder="80+"></div>
+                <div><span class="lbl">Legenda</span><input data-k="label" value="<%= val(s.label) %>" placeholder="obras entregues"></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="construtora_stats" style="margin-top:10px">+ Adicionar número</button>
+          <input type="hidden" name="construtora_stats" id="hidden-construtora_stats">
+        </div>
+
+        <!-- IDENTIDADE -->
+        <div class="fieldset">
+          <div class="leg">Identidade visual da página</div>
+          <div class="color-row">
+            <div class="field" style="margin:0"><label>Cor principal</label><input type="color" name="cor_principal" value="<%= v.cor_principal || '#0E9E4A' %>"></div>
+            <div class="field" style="margin:0"><label>Cor secundária</label><input type="color" name="cor_secundaria" value="<%= v.cor_secundaria || '#2BB86A' %>"></div>
+            <div>
+              <label style="font-size:12.5px;font-weight:560;margin-bottom:6px;display:block">Sugestões</label>
+              <div class="sw-list" id="sw-list">
+                <span class="sw" data-c="#0E9E4A" data-c2="#2BB86A" style="background:#0E9E4A"></span>
+                <span class="sw" data-c="#F47B20" data-c2="#FBA35A" style="background:#F47B20"></span>
+                <span class="sw" data-c="#1B6CA8" data-c2="#3E9BD6" style="background:#1B6CA8"></span>
+                <span class="sw" data-c="#8A5A2B" data-c2="#C08B4E" style="background:#8A5A2B"></span>
+                <span class="sw" data-c="#4B3A6B" data-c2="#7C63A8" style="background:#4B3A6B"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTATO / SEO -->
+        <div class="fieldset">
+          <div class="leg">Contato &amp; SEO</div>
+          <div class="frow">
+            <div class="field"><label>WhatsApp de atendimento</label><input name="whatsapp" value="<%= val(v.whatsapp) %>" placeholder="(51) 99000-0000"><div class="hint">Todos os leads caem neste WhatsApp (canal central).</div></div>
+            <div class="field"><label>Texto do botão (CTA)</label><input name="cta" value="<%= val(v.cta) || 'Quero conhecer' %>"></div>
+          </div>
+          <div class="frow one">
+            <div class="field"><label>Endereço da página (deixe em branco para gerar do nome)</label><div class="inp-prefix"><span class="pf" style="font-size:12px">/</span><input name="slug" value="<%= val(v.slug) %>" placeholder="reserva-moinhos"></div></div>
+          </div>
+          <div class="field"><label>Meta description (SEO)</label><textarea name="meta_description" style="min-height:60px"><%= val(v.meta_description) %></textarea></div>
+        </div>
+      </div>
+
+      <div class="form-foot">
+        <label class="switch"><input type="checkbox" name="published" <%= (!emp || v.published) ? 'checked' : '' %>> Publicar (deixar no ar)</label>
+        <div class="sp"></div>
+        <a class="btn btn-ghost" href="/admin">Cancelar</a>
+        <button class="btn btn-primary" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg><%= emp ? 'Salvar alterações' : 'Publicar landing page' %></button>
+      </div>
+    </form>
+  </div>
+
+  <script src="/js/admin-form.js"></script>
+</body>
+</html>

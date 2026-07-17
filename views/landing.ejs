@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= title %></title>
+  <% if (e.meta_description) { %><meta name="description" content="<%= e.meta_description %>"><% } %>
+  <meta property="og:title" content="<%= e.nome %>">
+  <% if (e.meta_description) { %><meta property="og:description" content="<%= e.meta_description %>"><% } %>
+  <% if (e.hero_image) { %><meta property="og:image" content="<%= e.hero_image %>"><% } %>
+  <link rel="stylesheet" href="/css/landing.css">
+  <style>
+    :root{
+      --green:<%= e._green %>; --green-deep:<%= e._greenDeep %>;
+      --green-bright:<%= e._greenBright %>; --green-ink:<%= e._greenInk %>;
+    }
+    .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (e.hero_image) { %>,url("<%= e.hero_image %>")<% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
+  </style>
+</head>
+<body>
+<%
+  var wave='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 16c2 0 2 1.5 4 1.5S8 16 10 16s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5M6 12l6-4 6 4"/></svg>';
+  var infraIcons=[
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 16c2 0 2 1.5 4 1.5S8 16 10 16s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5M6 12l6-4 6 4M9 10V6h6v4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 7v10M18 7v10M3 10h3M18 10h3M6 12h12"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10M12 16v4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 5.5a2.5 2.5 0 1 1 4 0M7 12a5 5 0 0 1 10 0v6H7v-6ZM5 18h14"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 21l-5-2.8 1-5.5-4-3.9L9.5 8 12 3Z"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 0 1 16 0M12 12v8M8 20h8"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v6M5 8l3 3M19 8l-3 3M4 14h16l-1 7H5l-1-7Z"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM7 15V6l10-2v9M17 13a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12l2-2 4 4 6-6 2 2M5 20h14"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h16M6 10V6a6 6 0 0 1 12 0v4M8 14h8M8 18h5"/></svg>'
+  ];
+  var planDraws=[
+    '<svg viewBox="0 0 120 90" fill="none" stroke="var(--green)" stroke-width="1.5"><rect x="8" y="8" width="104" height="74" rx="2" stroke-opacity=".3"/><path d="M8 40h44M52 8v74M52 46h30M82 46v36M70 8v20M70 28H52"/><circle cx="30" cy="24" r="6" stroke-opacity=".5"/><rect x="88" y="14" width="18" height="10" stroke-opacity=".5"/></svg>',
+    '<svg viewBox="0 0 120 90" fill="none" stroke="var(--green)" stroke-width="1.5"><rect x="8" y="8" width="104" height="74" rx="2" stroke-opacity=".3"/><path d="M60 8v74M8 44h52M60 40h52M8 24h30M38 8v16M82 40V82M82 60h30"/><circle cx="24" cy="60" r="7" stroke-opacity=".5"/><rect x="14" y="14" width="16" height="9" stroke-opacity=".5"/></svg>',
+    '<svg viewBox="0 0 120 90" fill="none" stroke="var(--green)" stroke-width="1.5"><rect x="8" y="8" width="104" height="74" rx="2" stroke-opacity=".3"/><path d="M8 46h48M56 8v74M56 44h56M40 8v22M40 30H8M84 44v38M84 62h28M8 62h20"/><circle cx="26" cy="26" r="7" stroke-opacity=".5"/><rect x="92" y="14" width="16" height="10" stroke-opacity=".5"/></svg>'
+  ];
+  var icoBed='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 14h18M6 10V7h12v3"/></svg>';
+  var icoBath='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3ZM6 12V6a2 2 0 0 1 4 0"/></svg>';
+  var icoCar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="7" rx="1"/><path d="M5 11V8h14v3"/></svg>';
+  var icoCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+  var icoPin='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+  var waSvg='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>';
+  var logoSvg='<svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg>';
+  var gal=e.gallery||[];
+%>
+
+<nav class="nav" id="nav">
+  <div class="lg"><span class="m"><%- logoSvg %></span><span><%= e.nome %><small>por Auxiliadora Predial</small></span></div>
+  <div class="links">
+    <% if (gal.length) { %><a href="#galeria">Galeria</a><% } %>
+    <% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %>
+    <% if (e.infra.length) { %><a href="#lazer">Lazer</a><% } %>
+    <a href="#local">Localização</a>
+    <% if (e.timeline.length) { %><a href="#obra">A obra</a><% } %>
+    <a href="#contato">Contato</a>
+  </div>
+  <a href="<%= wa %>" target="_blank" rel="noopener" class="wa"><%- waSvg %><%= e.whatsapp || 'WhatsApp' %></a>
+</nav>
+
+<% if (isPreview) { %><div class="ribbon"><span class="d"></span>Pré-visualização · rascunho não publicado</div><% } %>
+
+<header class="hero">
+  <div class="bg"></div>
+  <div class="hero-inner">
+    <div class="hero-grid">
+      <div>
+        <span class="badge"><span class="d"></span><%= e.status || 'Lançamento' %><% if (e.construtora) { %> · <%= e.construtora %><% } %></span>
+        <h1><%= e.nome %></h1>
+        <div class="loc"><%- icoPin %><%= [e.endereco, e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
+        <div class="cta-row">
+          <a href="#contato" class="btn primary"><%= e.cta || 'Quero conhecer' %> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="<%= wa %>" target="_blank" rel="noopener" class="btn wa"><%- waSvg %>Falar no WhatsApp</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="pl">Apartamentos a partir de</div>
+        <div class="pv"><%= e._precoFmt || 'Sob consulta' %></div>
+        <div class="g4">
+          <div class="st"><span class="ic"><%- icoBed %></span><b><%= e.dormitorios || '—' %></b><span>Dormitórios</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span><b><%= e.area ? e.area + ' m²' : '—' %></b><span>Área privativa</span></div>
+          <div class="st"><span class="ic"><%- icoCar %></span><b><%= e.vagas || '—' %></b><span>Vagas</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><b><%= e.entrega || '—' %></b><span>Entrega</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue"><div class="m"></div>Explore</div>
+</header>
+
+<% if (e.construtora_stats && e.construtora_stats.length) { %>
+<div class="trust">
+  <div class="wrap"><div class="row">
+    <% e.construtora_stats.forEach(function(s){ %>
+      <div class="it"><span class="ic"><%- icoCheck %></span><div><b><%= s.num %></b> <%= s.label %></div></div>
+    <% }); %>
+  </div></div>
+</div>
+<% } %>
+
+<% if (gal.length) { %>
+<section class="sec" id="galeria">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Galeria</div><h2 class="sec-h2">Cada detalhe pensado para viver bem</h2><p class="lead">Ambientes amplos, iluminação natural e acabamento de alto padrão em cada apartamento e área comum.</p></div>
+    <div class="gal rv">
+      <% gal.slice(0,5).forEach(function(g, i){ %>
+        <div class="c<%= i===0 ? ' big' : '' %>">
+          <img src="<%= g.url %>" alt="<%= g.tag || e.nome %>" loading="lazy"/>
+          <% if (i===4 && gal.length>5) { %><div class="more">+<%= gal.length-5 %> fotos</div><% } else { %><div class="ov"></div><% if (g.tag) { %><span class="tag"><%= g.tag %></span><% } %><% } %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.video_url || e.tour_url) { var vposter = (gal[0] && gal[0].url) || e.hero_image; %>
+<section class="sec alt" id="video">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Vídeo &amp; Tour virtual</div><h2 class="sec-h2">Conheça de onde você estiver</h2><p class="lead">Assista ao filme do empreendimento ou faça um tour imersivo pelo apartamento decorado, sem sair de casa.</p></div>
+    <a class="video rv" href="<%= e.video_url || e.tour_url %>" target="_blank" rel="noopener" style="display:block">
+      <% if (vposter) { %><img src="<%= vposter %>" alt="Vídeo"/><% } %><div class="shade"></div>
+      <% if (e.tour_url) { %><div class="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"/></svg>Tour 360°</div><% } %>
+      <div class="play"><div class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg></div></div>
+      <div class="cap"><b><%= e.nome %> · O filme</b><span>Clique para assistir</span></div>
+    </a>
+  </div>
+</section>
+<% } %>
+
+<% if (e.plantas.length) { %>
+<section class="sec" id="plantas">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Plantas</div><h2 class="sec-h2">Escolha a planta ideal para você</h2><p class="lead">Opções com plantas flexíveis, suíte máster e living ampliado.</p></div>
+    <div class="plants rv">
+      <% e.plantas.forEach(function(p, i){ %>
+        <div class="plant">
+          <div class="draw"><% if (p.final) { %><span class="fl"><%= p.final %></span><% } %><%- planDraws[i % planDraws.length] %></div>
+          <div class="pt">
+            <div class="top"><b><%= p.titulo %></b><% if (p.area) { %><span class="area"><%= p.area %></span><% } %></div>
+            <div class="specs">
+              <% if (p.quartos) { %><span class="sp"><%- icoBed %><%= p.quartos %> quartos</span><% } %>
+              <% if (p.banheiros) { %><span class="sp"><%- icoBath %><%= p.banheiros %> banhos</span><% } %>
+              <% if (p.vagas) { %><span class="sp"><%- icoCar %><%= p.vagas %> vagas</span><% } %>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.infra.length) { %>
+<section class="sec alt" id="lazer">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Infraestrutura &amp; Lazer</div><h2 class="sec-h2">Um clube completo dentro de casa</h2><p class="lead">Itens de lazer para aproveitar o dia inteiro sem precisar sair do condomínio.</p></div>
+    <div class="infra rv">
+      <% e.infra.forEach(function(it, i){ %>
+        <div class="it"><div class="ic"><%- infraIcons[i % infraIcons.length] %></div><b><%= it.titulo || it %></b><% if (it.sub) { %><span><%= it.sub %></span><% } %></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.diferenciais.length) { %>
+<section class="sec" id="diferenciais">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Diferenciais</div><h2 class="sec-h2">Por que morar no <%= e.nome %></h2></div>
+    <div class="diff rv">
+      <% e.diferenciais.forEach(function(d, i){ %>
+        <div class="d"><div class="n"><%= String(i+1).padStart(2,'0') %></div><h3><%= d.titulo %></h3><p><%= d.texto %></p></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.descricao) { var aboutImg = e.hero_image || (gal[1] && gal[1].url) || (gal[0] && gal[0].url); %>
+<section class="sec alt">
+  <div class="wrap">
+    <div class="about rv">
+      <div class="img">
+        <% if (aboutImg) { %><img src="<%= aboutImg %>" alt="<%= e.nome %>"/><% } %>
+        <div class="fc"><span class="ic"><%- icoCheck %></span><div><b>Decorado disponível</b><span>Agende sua visita presencial</span></div></div>
+      </div>
+      <div>
+        <div class="kick">Sobre o empreendimento</div>
+        <h2 class="sec-h2">Viver bem é viver aqui</h2>
+        <p class="lead"><%= e.descricao %></p>
+        <ul>
+          <% if (e.dormitorios) { %><li><%- icoCheck %>Apartamentos de <%= e.dormitorios %> dormitórios</li><% } %>
+          <% if (e.area) { %><li><%- icoCheck %>Áreas de <%= e.area %> m² privativos</li><% } %>
+          <% if (e.vagas) { %><li><%- icoCheck %><%= e.vagas %> vaga(s) de garagem</li><% } %>
+          <% if (e.entrega) { %><li><%- icoCheck %>Entrega prevista para <%= e.entrega %></li><% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="sec" id="local">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">No endereço mais desejado da região</h2><p class="lead">Tudo ao seu redor: gastronomia, lazer, saúde e educação a poucos minutos de casa.</p></div>
+    <div class="map rv" style="background:linear-gradient(0deg,rgba(14,158,74,.05),rgba(14,158,74,.05)),repeating-linear-gradient(0deg,#e9efe9 0 43px,#e0e8e0 43px 44px),repeating-linear-gradient(90deg,#eef3ee 0 63px,#e3eae3 63px 64px)">
+      <% (e.pois||[]).forEach(function(p){ %><div class="poi" style="<%= p.pos || 'top:20%;left:20%' %>"><%= p.label %></div><% }); %>
+      <div class="pin"><svg viewBox="0 0 24 24" fill="var(--green)"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg></div>
+      <div class="card"><b><%= e.endereco || e.nome %></b><span><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></span></div>
+    </div>
+  </div>
+</section>
+
+<% if (e.timeline.length) { %>
+<section class="sec alt" id="obra">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Andamento da obra</div><h2 class="sec-h2">Acompanhe cada etapa</h2><p class="lead">Transparência total: veja o progresso da construção até a entrega das chaves.</p></div>
+    <div class="tl rv">
+      <% e.timeline.forEach(function(t){ %>
+        <div class="tlx<%= t.done ? ' done' : '' %><%= t.act ? ' act' : '' %>"><div class="dot"></div><b><%= t.etapa %></b><span><%= t.sub %></span><div class="pct"><%= t.pct || '—' %></div></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.construtora || e.construtora_sobre) { %>
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">A construtora</div><h2 class="sec-h2">Assinado por quem entende de morar bem</h2></div>
+    <div class="builder rv">
+      <div class="lg"><% if (e.construtora_logo) { %><img src="<%= e.construtora_logo %>" alt="<%= e.construtora %>"/><% } else { %><%= (e.construtora || 'C').trim().charAt(0).toUpperCase() %><% } %></div>
+      <div class="tx">
+        <b><%= e.construtora || 'Construtora' %></b>
+        <% if (e.construtora_sobre) { %><p><%= e.construtora_sobre %></p><% } %>
+        <% if (e.construtora_stats && e.construtora_stats.length) { %>
+        <div class="badges"><% e.construtora_stats.forEach(function(s){ %><div class="b"><b><%= s.num %></b><span><%= s.label %></span></div><% }); %></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (e.faq.length) { %>
+<section class="sec alt">
+  <div class="wrap">
+    <div class="sec-head rv" style="text-align:center"><div class="kick">Dúvidas frequentes</div><h2 class="sec-h2">Tudo que você precisa saber</h2></div>
+    <div class="faq rv">
+      <% e.faq.forEach(function(f, i){ %>
+        <div class="q<%= i===0 ? ' open' : '' %>"><div class="qt"><%= f.q %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div><div class="qa"><%= f.a %></div></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="cta sec" id="contato">
+  <div class="wrap">
+    <div class="form-grid rv">
+      <div class="left">
+        <div class="kick">Fale com um consultor</div>
+        <h2>Agende sua visita hoje</h2>
+        <p>Preencha seus dados e um consultor especialista entra em contato em poucos minutos com todas as condições exclusivas.</p>
+        <ul>
+          <li><%- icoCheck %>Atendimento imediato via WhatsApp</li>
+          <li><%- icoCheck %>Tabela de valores e plantas completas</li>
+          <li><%- icoCheck %>Condições exclusivas de lançamento</li>
+        </ul>
+        <% if (e.whatsapp) { %>
+        <div class="phone"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg></span><div><b><%= e.whatsapp %></b><span>Atendimento todos os dias</span></div></div>
+        <% } %>
+      </div>
+      <div class="right">
+        <h3>Receba todas as informações</h3>
+        <div class="sh">É rápido e sem compromisso.</div>
+        <form id="leadForm">
+          <div class="fg"><label>Nome completo</label><input name="nome" placeholder="Como podemos te chamar?" required/></div>
+          <div class="fg"><label>WhatsApp</label><input name="tel" placeholder="(00) 0 0000-0000"/></div>
+          <div class="fg"><label>Tenho interesse em</label><select name="interesse">
+            <% (e.plantas.length ? e.plantas.map(function(p){return p.titulo;}) : ['2 dormitórios','3 dormitórios','4 dormitórios']).forEach(function(o){ %><option><%= o %></option><% }); %>
+          </select></div>
+          <button type="submit" class="submit"><%= e.cta || 'Quero conhecer' %> <%= e.nome %></button>
+          <div class="terms">Ao enviar, você será direcionado ao WhatsApp da Auxiliadora Predial.</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="lg"><span class="m"><%- logoSvg %></span>Auxiliadora Predial</div>
+        <p><%= e.nome %> é um empreendimento comercializado pela Auxiliadora Predial. Imagens meramente ilustrativas. Sujeito a alterações sem aviso prévio.</p>
+      </div>
+      <div class="col"><h5>Empreendimento</h5><% if (gal.length) { %><a href="#galeria">Galeria</a><% } %><% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %><% if (e.infra.length) { %><a href="#lazer">Infraestrutura</a><% } %><a href="#local">Localização</a></div>
+      <div class="col"><h5>Institucional</h5><a href="/">Outros lançamentos</a><a href="<%= wa %>" target="_blank" rel="noopener">Fale conosco</a></div>
+      <div class="col"><h5>Contato</h5><% if (e.whatsapp) { %><a href="<%= wa %>" target="_blank" rel="noopener"><%= e.whatsapp %></a><% } %><a href="<%= wa %>" target="_blank" rel="noopener">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
+    </div>
+    <div class="bot"><span>© <%= new Date().getFullYear() %> Auxiliadora Predial · Todos os direitos reservados</span><span>CRECI-RS · Política de Privacidade</span></div>
+  </div>
+</footer>
+
+<a href="<%= wa %>" target="_blank" rel="noopener" class="fab" title="Falar no WhatsApp"><span class="pin">1</span><%- waSvg %></a>
+
+<script>
+  var WA_BASE = "https://wa.me/<%= h.onlyDigits(waRaw) %>";
+  var EMP = <%- JSON.stringify(e.nome) %>;
+  var nav=document.getElementById('nav');
+  addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>20);});
+  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
+  document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
+  document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
+  var lf=document.getElementById('leadForm');
+  if(lf){lf.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var d=new FormData(lf);
+    var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
+    if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
+    window.open(WA_BASE+'?text='+encodeURIComponent(msg),'_blank');
+  });}
+</script>
+</body>
+</html>

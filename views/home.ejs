@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/landing.css">
+  <style>
+    .hm-hero{background:linear-gradient(160deg,var(--green),var(--green-deep));color:#fff;padding:120px 0 90px;position:relative;overflow:hidden}
+    .hm-hero::after{content:"";position:absolute;inset:0;background:radial-gradient(50% 60% at 85% 10%,rgba(255,255,255,.12),transparent),repeating-linear-gradient(118deg,rgba(255,255,255,.03) 0 2px,transparent 2px 26px)}
+    .hm-hero .wrap{position:relative}
+    .hm-hero h1{font-size:clamp(32px,5vw,50px);font-weight:760;letter-spacing:-.03em;max-width:720px;margin-bottom:14px}
+    .hm-hero p{font-size:16px;opacity:.9;max-width:540px}
+    .hm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:-56px;position:relative;z-index:2;padding-bottom:80px}
+    @media(max-width:900px){.hm-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.hm-grid{grid-template-columns:1fr}}
+    .ecard{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 20px 50px -30px rgba(10,63,33,.4);transition:transform .25s,box-shadow .25s;display:flex;flex-direction:column}
+    .ecard:hover{transform:translateY(-6px);box-shadow:0 40px 70px -34px rgba(10,63,33,.45)}
+    .ecard .cover{height:180px;position:relative;background:#dfe8e2 center/cover}
+    .ecard .cover .st{position:absolute;top:12px;left:12px;font-size:11px;font-weight:640;color:#fff;background:rgba(6,32,18,.5);backdrop-filter:blur(6px);padding:4px 11px;border-radius:20px}
+    .ecard .bd{padding:18px 20px 20px;flex:1;display:flex;flex-direction:column}
+    .ecard .cst{font-size:11.5px;color:var(--soft);font-weight:560;margin-bottom:5px}
+    .ecard h3{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+    .ecard .loc{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--body);margin-top:5px}
+    .ecard .loc svg{width:14px;height:14px;color:var(--green)}
+    .ecard .pr{font-size:17px;font-weight:730;font-family:var(--font-display);color:var(--ink);margin-top:14px}
+    .ecard .pr small{display:block;font-size:11px;color:var(--soft);font-weight:500}
+    .ecard .go{margin-top:16px;padding:11px;text-align:center;border-radius:11px;background:linear-gradient(160deg,var(--orange),var(--orange-deep));color:#fff;font-size:13.5px;font-weight:650}
+    .hm-nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;padding:15px 24px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .hm-nav .lg{font-family:var(--font-display);font-weight:730;font-size:17px;color:var(--ink);display:flex;align-items:center;gap:9px}
+    .hm-nav .lg .m{width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,var(--green-bright),var(--green-deep));display:grid;place-items:center}
+    .hm-nav .lg .m svg{width:17px;height:17px}
+    .hm-nav .adm{margin-left:auto;font-size:13px;font-weight:600;color:var(--green);border:1px solid var(--line);padding:9px 15px;border-radius:10px}
+    .empty{grid-column:1/-1;text-align:center;color:var(--soft);padding:60px 20px;background:#fff;border-radius:20px;border:1px solid var(--line)}
+  </style>
+</head>
+<body>
+  <nav class="hm-nav">
+    <div class="lg"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span>Auxiliadora Predial</div>
+    <a class="adm" href="/admin">Painel</a>
+  </nav>
+  <header class="hm-hero">
+    <div class="wrap">
+      <h1>Empreendimentos exclusivos da Auxiliadora Predial</h1>
+      <p>Encontre o lançamento ideal para você. Localização privilegiada, alto padrão e as melhores condições.</p>
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="hm-grid">
+      <% if (!emps.length) { %>
+        <div class="empty">Nenhum empreendimento publicado ainda. Acesse o <a href="/admin" style="color:var(--green);font-weight:600">painel</a> para cadastrar o primeiro.</div>
+      <% } %>
+      <% emps.forEach(function(e){ var cover=(e.gallery[0]&&e.gallery[0].url)||e.hero_image; %>
+        <a class="ecard" href="/<%= e.slug %>">
+          <div class="cover" style="<% if (cover) { %>background-image:url('<%= cover %>')<% } %>"><span class="st"><%= e.status || 'Lançamento' %></span></div>
+          <div class="bd">
+            <% if (e.construtora) { %><div class="cst"><%= e.construtora %></div><% } %>
+            <h3><%= e.nome %></h3>
+            <div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
+            <div class="pr"><%= e._precoFmt || 'Sob consulta' %><small>a partir de</small></div>
+            <div class="go">Ver empreendimento</div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</body>
+</html>

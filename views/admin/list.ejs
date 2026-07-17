@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/" target="_blank">Ver site</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Portfólio</div>
+        <h1>Empreendimentos</h1>
+        <p><%= emps.length %> cadastrado(s) · <%= emps.filter(e=>e.published).length %> publicado(s)</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="/admin/novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Novo empreendimento</a>
+      </div>
+    </div>
+
+    <% if (q && q.ok) { %>
+      <div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Empreendimento salvo com sucesso<% if (q.slug) { %> — no ar em <a href="/<%= q.slug %>" target="_blank" style="color:inherit;font-weight:700;text-decoration:underline">/<%= q.slug %></a><% } %>.</div>
+    <% } %>
+    <% if (q && q.del) { %>
+      <div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Empreendimento excluído.</div>
+    <% } %>
+
+    <div class="list">
+      <% if (!emps.length) { %>
+        <div style="grid-column:1/-1;text-align:center;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:18px;padding:60px 20px">
+          Nenhum empreendimento ainda. Clique em <b>Novo empreendimento</b> para começar.
+        </div>
+      <% } %>
+      <% emps.forEach(function(e){ var cover=(Array.isArray(e.gallery)?e.gallery[0]:null); cover = (cover&&cover.url)||e.hero_image; %>
+        <div class="card">
+          <div class="cover" style="<% if (cover) { %>background-image:url('<%= cover %>')<% } %>">
+            <span class="badge <%= e.published ? 'on' : 'off' %>"><%= e.published ? 'Publicado' : 'Rascunho' %></span>
+          </div>
+          <div class="bd">
+            <% if (e.construtora) { %><div class="cst"><%= e.construtora %></div><% } %>
+            <h3><%= e.nome %></h3>
+            <div class="loc"><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
+            <div class="url">/<%= e.slug %></div>
+            <div class="foot">
+              <a class="btn btn-ghost btn-sm" href="/<%= e.slug %>" target="_blank">Ver</a>
+              <a class="btn btn-green btn-sm" href="/admin/editar/<%= e.id %>">Editar</a>
+              <form method="POST" action="/admin/excluir/<%= e.id %>" onsubmit="return confirm('Excluir <%= e.nome %>? Esta ação não pode ser desfeita.')">
+                <button class="btn btn-danger btn-sm" type="submit" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</body>
+</html>
