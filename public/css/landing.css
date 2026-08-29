@@ -98,7 +98,7 @@ section{scroll-margin-top:72px}
 .video .tour{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.92);color:var(--ink);font-size:12.5px;font-weight:640;padding:9px 15px;border-radius:11px;display:flex;align-items:center;gap:7px;z-index:2}
 .video .tour svg{width:15px;height:15px;color:var(--green)}
 
-.plants{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.plants{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
 @media(max-width:820px){.plants{grid-template-columns:1fr}}
 .plant{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#fff;transition:transform .25s,box-shadow .25s}
 .plant:hover{transform:translateY(-6px);box-shadow:0 30px 60px -24px rgba(10,63,33,.28)}
@@ -293,7 +293,7 @@ section{scroll-margin-top:72px}
 .gal .c .zoom{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(6,32,18,.42);backdrop-filter:blur(6px);opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s;z-index:2}
 .gal .c .zoom svg{width:17px;height:17px}
 .gal .c:hover .zoom,.gal .c:focus-visible .zoom{opacity:1;transform:scale(1)}
-.gal .c .more{flex-direction:column;gap:2px;line-height:1.1;backdrop-filter:blur(2px);transition:background .22s}
+.gal .c .more{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1;backdrop-filter:blur(2px);transition:background .22s}
 .gal .c:hover .more{background:rgba(6,32,18,.66)}
 .gal .c .more .n{font-size:26px;font-weight:760;letter-spacing:-.02em}
 .gal .c .more .t{font-size:12.5px;font-weight:600;opacity:.9}
@@ -303,8 +303,8 @@ section{scroll-margin-top:72px}
 
 /* ===== Plantas: foto real quando existe, desenho valorizado quando não ===== */
 .plant .draw{border:none;width:100%;padding:0;font:inherit;cursor:default}
-.plant.has-img .draw{cursor:pointer;height:230px;background:#fff}
-.plant.has-img .draw img{width:100%;height:100%;object-fit:contain;padding:10px;transition:transform .4s}
+.plant.has-img .draw{cursor:pointer;height:265px;background:#fbfcfb;overflow:hidden}
+.plant.has-img .draw img{width:100%;height:100%;object-fit:contain;padding:14px;transition:transform .45s cubic-bezier(.2,.7,.3,1)}
 .plant.has-img:hover .draw img{transform:scale(1.05)}
 .plant .draw .zoom{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(6,32,18,.42);opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s}
 .plant .draw .zoom svg{width:17px;height:17px}
@@ -345,4 +345,38 @@ section{scroll-margin-top:72px}
 }
 
 /* <picture> não pode quebrar o enquadramento das fotos */
-.gal .c picture,.plant .draw picture{display:block;width:100%;height:100%}
+/* height:100% dentro de um grid com place-items:center vira dependencia
+   circular: o navegador cai no tamanho natural da imagem e ela vaza por cima
+   do texto do card. Ancorar no proprio box resolve de vez. */
+.gal .c picture{display:block;width:100%;height:100%}
+.plant .draw picture{position:absolute;inset:0;display:block}
+
+/* ===== Card de planta: informação em primeiro plano ===== */
+.plant.has-img .pt .top{align-items:center;gap:10px;margin-bottom:14px}
+.plant.has-img .pt .area{background:color-mix(in srgb,var(--green) 10%,#fff);color:var(--green-deep);padding:4px 11px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap}
+.plant.has-img .pt .specs{border-top:1px solid var(--line);padding-top:13px;gap:14px;flex-wrap:wrap}
+.plant .ver{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px;font-size:13px;font-weight:660;color:var(--green);opacity:.9}
+.plant .ver svg{width:15px;height:15px}
+.plant.has-img:hover .ver{opacity:1}
+/* a lupa aparece sozinha por um instante no celular, onde nao existe hover */
+@media(hover:none){
+  .plant .draw .zoom{opacity:1;transform:none;animation:pulsaZoom 2.6s ease-in-out 1s 2}
+  .gal .c .zoom{opacity:.92;transform:none}
+}
+@keyframes pulsaZoom{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+/* entrada dos cards de planta, escalonada */
+.plants .plant{opacity:0;transform:translateY(18px);transition:opacity .5s ease-out,transform .5s cubic-bezier(.2,.7,.3,1)}
+.plants.in .plant{opacity:1;transform:none}
+.plants.in .plant:nth-child(2){transition-delay:.09s}
+.plants.in .plant:nth-child(3){transition-delay:.18s}
+@media(prefers-reduced-motion:reduce){
+  .plants .plant{opacity:1;transform:none;transition:none}
+  .plant .draw .zoom{animation:none}
+}
+@media(max-width:600px){
+  .plant.has-img .draw{height:232px}
+  .plant.has-img .pt .specs{gap:12px;font-size:12.5px}
+}
+
+/* Aviso legal / registro de incorporação no rodapé */
+.foot .legal{margin-top:26px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);font-size:11.5px;line-height:1.65;color:rgba(255,255,255,.5);max-width:900px}

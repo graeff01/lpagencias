@@ -220,10 +220,13 @@
           <div class="pt">
             <div class="top"><b><%= p.titulo %></b><% if (p.area) { %><span class="area"><%= p.area %></span><% } %></div>
             <div class="specs">
-              <% if (p.quartos) { %><span class="sp"><%- icoBed %><%= p.quartos %> quartos</span><% } %>
-              <% if (p.banheiros) { %><span class="sp"><%- icoBath %><%= p.banheiros %> banhos</span><% } %>
-              <% if (p.vagas) { %><span class="sp"><%- icoCar %><%= p.vagas %> vagas</span><% } %>
+              <% if (p.quartos) { %><span class="sp"><%- icoBed %><%= /\d\s*$/.test(String(p.quartos)) ? p.quartos + ' quartos' : p.quartos %></span><% } %>
+              <% if (p.banheiros) { %><span class="sp"><%- icoBath %><%= /\d\s*$/.test(String(p.banheiros)) ? p.banheiros + ' banhos' : p.banheiros %></span><% } %>
+              <% if (p.vagas) { %><span class="sp"><%- icoCar %><%= /\d\s*$/.test(String(p.vagas)) ? p.vagas + ' vagas' : p.vagas %></span><% } %>
             </div>
+            <% if (p.imagem) { %>
+            <div class="ver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg>Toque para ampliar a planta</div>
+            <% } %>
           </div>
         </div>
       <% }); %>
@@ -383,6 +386,7 @@
       <div class="col"><h5>Institucional</h5><a href="/">Outros lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
       <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape-wa" target="_blank" rel="noopener nofollow">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
     </div>
+    <% if (e.aviso_legal) { %><div class="legal"><%= e.aviso_legal %></div><% } %>
     <div class="bot"><span>© <%= new Date().getFullYear() %> Auxiliadora Predial · Todos os direitos reservados</span><span>CRECI-RS · Política de Privacidade</span></div>
   </div>
 </footer>
