@@ -7,7 +7,22 @@
   <% if (e.meta_description) { %><meta name="description" content="<%= e.meta_description %>"><% } %>
   <meta property="og:title" content="<%= e.nome %>">
   <% if (e.meta_description) { %><meta property="og:description" content="<%= e.meta_description %>"><% } %>
-  <% if (e.hero_image) { %><meta property="og:image" content="<%= e.hero_image %>"><% } %>
+  <% if (e.hero_image) { %>
+  <meta property="og:image" content="<%= canonical.replace(/\/[^\/]*$/, '') + e.hero_image %>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="<%= e.nome %><%= e.bairro ? ' — ' + e.bairro : '' %>">
+  <% } %>
+  <meta property="og:site_name" content="Auxiliadora Predial">
+  <meta property="og:locale" content="pt_BR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= e.nome %>">
+  <% if (e.meta_description) { %><meta name="twitter:description" content="<%= e.meta_description %>"><% } %>
+  <% if (e.hero_image) { %><meta name="twitter:image" content="<%= canonical.replace(/\/[^\/]*$/, '') + e.hero_image %>"><% } %>
+  <meta name="theme-color" content="<%= e._green %>">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <% var heroWebp = e.hero_image ? h.webpDe(e.hero_image) : null; %>
+  <% if (e.hero_image) { %><link rel="preload" as="image" href="<%= heroWebp || e.hero_image %>"<% if (heroWebp) { %> type="image/webp"<% } %> fetchpriority="high"><% } %>
   <link rel="canonical" href="<%= canonical %>">
   <meta property="og:url" content="<%= canonical %>">
   <meta property="og:type" content="website">
@@ -19,8 +34,42 @@
       --green-bright:<%= e._greenBright %>; --green-ink:<%= e._greenInk %>;
       --orange:<%= e._accent %>; --orange-deep:<%= e._accentDeep %>;
     }
-    .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (e.hero_image) { %>,url("<%= e.hero_image %>")<% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
+    .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (e.hero_image) { %>,<%- h.bgImagem(e.hero_image) %><% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
   </style>
+  <script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"Residence",
+    "name": e.nome,
+    "url": canonical,
+    "description": e.meta_description || e.descricao || undefined,
+    "image": e.hero_image ? canonical.replace(/\/[^\/]*$/, '') + e.hero_image : undefined,
+    "address": {
+      "@type":"PostalAddress",
+      "streetAddress": e.endereco || undefined,
+      "addressLocality": e.cidade || undefined,
+      "addressRegion":"RS",
+      "addressCountry":"BR"
+    },
+    "numberOfRooms": e.dormitorios || undefined,
+    "floorSize": e.area ? { "@type":"QuantitativeValue", "value": e.area, "unitCode":"MTK" } : undefined,
+    "offers": e.preco_inicial ? {
+      "@type":"Offer",
+      "price": e.preco_inicial,
+      "priceCurrency":"BRL",
+      "availability":"https://schema.org/InStock",
+      "seller": { "@type":"RealEstateAgent", "name":"Auxiliadora Predial" }
+    } : undefined
+  }, function(k,v){ return v === undefined ? undefined : v; }) %>
+  </script>
+  <% if (e.ga_id) { %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= e.ga_id %>"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','<%= e.ga_id %>');</script>
+  <% } %>
+  <% if (e.pixel_id) { %>
+  <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','<%= e.pixel_id %>');fbq('track','PageView');</script>
+  <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=<%= e.pixel_id %>&ev=PageView&noscript=1"/></noscript>
+  <% } %>
 </head>
 <body>
 <%
@@ -110,7 +159,10 @@
     <div class="gal rv">
       <% gal.slice(0,5).forEach(function(g, i){ %>
         <button type="button" class="c<%= i===0 ? ' big' : '' %>" data-lb="<%= i %>" aria-label="Abrir foto <%= i+1 %> de <%= gal.length %><%= g.tag ? ': ' + g.tag : '' %>">
-          <img src="<%= g.url %>" alt="<%= g.tag || e.nome %>" loading="lazy"/>
+          <picture>
+            <% var gw = h.webpDe(g.url); if (gw) { %><source srcset="<%= gw %>" type="image/webp"><% } %>
+            <img src="<%= g.url %>" alt="<%= g.tag || e.nome %>" width="800" height="600" loading="<%= i===0 ? 'eager' : 'lazy' %>"<%= i===0 ? ' fetchpriority="high"' : '' %>/>
+          </picture>
           <% if (i===4 && gal.length>5) { %>
             <div class="more"><span class="n">+<%= gal.length-5 %></span><span class="t">fotos</span></div>
           <% } else { %>
@@ -151,7 +203,10 @@
         <div class="plant<%= p.imagem ? ' has-img' : '' %>">
           <% if (p.imagem) { %>
             <button type="button" class="draw" data-lbp="<%= i %>" aria-label="Ampliar planta <%= p.titulo %>">
-              <img src="<%= p.imagem %>" alt="Planta <%= p.titulo %>" loading="lazy"/>
+              <picture>
+                <% var pw = h.webpDe(p.imagem); if (pw) { %><source srcset="<%= pw %>" type="image/webp"><% } %>
+                <img src="<%= p.imagem %>" alt="Planta humanizada — <%= p.titulo %>, <%= p.area || '' %>" width="1000" height="850" loading="lazy"/>
+              </picture>
               <% if (p.final) { %><span class="fl"><%= p.final %></span><% } %>
               <span class="zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg></span>
             </button>
@@ -361,6 +416,15 @@
   var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
+  // ---- Conversão: todo clique que leva ao WhatsApp vira evento ----
+  document.querySelectorAll('a[href^="/wa/"]').forEach(function(a){
+    a.addEventListener('click',function(){
+      var origem=(a.getAttribute('href').split('src=')[1]||'link').split('&')[0];
+      if(window.gtag) gtag('event','contato_whatsapp',{empreendimento:EMP,botao:origem});
+      if(window.fbq) fbq('track','Contact',{content_name:EMP,source:origem});
+    });
+  });
+
   // ---- Visualizador em tela cheia ----
   (function(){
     var box=document.getElementById('lbx'), img=document.getElementById('lbxImg'),
@@ -435,6 +499,8 @@
   if(lf){lf.addEventListener('submit',function(ev){
     ev.preventDefault();
     var d=new FormData(lf);
+    if(window.gtag) gtag('event','envio_formulario',{empreendimento:EMP});
+    if(window.fbq) fbq('track','Lead',{content_name:EMP});
     var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
     if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
     window.open(WA_URL+'?src=formulario&msg='+encodeURIComponent(msg),'_blank');

@@ -39,7 +39,27 @@ router.get('/', async (req, res, next) => {
 
 // Robôs não devem seguir (nem indexar) o link da roleta.
 router.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send('User-agent: *\nDisallow: /wa/\nAllow: /\n');
+  const base = `${req.protocol}://${req.get('host')}`;
+  res.type('text/plain').send(
+    `User-agent: *\nDisallow: /wa/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`
+  );
+});
+
+// Sitemap com as landings publicadas — o Google encontra tudo sem depender de link.
+router.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const base = `${req.protocol}://${req.get('host')}`;
+    const rows = await db.list({ publishedOnly: true });
+    const urls = [`<url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`]
+      .concat(rows.map((r) => {
+        const dt = r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : null;
+        return `<url><loc>${base}/${r.slug}</loc>${dt ? `<lastmod>${dt}</lastmod>` : ''}`
+             + `<changefreq>weekly</changefreq><priority>1.0</priority></url>`;
+      }));
+    res.type('application/xml').send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`
+    );
+  } catch (e) { next(e); }
 });
 
 // ---------------------------------------------------------------------

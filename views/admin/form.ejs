@@ -286,7 +286,11 @@
         <div class="fieldset">
           <div class="leg">Contato &amp; SEO</div>
           <div class="frow">
-            <div class="field"><label>WhatsApp de atendimento</label><input name="whatsapp" value="<%= val(v.whatsapp) %>" placeholder="(51) 99000-0000"><div class="hint">Número reserva: só é usado se não houver nenhum corretor ativo na roleta. Ele <b>não aparece</b> na landing.</div></div>
+            <div class="frow">
+            <div class="field"><label>Google Analytics 4 (ID de medição)</label><input name="ga_id" value="<%= val(v.ga_id) %>" placeholder="G-XXXXXXXXXX"><div class="hint">Cole o ID do GA4. Em branco, nenhum script é carregado.</div></div>
+            <div class="field"><label>Meta Pixel (ID)</label><input name="pixel_id" value="<%= val(v.pixel_id) %>" placeholder="000000000000000"><div class="hint">Só números. O clique no WhatsApp dispara o evento <b>Contact</b>.</div></div>
+          </div>
+          <div class="field"><label>WhatsApp de atendimento</label><input name="whatsapp" value="<%= val(v.whatsapp) %>" placeholder="(51) 99000-0000"><div class="hint">Número reserva: só é usado se não houver nenhum corretor ativo na roleta. Ele <b>não aparece</b> na landing.</div></div>
             <div class="field"><label>Texto do botão (CTA)</label><input name="cta" value="<%= val(v.cta) || 'Quero conhecer' %>"></div>
           </div>
           <div class="frow one">
