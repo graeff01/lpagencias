@@ -19,6 +19,7 @@ function prep(e) {
     faq: asArray(e.faq),
     pois: asArray(e.pois),
     construtora_stats: asArray(e.construtora_stats),
+    acabamentos: asArray(e.acabamentos),
     _green: green,
     _greenDeep: shade(green, -40),
     _greenBright: green2,

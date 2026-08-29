@@ -16,6 +16,9 @@
       '<label class="uplabel">Enviar planta<input type="file" accept="image/*" data-upload-item></label>' +
       '<input data-k="imagem" placeholder="ou cole a URL da planta" style="margin-top:8px"></div></div></div>' +
       '</div></div>',
+    acabamentos: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">' +
+      '<div><span class="lbl">Item</span><input data-k="item" placeholder="Fechadura digital"></div>' +
+      '<div><span class="lbl">Detalhe</span><input data-k="det" placeholder="em todas as unidades"></div></div></div>',
     diferenciais: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">' +
       '<div><span class="lbl">Título</span><input data-k="titulo"></div>' +
       '<div><span class="lbl">Texto</span><textarea data-k="texto" rows="2"></textarea></div></div></div>',

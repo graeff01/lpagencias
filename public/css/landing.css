@@ -380,3 +380,13 @@ section{scroll-margin-top:72px}
 
 /* Aviso legal / registro de incorporação no rodapé */
 .foot .legal{margin-top:26px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);font-size:11.5px;line-height:1.65;color:rgba(255,255,255,.5);max-width:900px}
+
+/* ===== Acabamentos de série do apartamento ===== */
+.acab{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:14px 26px}
+.acab li{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.acab .ck{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--green) 12%,#fff);color:var(--green-deep);margin-top:1px}
+.acab .ck svg{width:14px;height:14px}
+.acab b{display:block;font-size:14.5px;font-weight:640;color:var(--ink);line-height:1.35}
+.acab span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+@media(max-width:900px){.acab{grid-template-columns:repeat(2,1fr);gap:10px 20px}}
+@media(max-width:600px){.acab{grid-template-columns:1fr}.acab li{padding:12px 0}}

@@ -108,6 +108,7 @@
     <% if (gal.length) { %><a href="#galeria">Galeria</a><% } %>
     <% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %>
     <% if (e.infra.length) { %><a href="#lazer">Lazer</a><% } %>
+    <% if ((e.acabamentos||[]).length) { %><a href="#acabamentos">Acabamentos</a><% } %>
     <a href="#local">Localização</a>
   </div>
 </nav>
@@ -180,6 +181,7 @@
 </section>
 <% } %>
 
+
 <% if (e.video_url || e.tour_url) { var vposter = (gal[0] && gal[0].url) || e.hero_image; %>
 <section class="sec alt" id="video">
   <div class="wrap">
@@ -244,6 +246,19 @@
         <div class="it"><div class="ic"><%- infraIcons[i % infraIcons.length] %></div><b><%= it.titulo || it %></b><% if (it.sub) { %><span><%= it.sub %></span><% } %></div>
       <% }); %>
     </div>
+  </div>
+</section>
+<% } %>
+
+<% if ((e.acabamentos||[]).length) { %>
+<section class="sec" id="acabamentos">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Seu apartamento</div><h2 class="sec-h2">Já vem pronto para viver</h2><p class="lead">Itens de série entregues em todas as unidades — sem obra depois das chaves.</p></div>
+    <ul class="acab rv">
+      <% e.acabamentos.forEach(function(a){ %>
+        <li><span class="ck"><%- icoCheck %></span><div><b><%= a.item %></b><% if (a.det) { %><span><%= a.det %></span><% } %></div></li>
+      <% }); %>
+    </ul>
   </div>
 </section>
 <% } %>

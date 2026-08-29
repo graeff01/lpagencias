@@ -105,7 +105,7 @@ router.get('/editar/:id', async (req, res, next) => {
 
 // Converte o corpo do formulário no objeto de dados
 function parseBody(body) {
-  const jsonFields = ['gallery', 'infra', 'plantas', 'diferenciais', 'timeline', 'faq', 'pois', 'construtora_stats'];
+  const jsonFields = ['gallery', 'infra', 'plantas', 'diferenciais', 'timeline', 'faq', 'pois', 'construtora_stats', 'acabamentos'];
   const data = { ...body };
   for (const f of jsonFields) {
     try { data[f] = body[f] ? JSON.parse(body[f]) : []; }

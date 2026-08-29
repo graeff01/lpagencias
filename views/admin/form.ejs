@@ -16,6 +16,7 @@
   var faq = h.asArray(v.faq);
   var pois = h.asArray(v.pois);
   var stats = h.asArray(v.construtora_stats);
+  var acabamentos = h.asArray(v.acabamentos);
   function val(x){ return (x===undefined||x===null)?'':String(x); }
 %>
 <body>
@@ -181,6 +182,22 @@
           </div>
           <button type="button" class="add-btn" data-add="plantas" style="margin-top:10px">+ Adicionar planta</button>
           <input type="hidden" name="plantas" id="hidden-plantas">
+        </div>
+
+        <!-- ACABAMENTOS DO APARTAMENTO (repetível) -->
+        <div class="fieldset">
+          <div class="leg">O que já vem no apartamento</div>
+          <div class="rep" data-rep="acabamentos">
+            <% acabamentos.forEach(function(a){ %>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">
+                <div><span class="lbl">Item</span><input data-k="item" value="<%= val(a.item) %>" placeholder="Fechadura digital"></div>
+                <div><span class="lbl">Detalhe</span><input data-k="det" value="<%= val(a.det) %>" placeholder="em todas as unidades"></div>
+              </div></div>
+            <% }); %>
+          </div>
+          <button type="button" class="add-btn" data-add="acabamentos" style="margin-top:10px">+ Adicionar acabamento</button>
+          <input type="hidden" name="acabamentos" id="hidden-acabamentos">
+          <div class="hint" style="margin-top:8px">Itens de série da unidade (não do condomínio). Some da landing se ficar vazio.</div>
         </div>
 
         <!-- DIFERENCIAIS (repetível) -->
