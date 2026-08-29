@@ -8,3 +8,7 @@ npm-debug.log*
 material/
 *.mov
 *.mp4
+
+# dados de trabalho de migracao de conteudo (nao fazem parte do app)
+dados-novos.json
+*.tmp.js
