@@ -1,0 +1,10 @@
+# O railway up não usa o .gitignore com garantia — espelhado aqui para não
+# subir 1,1 GB de material bruto do cliente a cada deploy.
+node_modules/
+material/
+*.mov
+*.mp4
+.env
+.DS_Store
+*.log
+.git/
