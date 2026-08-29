@@ -112,6 +112,7 @@ function parseBody(body) {
     catch { data[f] = []; }
   }
   data.published = body.published === 'on' || body.published === 'true' || body.published === true;
+  data.home = body.home === 'on' || body.home === 'true' || body.home === true;
   return data;
 }
 
@@ -131,6 +132,9 @@ router.post('/salvar', async (req, res, next) => {
     let emp;
     if (id) emp = await db.update(id, data);
     else emp = await db.create(data);
+
+    // Só um empreendimento pode ocupar a raiz do site.
+    if (data.home) await db.definirHome(emp.id);
 
     res.redirect(`/admin?ok=1&slug=${emp.slug}`);
   } catch (e) { next(e); }

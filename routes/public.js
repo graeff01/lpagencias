@@ -30,9 +30,13 @@ function prep(e) {
   };
 }
 
-// Home — vitrine dos empreendimentos publicados
+// Raiz do site. Com um empreendimento marcado como "página inicial", ele
+// ocupa a raiz: toda a autoridade do domínio se concentra numa URL só, em
+// vez de dividir entre uma vitrine magra e a landing de verdade.
 router.get('/', async (req, res, next) => {
   try {
+    const home = await db.getHome();
+    if (home) return renderLanding(req, res, home, { naRaiz: true });
     const rows = (await db.list({ publishedOnly: true })).map(prep);
     res.render('home', { title: 'Auxiliadora Predial · Empreendimentos', emps: rows });
   } catch (e) { next(e); }
@@ -51,12 +55,18 @@ router.get('/sitemap.xml', async (req, res, next) => {
   try {
     const base = `${req.protocol}://${req.get('host')}`;
     const rows = await db.list({ publishedOnly: true });
-    const urls = [`<url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`]
-      .concat(rows.map((r) => {
-        const dt = r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : null;
-        return `<url><loc>${base}/${r.slug}</loc>${dt ? `<lastmod>${dt}</lastmod>` : ''}`
-             + `<changefreq>weekly</changefreq><priority>1.0</priority></url>`;
-      }));
+    const home = rows.find((r) => r.home);
+    const dia = (r) => (r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : null);
+    // O empreendimento da raiz entra só como "/". Listar também /slug faria o
+    // Google indexar duas URLs para a mesma página.
+    const urls = home
+      ? [`<url><loc>${base}/</loc><lastmod>${dia(home) || ''}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`]
+      : [`<url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`];
+    rows.filter((r) => !r.home).forEach((r) => {
+      const dt = dia(r);
+      urls.push(`<url><loc>${base}/${r.slug}</loc>${dt ? `<lastmod>${dt}</lastmod>` : ''}`
+        + `<changefreq>weekly</changefreq><priority>1.0</priority></url>`);
+    });
     res.type('application/xml').send(
       `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`
     );
@@ -101,6 +111,22 @@ function enviarParaWhats(res, telefone, msg) {
   return res.redirect(302, `https://wa.me/${telefone}?text=${encodeURIComponent(msg)}`);
 }
 
+function renderLanding(req, res, row, { naRaiz = false } = {}) {
+  const e = prep(row);
+  const base = `${req.protocol}://${req.get('host')}`;
+  return res.render('landing', {
+    // Canonical sempre na URL preferida: sem isso a mesma página em duas
+    // URLs vira conteúdo duplicado e o Google divide a força entre as duas.
+    canonical: naRaiz ? base + '/' : `${base}/${e.slug}`,
+    title: tituloBusca(e),
+    e,
+    // Todo botão de WhatsApp passa pela roleta, nunca pelo número direto.
+    wa: '/wa/' + e.slug,
+    isPreview: !row.published,
+    naRaiz,
+  });
+}
+
 // Landing page pública do empreendimento
 router.get('/:slug', async (req, res, next) => {
   try {
@@ -108,16 +134,10 @@ router.get('/:slug', async (req, res, next) => {
     if (!row) return next();
     // só admin logado vê rascunhos (não publicados)
     if (!row.published && !(req.session && req.session.admin)) return next();
-    const e = prep(row);
-    res.render('landing', {
-      canonical: `${req.protocol}://${req.get('host')}/${e.slug}`,
-      title: tituloBusca(e),
-      e,
-      // Todo botão de WhatsApp aponta para a roleta (/wa/:slug), nunca para o
-      // número direto — é ela que distribui o lead entre os corretores.
-      wa: '/wa/' + e.slug,
-      isPreview: !row.published,
-    });
+    // Se este é o empreendimento da raiz, /slug redireciona para lá em
+    // definitivo (301), consolidando os sinais numa URL única.
+    if (row.home && row.published) return res.redirect(301, '/');
+    return renderLanding(req, res, row);
   } catch (e) { next(e); }
 });
 

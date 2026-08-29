@@ -304,7 +304,9 @@
         <div class="fieldset">
           <div class="leg">Contato &amp; SEO</div>
           <div class="frow">
-            <div class="field"><label>Título para o Google (SEO)</label><input name="seo_titulo" value="<%= val(v.seo_titulo) %>" placeholder="deixe vazio para gerar automaticamente" maxlength="70"><div class="hint">É o que aparece como link azul na busca. Ideal 50–60 caracteres, contendo o que a pessoa digita: <b>tipo de imóvel + bairro + cidade</b>. Vazio, o sistema monta a partir do nome, dormitórios e localização.</div></div>
+            <label class="switch" style="margin-bottom:16px"><input type="checkbox" name="home" <%= v.home ? 'checked' : '' %>><span>Usar como <b>página inicial</b> do site</span></label>
+          <div class="hint" style="margin:-10px 0 16px">Modo "um empreendimento só": ele passa a ocupar o endereço raiz e <code>/<%= val(v.slug) || 'slug' %></code> redireciona para lá. Concentra toda a força de busca numa URL única, em vez de dividir com uma vitrine quase vazia. Só um empreendimento pode ocupar a raiz.</div>
+          <div class="field"><label>Título para o Google (SEO)</label><input name="seo_titulo" value="<%= val(v.seo_titulo) %>" placeholder="deixe vazio para gerar automaticamente" maxlength="70"><div class="hint">É o que aparece como link azul na busca. Ideal 50–60 caracteres, contendo o que a pessoa digita: <b>tipo de imóvel + bairro + cidade</b>. Vazio, o sistema monta a partir do nome, dormitórios e localização.</div></div>
           <div class="frow">
             <div class="field"><label>Google Analytics 4 (ID de medição)</label><input name="ga_id" value="<%= val(v.ga_id) %>" placeholder="G-XXXXXXXXXX"><div class="hint">Cole o ID do GA4. Em branco, nenhum script é carregado.</div></div>
             <div class="field"><label>Meta Pixel (ID)</label><input name="pixel_id" value="<%= val(v.pixel_id) %>" placeholder="000000000000000"><div class="hint">Só números. O clique no WhatsApp dispara o evento <b>Contact</b>.</div></div>

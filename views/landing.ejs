@@ -428,7 +428,7 @@
         <p><%= e.nome %> é um empreendimento comercializado pela Auxiliadora Predial. Imagens meramente ilustrativas. Sujeito a alterações sem aviso prévio.</p>
       </div>
       <div class="col"><h5>Empreendimento</h5><% if (gal.length) { %><a href="#galeria">Galeria</a><% } %><% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %><% if (e.infra.length) { %><a href="#lazer">Infraestrutura</a><% } %><a href="#local">Localização</a></div>
-      <div class="col"><h5>Institucional</h5><a href="/">Outros lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
+      <div class="col"><h5>Institucional</h5><% if (!naRaiz) { %><a href="/">Outros lançamentos</a><% } %><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
       <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape-wa" target="_blank" rel="noopener nofollow">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
     </div>
     <% if (e.aviso_legal) { %><div class="legal"><%= e.aviso_legal %></div><% } %>
