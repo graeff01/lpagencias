@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../lib/db');
-const { asArray, fmtPreco, shade } = require('../lib/helpers');
+const { asArray, fmtPreco, shade, tituloBusca } = require('../lib/helpers');
 const roleta = require('../lib/roleta');
 
 // Prepara o objeto do empreendimento para a view (parse dos jsonb + cores derivadas)
@@ -111,7 +111,7 @@ router.get('/:slug', async (req, res, next) => {
     const e = prep(row);
     res.render('landing', {
       canonical: `${req.protocol}://${req.get('host')}/${e.slug}`,
-      title: `${e.nome} · Auxiliadora Predial`,
+      title: tituloBusca(e),
       e,
       // Todo botão de WhatsApp aponta para a roleta (/wa/:slug), nunca para o
       // número direto — é ela que distribui o lead entre os corretores.

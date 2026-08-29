@@ -62,9 +62,37 @@
     } : undefined
   }, function(k,v){ return v === undefined ? undefined : v; }) %>
   </script>
-  <% if (e.ga_id) { %>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= e.ga_id %>"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','<%= e.ga_id %>');</script>
+  <% if (e.faq && e.faq.length) { %>
+  <script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity": e.faq.map(function(f){ return {
+      "@type":"Question",
+      "name": f.q,
+      "acceptedAnswer": { "@type":"Answer", "text": f.a }
+    }; })
+  }) %>
+  </script>
+  <% } %>
+  <script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Empreendimentos","item": canonical.replace(/\/[^\/]*$/, '/')},
+      {"@type":"ListItem","position":2,"name": e.nome,"item": canonical}
+    ]
+  }) %>
+  </script>
+  <% if (e.ga_id || e.ads_conversao) { %>
+  <% var tagPrincipal = e.ga_id || (e.ads_conversao||'').split('/')[0]; %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= tagPrincipal %>"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());
+    <% if (e.ga_id) { %>gtag('config','<%= e.ga_id %>');<% } %>
+    <% if (e.ads_conversao) { %>gtag('config','<%= e.ads_conversao.split('/')[0] %>');<% } %>
+  </script>
   <% } %>
   <% if (e.pixel_id) { %>
   <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','<%= e.pixel_id %>');fbq('track','PageView');</script>
@@ -122,6 +150,8 @@
       <div>
         <span class="badge"><span class="d"></span><%= e.status || 'Lançamento' %><% if (e.construtora) { %> · <%= e.construtora %><% } %></span>
         <h1><%= e.nome %></h1>
+        <% var subBusca = h.subtituloBusca(e); %>
+        <% if (subBusca) { %><p class="sub-h1"><%= subBusca %></p><% } %>
         <div class="loc"><%- icoPin %><%= [e.endereco, e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
         <div class="cta-row">
           <a href="#contato" class="btn primary"><%= e.cta || 'Quero conhecer' %> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -162,7 +192,7 @@
         <button type="button" class="c<%= i===0 ? ' big' : '' %>" data-lb="<%= i %>" aria-label="Abrir foto <%= i+1 %> de <%= gal.length %><%= g.tag ? ': ' + g.tag : '' %>">
           <picture>
             <% var gw = h.webpDe(g.url); if (gw) { %><source srcset="<%= gw %>" type="image/webp"><% } %>
-            <img src="<%= g.url %>" alt="<%= g.tag || e.nome %>" width="800" height="600" loading="<%= i===0 ? 'eager' : 'lazy' %>"<%= i===0 ? ' fetchpriority="high"' : '' %>/>
+            <img src="<%= g.url %>" alt="<%= h.altFoto(g.tag, e) %>" width="800" height="600" loading="<%= i===0 ? 'eager' : 'lazy' %>"<%= i===0 ? ' fetchpriority="high"' : '' %>/>
           </picture>
           <% if (i===4 && gal.length>5) { %>
             <div class="more"><span class="n">+<%= gal.length-5 %></span><span class="t">fotos</span></div>
@@ -427,6 +457,7 @@
 
 <script>
   var WA_URL = "<%= wa %>";
+  var ADS_CONV = <%- JSON.stringify(e.ads_conversao || "") %>;
   var FOTOS = <%- JSON.stringify((e.gallery||[]).map(function(g){ return { url: g.url, cap: g.tag || '' }; })) %>;
   var PLANTAS = <%- JSON.stringify((e.plantas||[]).map(function(p){ return { url: p.imagem || '', cap: [p.titulo, p.area].filter(Boolean).join(' · ') }; })) %>;
   var EMP = <%- JSON.stringify(e.nome) %>;
@@ -439,7 +470,10 @@
   document.querySelectorAll('a[href^="/wa/"]').forEach(function(a){
     a.addEventListener('click',function(){
       var origem=(a.getAttribute('href').split('src=')[1]||'link').split('&')[0];
-      if(window.gtag) gtag('event','contato_whatsapp',{empreendimento:EMP,botao:origem});
+      if(window.gtag){
+        gtag('event','contato_whatsapp',{empreendimento:EMP,botao:origem});
+        if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV});
+      }
       if(window.fbq) fbq('track','Contact',{content_name:EMP,source:origem});
     });
   });
@@ -518,7 +552,10 @@
   if(lf){lf.addEventListener('submit',function(ev){
     ev.preventDefault();
     var d=new FormData(lf);
-    if(window.gtag) gtag('event','envio_formulario',{empreendimento:EMP});
+    if(window.gtag){
+      gtag('event','envio_formulario',{empreendimento:EMP});
+      if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV});
+    }
     if(window.fbq) fbq('track','Lead',{content_name:EMP});
     var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
     if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
