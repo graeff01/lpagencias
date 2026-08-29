@@ -8,6 +8,10 @@
   <meta property="og:title" content="<%= e.nome %>">
   <% if (e.meta_description) { %><meta property="og:description" content="<%= e.meta_description %>"><% } %>
   <% if (e.hero_image) { %><meta property="og:image" content="<%= e.hero_image %>"><% } %>
+  <link rel="canonical" href="<%= canonical %>">
+  <meta property="og:url" content="<%= canonical %>">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/landing.css">
   <style>
     :root{
@@ -71,7 +75,7 @@
         <div class="loc"><%- icoPin %><%= [e.endereco, e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
         <div class="cta-row">
           <a href="#contato" class="btn primary"><%= e.cta || 'Quero conhecer' %> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a href="<%= wa %>" target="_blank" rel="noopener" class="btn wa"><%- waSvg %>Falar no WhatsApp</a>
+          <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="btn wa"><%- waSvg %>Falar no WhatsApp</a>
         </div>
       </div>
       <div class="hero-card">
@@ -274,9 +278,6 @@
           <li><%- icoCheck %>Tabela de valores e plantas completas</li>
           <li><%- icoCheck %>Condições exclusivas de lançamento</li>
         </ul>
-        <% if (e.whatsapp) { %>
-        <div class="phone"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg></span><div><b><%= e.whatsapp %></b><span>Atendimento todos os dias</span></div></div>
-        <% } %>
       </div>
       <div class="right">
         <h3>Receba todas as informações</h3>
@@ -303,17 +304,17 @@
         <p><%= e.nome %> é um empreendimento comercializado pela Auxiliadora Predial. Imagens meramente ilustrativas. Sujeito a alterações sem aviso prévio.</p>
       </div>
       <div class="col"><h5>Empreendimento</h5><% if (gal.length) { %><a href="#galeria">Galeria</a><% } %><% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %><% if (e.infra.length) { %><a href="#lazer">Infraestrutura</a><% } %><a href="#local">Localização</a></div>
-      <div class="col"><h5>Institucional</h5><a href="/">Outros lançamentos</a><a href="<%= wa %>" target="_blank" rel="noopener">Fale conosco</a></div>
-      <div class="col"><h5>Contato</h5><% if (e.whatsapp) { %><a href="<%= wa %>" target="_blank" rel="noopener"><%= e.whatsapp %></a><% } %><a href="<%= wa %>" target="_blank" rel="noopener">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
+      <div class="col"><h5>Institucional</h5><a href="/">Outros lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
+      <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape-wa" target="_blank" rel="noopener nofollow">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
     </div>
     <div class="bot"><span>© <%= new Date().getFullYear() %> Auxiliadora Predial · Todos os direitos reservados</span><span>CRECI-RS · Política de Privacidade</span></div>
   </div>
 </footer>
 
-<a href="<%= wa %>" target="_blank" rel="noopener" class="fab" title="Falar no WhatsApp"><span class="pin">1</span><%- waSvg %></a>
+<a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="fab" title="Falar no WhatsApp"><span class="pin">1</span><%- waSvg %></a>
 
 <script>
-  var WA_BASE = "https://wa.me/<%= h.onlyDigits(waRaw) %>";
+  var WA_URL = "<%= wa %>";
   var EMP = <%- JSON.stringify(e.nome) %>;
   var nav=document.getElementById('nav');
   addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>20);});
@@ -326,7 +327,7 @@
     var d=new FormData(lf);
     var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
     if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
-    window.open(WA_BASE+'?text='+encodeURIComponent(msg),'_blank');
+    window.open(WA_URL+'?src=formulario&msg='+encodeURIComponent(msg),'_blank');
   });}
 </script>
 </body>

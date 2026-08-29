@@ -11,7 +11,8 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
+// Estáticos com cache no navegador (CSS/JS/imagens quase nunca mudam).
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d', etag: true }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.json({ limit: '2mb' }));
 

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/admin">Empreendimentos</a>
+      <a class="btn btn-ghost btn-sm" href="/admin/leads/<%= emp.id %>">Relatório de leads</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><%= emp.nome %></div>
+        <h1>Roleta de corretores</h1>
+        <p>Cada clique no WhatsApp da landing vai para o próximo da fila. <%= corretores.filter(c=>c.ativo).length %> ativo(s) de <%= corretores.length %> cadastrado(s).</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank">Ver landing</a>
+        <a class="btn btn-green" href="/admin/leads/<%= emp.id %>">Ver leads por corretor</a>
+      </div>
+    </div>
+
+    <% if (q && q.ok) { %><div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Alterações salvas.</div><% } %>
+    <% if (q && q.del) { %><div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f">Corretor removido da roleta.</div><% } %>
+    <% if (q && q.zerado) { %><div class="flash">Contadores zerados — o rodízio recomeça agora. O histórico de leads foi mantido.</div><% } %>
+    <% if (q && q.erro === 'campos') { %><div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f">Nome e WhatsApp são obrigatórios.</div><% } %>
+    <% if (q && q.erro === 'telefone') { %><div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f">WhatsApp inválido. Use DDD + número, ex.: (51) 99999-0000. Um número errado faz os leads desse corretor sumirem.</div><% } %>
+    <% if (q && q.erro === 'duplicado') { %><div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f">Esse WhatsApp já está cadastrado em outro corretor deste empreendimento — dois corretores no mesmo número quebram a contagem de leads.</div><% } %>
+
+    <% if (!corretores.filter(c=>c.ativo).length) { %>
+      <div class="flash" style="background:#fff6e8;border-color:#f3ddb6;color:#8a5a12">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v5M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        Nenhum corretor ativo: por enquanto os botões usam o WhatsApp geral do empreendimento (<%= emp.whatsapp || 'não informado' %>).
+      </div>
+    <% } %>
+
+    <div class="split">
+      <div class="panel">
+        <h2 class="panel-h">Fila atual</h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Corretor</th><th>WhatsApp</th><th>Peso</th><th>Na fila</th><th>Último lead</th><th></th></tr></thead>
+          <tbody>
+            <% if (!corretores.length) { %>
+              <tr><td colspan="7" class="empty">Cadastre o primeiro corretor no formulário ao lado.</td></tr>
+            <% } %>
+            <% corretores.forEach(function(c, i){ %>
+              <tr class="<%= c.ativo ? '' : 'off' %>">
+                <td class="num"><%= i+1 %></td>
+                <td>
+                  <b><%= c.nome %></b>
+                  <% if (!c.ativo) { %><span class="tag pause">pausado</span><% } %>
+                  <% if (c.creci) { %><span class="sub">CRECI <%= c.creci %></span><% } %>
+                </td>
+                <td class="mono"><%= c.telefone %></td>
+                <td class="num"><%= c.peso %>x</td>
+                <td class="num"><%= c.atribuicoes %></td>
+                <td class="sub"><%= c.ultima_atribuicao ? new Date(c.ultima_atribuicao).toLocaleString('pt-BR') : '—' %></td>
+                <td class="row-acts">
+                  <a class="btn btn-ghost btn-sm" href="https://wa.me/<%= h.onlyDigits(c.telefone) %>" target="_blank" rel="noopener" title="Abrir conversa para conferir se o número existe">Testar</a>
+                  <button class="btn btn-ghost btn-sm" type="button"
+                    onclick='editar(<%- JSON.stringify({id:c.id,nome:c.nome,telefone:c.telefone,email:c.email,creci:c.creci,peso:c.peso,ordem:c.ordem,ativo:c.ativo}) %>)'>Editar</button>
+                  <form method="POST" action="/admin/corretores/<%= emp.id %>/toggle/<%= c.id %>">
+                    <button class="btn btn-ghost btn-sm" type="submit"><%= c.ativo ? 'Pausar' : 'Reativar' %></button>
+                  </form>
+                  <form method="POST" action="/admin/corretores/<%= emp.id %>/excluir/<%= c.id %>" onsubmit="return confirm('Remover <%= c.nome %> da roleta?')">
+                    <button class="btn btn-danger btn-sm" type="submit" title="Remover">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="panel-foot">
+          <p class="hint">
+            <b>Como a vez é decidida:</b> sempre entra quem tem a menor carga (leads recebidos ÷ peso).
+            Pausar não apaga nada, e quem volta de uma pausa reentra no nível de quem está ativo hoje —
+            não recebe de uma vez tudo o que perdeu.
+          </p>
+          <form method="POST" action="/admin/corretores/<%= emp.id %>/zerar" onsubmit="return confirm('Zerar os contadores da fila? O histórico de leads é mantido.')">
+            <button class="btn btn-ghost btn-sm" type="submit">Zerar contadores da fila</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-h" id="form-titulo">Novo corretor</h2>
+        <form method="POST" action="/admin/corretores/<%= emp.id %>/salvar" class="frm" id="frm">
+          <input type="hidden" name="corretor_id" id="corretor_id" value="">
+          <div class="fg"><label>Nome *</label><input name="nome" id="f_nome" required placeholder="Ex.: Ana Beatriz Souza"></div>
+          <div class="fg"><label>WhatsApp *</label><input name="telefone" id="f_telefone" required placeholder="(51) 99999-0000"><span class="hint">Só o número — ele nunca aparece na landing.</span></div>
+          <div class="fg2">
+            <div class="fg"><label>E-mail</label><input name="email" id="f_email" type="email" placeholder="opcional"></div>
+            <div class="fg"><label>CRECI</label><input name="creci" id="f_creci" placeholder="opcional"></div>
+          </div>
+          <div class="fg2">
+            <div class="fg"><label>Peso</label><input name="peso" id="f_peso" type="number" min="1" max="10" value="1"><span class="hint">2 = recebe o dobro.</span></div>
+            <div class="fg"><label>Ordem</label><input name="ordem" id="f_ordem" type="number" value="0"><span class="hint">Só organiza a lista.</span></div>
+          </div>
+          <label class="chk"><input type="checkbox" name="ativo" id="f_ativo" checked> Ativo na roleta</label>
+          <div class="frm-acts">
+            <button class="btn btn-green" type="submit">Salvar corretor</button>
+            <button class="btn btn-ghost" type="button" onclick="novo()">Limpar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function novo(){
+      document.getElementById('frm').reset();
+      document.getElementById('corretor_id').value='';
+      document.getElementById('form-titulo').textContent='Novo corretor';
+    }
+    function editar(c){
+      document.getElementById('corretor_id').value=c.id;
+      document.getElementById('f_nome').value=c.nome||'';
+      document.getElementById('f_telefone').value=c.telefone||'';
+      document.getElementById('f_email').value=c.email||'';
+      document.getElementById('f_creci').value=c.creci||'';
+      document.getElementById('f_peso').value=c.peso||1;
+      document.getElementById('f_ordem').value=c.ordem||0;
+      document.getElementById('f_ativo').checked=!!c.ativo;
+      document.getElementById('form-titulo').textContent='Editando: '+c.nome;
+      document.getElementById('f_nome').focus();
+    }
+  </script>
+</body>
+</html>

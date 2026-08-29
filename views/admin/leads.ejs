@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/admin">Empreendimentos</a>
+      <a class="btn btn-ghost btn-sm" href="/admin/corretores/<%= emp.id %>">Roleta de corretores</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><%= emp.nome %></div>
+        <h1>Leads por corretor</h1>
+        <p>Cada clique no botão de WhatsApp é registrado aqui — com hora, origem e para quem foi.</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-ghost" href="/admin/leads/<%= emp.id %><%= dias ? '' : '?dias=30' %>"><%= dias ? 'Ver período total' : 'Ver últimos 30 dias' %></a>
+        <a class="btn btn-primary" href="/admin/leads/<%= emp.id %>/csv">Exportar CSV</a>
+      </div>
+    </div>
+
+    <%
+      var ativos = stats.filter(function(s){ return s.ativo; });
+      var ultimo = stats.reduce(function(m,s){ var d=s.ultimo_clique?new Date(s.ultimo_clique):null; return (d&&(!m||d>m))?d:m; }, null);
+      var horasParado = ultimo ? Math.floor((Date.now()-ultimo.getTime())/3600000) : null;
+    %>
+    <% if (!ativos.length) { %>
+      <div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v5M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        <b style="margin-right:4px">Roleta parada:</b> nenhum corretor ativo. Os leads estão indo para o número reserva do empreendimento.
+      </div>
+    <% } else if (horasParado !== null && horasParado >= 48) { %>
+      <div class="flash" style="background:#fff6e8;border-color:#f3ddb6;color:#8a5a12">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v5M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        Nenhum clique há <%= horasParado %> horas. Se a campanha está no ar, vale conferir se a landing e os botões estão funcionando.
+      </div>
+    <% } %>
+
+    <div class="kpis">
+      <div class="kpi"><span>Leads únicos</span><b><%= resumo.leads %></b><i>pessoas distintas distribuídas</i></div>
+      <div class="kpi"><span>Cliques totais</span><b><%= resumo.cliques %></b><i>inclui quem voltou a clicar</i></div>
+      <div class="kpi"><span>Leads · 7 dias</span><b><%= resumo.leads_7d %></b><i><%= resumo.cliques_7d %> cliques no período</i></div>
+      <div class="kpi"><span>Resgatados</span><b><%= resumo.resgates %></b><i>voltaram após 24h e trocaram de corretor</i></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Distribuição<% if (dias) { %> · últimos <%= dias %> dias<% } %></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Corretor</th><th>Leads</th><th>Participação</th><th>Resgatou</th><th>Não retornou</th><th>Na fila</th><th>Último lead</th><th>Status</th></tr></thead>
+        <tbody>
+          <% var totalLeads = stats.reduce(function(a,s){return a+s.leads;},0);
+             var alvo = stats.filter(function(s){return s.ativo;}).length ? (100/stats.filter(function(s){return s.ativo;}).length) : 0; %>
+          <% if (!stats.length) { %>
+            <tr><td colspan="8" class="empty">Nenhum corretor cadastrado ainda. <a href="/admin/corretores/<%= emp.id %>" style="color:var(--green);font-weight:700">Cadastrar agora</a>.</td></tr>
+          <% } %>
+          <% stats.forEach(function(s){ var pct = totalLeads ? (s.leads*100/totalLeads) : 0; %>
+            <tr class="<%= s.ativo ? '' : 'off' %>">
+              <td><b><%= s.nome %></b><span class="sub mono"><%= s.telefone %></span></td>
+              <td class="num big"><%= s.leads %></td>
+              <td>
+                <div class="bar"><span style="width:<%= Math.min(100, pct).toFixed(1) %>%"></span></div>
+                <span class="sub"><%= pct.toFixed(1) %>%<% if (s.ativo && alvo) { %> · meta <%= alvo.toFixed(1) %>%<% } %></span>
+              </td>
+              <td class="num"><%= s.resgatados %></td>
+              <td class="num" <% if (s.nao_retornados) { %>style="color:var(--danger)"<% } %>><%= s.nao_retornados %></td>
+              <td class="num"><%= s.atribuicoes %></td>
+              <td class="sub"><%= s.ultimo_clique ? new Date(s.ultimo_clique).toLocaleString('pt-BR') : '—' %></td>
+              <td><span class="tag <%= s.ativo ? 'on' : 'pause' %>"><%= s.ativo ? 'ativo' : 'pausado' %></span></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot"><p class="hint">
+        “Participação” é a fatia de leads que cada um recebeu; “meta” é a fatia igualitária entre os ativos.
+        <b>“Não retornou”</b> conta os leads que voltaram à landing depois de 24h e foram repassados a outro corretor —
+        é um sinal de responsividade, não uma prova: o corretor pode ter atendido e o lead ter voltado por outro motivo.
+        Olhe a tendência ao longo das semanas, não um caso isolado.
+      </p></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Últimos cliques <span class="sub">(200 mais recentes)</span></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Corretor</th><th>Tipo</th><th>Botão</th><th>Como foi decidido</th><th>Campanha</th></tr></thead>
+        <tbody>
+          <% if (!cliques.length) { %><tr><td colspan="6" class="empty">Nenhum clique registrado ainda.</td></tr><% } %>
+          <% cliques.forEach(function(c){ %>
+            <tr class="<%= c.bot ? 'off' : '' %>">
+              <td class="sub"><%= new Date(c.created_at).toLocaleString('pt-BR') %></td>
+              <td><%= c.corretor_nome || '—' %></td>
+              <td>
+                <% if (c.bot) { %><span class="tag">robô</span>
+                <% } else if (c.novo_lead) { %><span class="tag on">lead novo</span>
+                <% } else { %><span class="tag">repetido</span><% } %>
+              </td>
+              <td class="sub"><%= c.origem || '—' %></td>
+              <td class="sub"><%= c.motivo || '—' %></td>
+              <td class="sub"><%= [c.utm_source, c.utm_campaign].filter(Boolean).join(' · ') || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

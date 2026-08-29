@@ -53,6 +53,8 @@
             <div class="url">/<%= e.slug %></div>
             <div class="foot">
               <a class="btn btn-ghost btn-sm" href="/<%= e.slug %>" target="_blank">Ver</a>
+              <a class="btn btn-ghost btn-sm" href="/admin/corretores/<%= e.id %>" title="Corretores da roleta">Corretores</a>
+              <a class="btn btn-ghost btn-sm" href="/admin/leads/<%= e.id %>" title="Leads por corretor">Leads</a>
               <a class="btn btn-green btn-sm" href="/admin/editar/<%= e.id %>">Editar</a>
               <form method="POST" action="/admin/excluir/<%= e.id %>" onsubmit="return confirm('Excluir <%= e.nome %>? Esta ação não pode ser desfeita.')">
                 <button class="btn btn-danger btn-sm" type="submit" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>

@@ -83,3 +83,69 @@ views/home.ejs       # vitrine dos empreendimentos
 views/admin/*.ejs    # login, lista e formulário
 public/css, public/js
 ```
+
+## Roleta de corretores (distribuição de leads)
+
+Cada empreendimento pode ter sua própria lista de corretores. Todo botão de
+WhatsApp da landing aponta para `/wa/:slug` — nunca para o `wa.me` direto.
+É essa rota que escolhe o corretor da vez, grava o clique e só então redireciona.
+
+**Painel:** `/admin/corretores/:id` (cadastro e fila) e `/admin/leads/:id`
+(quantos leads cada um recebeu, com exportação em CSV).
+
+### Como a vez é decidida
+Entra sempre quem tem a **menor carga** (`leads recebidos ÷ peso`), com desempate
+pelo lead mais antigo. Não é sorteio aleatório: é rodízio determinístico, então
+com 10 corretores e 100 leads cada um recebe exatamente 10.
+
+- **Peso**: `2` faz o corretor receber o dobro dos demais (útil para plantonista).
+- **Pausar**: tira da fila sem apagar o histórico. Ao reativar, ele reentra no
+  nível de quem está ativo hoje — não recebe de uma vez tudo o que perdeu.
+- **Concorrência**: a escolha roda em transação com `pg_advisory_xact_lock` por
+  empreendimento, então dois cliques no mesmo instante nunca caem no mesmo corretor.
+
+### O que evita contagem injusta
+- **Mesmo visitante = mesmo corretor por 24h.** Quem clica no botão do topo, no
+  flutuante e no formulário conta como **1 lead**. O reconhecimento é por cookie
+  e, se ele for limpo, pelo hash do IP no log.
+- **Resgate automático.** Passadas 24h, o visitante que volta à landing e clica
+  de novo é sinal de que ninguém retornou: ele vai para **outro** corretor, e o
+  primeiro fica com um "não retornou" no relatório. É um sinal de
+  responsividade que chega sozinho, sem pedir nada aos corretores — mas é
+  indício, não prova: olhe a tendência, não o caso isolado.
+- **Robôs** (Googlebot, preview do WhatsApp, curl…) não consomem vez da fila e
+  ficam marcados como `bot` no relatório.
+- **Números fora do HTML**: ninguém descobre o telefone dos corretores pelo
+  código-fonte da página, e um corretor não consegue recarregar a página para
+  “puxar” leads.
+- **Log imutável**: `cliques_whatsapp` guarda data/hora, corretor, botão de
+  origem, motivo da decisão e UTMs de cada clique — é a prova de que o rodízio
+  foi justo.
+
+### Tabelas
+- `corretores` — nome, telefone, peso, ativo, contador da fila.
+- `cliques_whatsapp` — log de auditoria de cada clique.
+
+### Proteções contra erro
+- **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o
+  clique vai para o número reserva do empreendimento sem atribuição. Melhor um
+  lead sem dono do que um lead perdido.
+- **Número inválido é barrado no cadastro** (DDD, quantidade de dígitos, celular
+  que não começa com 9, dígitos repetidos). Um telefone errado faria os leads
+  daquele corretor sumirem sem ninguém perceber.
+- **Número duplicado é barrado**: dois corretores no mesmo WhatsApp quebram a
+  medição de quem recebeu o quê.
+- **Corrida em duas camadas**: fila em memória dentro do processo + advisory
+  lock no Postgres para o caso de mais de uma instância do app.
+- **Login do painel**: 5 senhas erradas bloqueiam o IP por 15 minutos, e a
+  sessão é regenerada no login (o painel guarda dados pessoais dos corretores).
+- **Alerta de falha silenciosa** na tela de leads: avisa se não há corretor
+  ativo ou se nenhum clique chega há mais de 48h.
+
+### Testes
+```bash
+npm run test:roleta
+```
+Prova a distribuição igualitária (100 leads ÷ 10 corretores = 10 para cada), o
+peso, o comportamento de pausa/reativação, 50 cliques simultâneos sem duplicar,
+a validação de telefone e a detecção de robôs.
