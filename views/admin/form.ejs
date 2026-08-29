@@ -165,6 +165,16 @@
                 <div><span class="lbl">Banheiros</span><input data-k="banheiros" value="<%= val(p.banheiros) %>"></div>
                 <div><span class="lbl">Vagas</span><input data-k="vagas" value="<%= val(p.vagas) %>"></div>
                 <div><span class="lbl">Etiqueta</span><input data-k="final" value="<%= val(p.final) %>" placeholder="Final 02 · 03"></div>
+                <div style="grid-column:1/-1"><span class="lbl">Imagem da planta</span>
+                  <div class="imgfield">
+                    <div class="thumb pthumb" style="width:74px;height:56px;<% if (p.imagem) { %>background-image:url('<%= p.imagem %>')<% } %>"></div>
+                    <div class="up">
+                      <label class="uplabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Enviar planta<input type="file" accept="image/*" data-upload-item></label>
+                      <input data-k="imagem" value="<%= val(p.imagem) %>" placeholder="ou cole a URL da planta" style="margin-top:8px">
+                    </div>
+                  </div>
+                  <div class="hint">Sem imagem, a landing mostra um desenho ilustrativo com a metragem em destaque.</div>
+                </div>
               </div></div>
             <% }); %>
           </div>

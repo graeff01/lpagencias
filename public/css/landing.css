@@ -287,3 +287,55 @@ section{scroll-margin-top:72px}
   .hero-card .g4{gap:12px}
   .trust .it{flex:1 1 100%}
 }
+
+/* ===== Galeria: célula clicável + chamada para ver todas ===== */
+.gal .c{border:none;padding:0;background:#dfe8e2;font:inherit;display:block}
+.gal .c .zoom{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(6,32,18,.42);backdrop-filter:blur(6px);opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s;z-index:2}
+.gal .c .zoom svg{width:17px;height:17px}
+.gal .c:hover .zoom,.gal .c:focus-visible .zoom{opacity:1;transform:scale(1)}
+.gal .c .more{flex-direction:column;gap:2px;line-height:1.1;backdrop-filter:blur(2px);transition:background .22s}
+.gal .c:hover .more{background:rgba(6,32,18,.66)}
+.gal .c .more .n{font-size:26px;font-weight:760;letter-spacing:-.02em}
+.gal .c .more .t{font-size:12.5px;font-weight:600;opacity:.9}
+.gal-all{display:flex;justify-content:center;margin-top:18px}
+.btn.ghost-line{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:640;padding:12px 24px;border-radius:12px;cursor:pointer;transition:border-color .2s,background .2s}
+.btn.ghost-line:hover{border-color:var(--green);background:rgba(14,158,74,.06);color:var(--green)}
+
+/* ===== Plantas: foto real quando existe, desenho valorizado quando não ===== */
+.plant .draw{border:none;width:100%;padding:0;font:inherit;cursor:default}
+.plant.has-img .draw{cursor:pointer;height:230px;background:#fff}
+.plant.has-img .draw img{width:100%;height:100%;object-fit:contain;padding:10px;transition:transform .4s}
+.plant.has-img:hover .draw img{transform:scale(1.05)}
+.plant .draw .zoom{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(6,32,18,.42);opacity:0;transform:scale(.85);transition:opacity .22s,transform .22s}
+.plant .draw .zoom svg{width:17px;height:17px}
+.plant.has-img:hover .draw .zoom{opacity:1;transform:scale(1)}
+/* Sem imagem: o desenho vira pano de fundo e a metragem assume o protagonismo */
+.plant .draw.ph{background:
+  radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,.9), transparent 70%),
+  linear-gradient(160deg, color-mix(in srgb, var(--green) 9%, #fff), color-mix(in srgb, var(--green) 3%, #fff));
+  overflow:hidden}
+.plant .draw.ph svg{width:78%;height:78%;opacity:.3;stroke:var(--green)}
+.plant .draw.ph .ar{position:absolute;inset:auto 0 16px 0;text-align:center;font-family:var(--font-display);font-size:25px;font-weight:740;letter-spacing:-.02em;color:var(--green-deep);text-shadow:0 2px 12px rgba(255,255,255,.85)}
+
+/* ===== Visualizador em tela cheia ===== */
+.lbx{position:fixed;inset:0;z-index:120;background:rgba(4,16,10,.94);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:64px 12px 76px;animation:lbxIn .2s ease-out}
+@keyframes lbxIn{from{opacity:0}to{opacity:1}}
+.lbx-stage{width:100%;height:100%;display:grid;place-items:center;overflow:hidden}
+.lbx-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);animation:lbxImg .22s ease-out}
+@keyframes lbxImg{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+.lbx-x,.lbx-nav{border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .18s;flex:none}
+.lbx-x{position:absolute;top:16px;right:16px;width:44px;height:44px;z-index:2}
+.lbx-x svg,.lbx-nav svg{width:22px;height:22px}
+.lbx-nav{width:48px;height:48px}
+.lbx-x:hover,.lbx-nav:hover{background:rgba(255,255,255,.22);transform:scale(1.06)}
+.lbx.solo .lbx-nav{visibility:hidden}
+.lbx-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px;color:#fff}
+.lbx-bar .cap{font-size:14px;font-weight:560;opacity:.92;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbx-bar .n{font-size:13px;font-weight:660;opacity:.7;font-variant-numeric:tabular-nums;flex:none}
+@media(max-width:720px){
+  .lbx{padding:56px 6px 68px;gap:2px}
+  .lbx-nav{width:40px;height:40px;background:rgba(255,255,255,.08)}
+  .lbx-bar{padding:14px 16px}
+  .lbx-bar .cap{font-size:13px}
+  .plant.has-img .draw{height:200px}
+}

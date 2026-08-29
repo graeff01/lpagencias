@@ -10,7 +10,12 @@
       '<div><span class="lbl">Quartos</span><input data-k="quartos"></div>' +
       '<div><span class="lbl">Banheiros</span><input data-k="banheiros"></div>' +
       '<div><span class="lbl">Vagas</span><input data-k="vagas"></div>' +
-      '<div><span class="lbl">Etiqueta</span><input data-k="final" placeholder="Final 02 · 03"></div></div></div>',
+      '<div><span class="lbl">Etiqueta</span><input data-k="final" placeholder="Final 02 · 03"></div>' +
+      '<div style="grid-column:1/-1"><span class="lbl">Imagem da planta</span>' +
+      '<div class="imgfield"><div class="thumb pthumb" style="width:74px;height:56px"></div><div class="up">' +
+      '<label class="uplabel">Enviar planta<input type="file" accept="image/*" data-upload-item></label>' +
+      '<input data-k="imagem" placeholder="ou cole a URL da planta" style="margin-top:8px"></div></div></div>' +
+      '</div></div>',
     diferenciais: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">' +
       '<div><span class="lbl">Título</span><input data-k="titulo"></div>' +
       '<div><span class="lbl">Texto</span><textarea data-k="texto" rows="2"></textarea></div></div></div>',
@@ -80,6 +85,30 @@
       }, stateEl);
       inp.value = '';
     });
+  });
+
+  // Upload dentro de item repetível (imagem da planta) — delegado, para
+  // funcionar também nos itens criados depois pelo botão "+ Adicionar".
+  document.addEventListener('change', function (ev) {
+    var inp = ev.target;
+    if (!inp.matches || !inp.matches('[data-upload-item]')) return;
+    if (!inp.files || !inp.files[0]) return;
+    var campo = inp.closest('.imgfield');
+    var alvo = campo && campo.querySelector('input[data-k]');
+    var thumb = campo && campo.querySelector('.pthumb');
+    upload(inp.files[0], function (url) {
+      if (alvo) { alvo.value = url; alvo.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (thumb) thumb.style.backgroundImage = "url('" + url + "')";
+    });
+    inp.value = '';
+  });
+
+  // Thumb do item repetível acompanha a URL colada à mão
+  document.addEventListener('input', function (ev) {
+    var inp = ev.target;
+    if (!inp.matches || !inp.matches('input[data-k="imagem"]')) return;
+    var thumb = inp.closest('.imgfield') && inp.closest('.imgfield').querySelector('.pthumb');
+    if (thumb) thumb.style.backgroundImage = inp.value ? "url('" + inp.value + "')" : '';
   });
 
   // Sincroniza thumb quando cola URL manualmente

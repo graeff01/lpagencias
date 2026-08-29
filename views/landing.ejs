@@ -109,12 +109,21 @@
     <div class="sec-head rv"><div class="kick">Galeria</div><h2 class="sec-h2">Cada detalhe pensado para viver bem</h2><p class="lead">Ambientes amplos, iluminação natural e acabamento de alto padrão em cada apartamento e área comum.</p></div>
     <div class="gal rv">
       <% gal.slice(0,5).forEach(function(g, i){ %>
-        <div class="c<%= i===0 ? ' big' : '' %>">
+        <button type="button" class="c<%= i===0 ? ' big' : '' %>" data-lb="<%= i %>" aria-label="Abrir foto <%= i+1 %> de <%= gal.length %><%= g.tag ? ': ' + g.tag : '' %>">
           <img src="<%= g.url %>" alt="<%= g.tag || e.nome %>" loading="lazy"/>
-          <% if (i===4 && gal.length>5) { %><div class="more">+<%= gal.length-5 %> fotos</div><% } else { %><div class="ov"></div><% if (g.tag) { %><span class="tag"><%= g.tag %></span><% } %><% } %>
-        </div>
+          <% if (i===4 && gal.length>5) { %>
+            <div class="more"><span class="n">+<%= gal.length-5 %></span><span class="t">fotos</span></div>
+          <% } else { %>
+            <div class="ov"></div>
+            <span class="zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg></span>
+            <% if (g.tag) { %><span class="tag"><%= g.tag %></span><% } %>
+          <% } %>
+        </button>
       <% }); %>
     </div>
+    <% if (gal.length > 5) { %>
+      <div class="gal-all rv"><button type="button" class="btn ghost-line" data-lb="0">Ver todas as <%= gal.length %> fotos</button></div>
+    <% } %>
   </div>
 </section>
 <% } %>
@@ -139,8 +148,20 @@
     <div class="sec-head rv"><div class="kick">Plantas</div><h2 class="sec-h2">Escolha a planta ideal para você</h2><p class="lead">Opções com plantas flexíveis, suíte máster e living ampliado.</p></div>
     <div class="plants rv">
       <% e.plantas.forEach(function(p, i){ %>
-        <div class="plant">
-          <div class="draw"><% if (p.final) { %><span class="fl"><%= p.final %></span><% } %><%- planDraws[i % planDraws.length] %></div>
+        <div class="plant<%= p.imagem ? ' has-img' : '' %>">
+          <% if (p.imagem) { %>
+            <button type="button" class="draw" data-lbp="<%= i %>" aria-label="Ampliar planta <%= p.titulo %>">
+              <img src="<%= p.imagem %>" alt="Planta <%= p.titulo %>" loading="lazy"/>
+              <% if (p.final) { %><span class="fl"><%= p.final %></span><% } %>
+              <span class="zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg></span>
+            </button>
+          <% } else { %>
+            <div class="draw ph">
+              <% if (p.final) { %><span class="fl"><%= p.final %></span><% } %>
+              <%- planDraws[i % planDraws.length] %>
+              <% if (p.area) { %><span class="ar"><%= p.area %></span><% } %>
+            </div>
+          <% } %>
           <div class="pt">
             <div class="top"><b><%= p.titulo %></b><% if (p.area) { %><span class="area"><%= p.area %></span><% } %></div>
             <div class="specs">
@@ -311,16 +332,105 @@
   </div>
 </footer>
 
+<!-- Visualizador em tela cheia (galeria e plantas) -->
+<div class="lbx" id="lbx" role="dialog" aria-modal="true" aria-label="Visualizador de imagens" hidden>
+  <button type="button" class="lbx-x" id="lbxX" aria-label="Fechar (Esc)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <button type="button" class="lbx-nav prev" id="lbxPrev" aria-label="Imagem anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <div class="lbx-stage" id="lbxStage">
+    <img id="lbxImg" alt="">
+  </div>
+  <button type="button" class="lbx-nav next" id="lbxNext" aria-label="Próxima imagem">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+  <div class="lbx-bar"><span class="cap" id="lbxCap"></span><span class="n" id="lbxN"></span></div>
+</div>
+
 <a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="fab" title="Falar no WhatsApp"><span class="pin">1</span><%- waSvg %></a>
 
 <script>
   var WA_URL = "<%= wa %>";
+  var FOTOS = <%- JSON.stringify((e.gallery||[]).map(function(g){ return { url: g.url, cap: g.tag || '' }; })) %>;
+  var PLANTAS = <%- JSON.stringify((e.plantas||[]).map(function(p){ return { url: p.imagem || '', cap: [p.titulo, p.area].filter(Boolean).join(' · ') }; })) %>;
   var EMP = <%- JSON.stringify(e.nome) %>;
   var nav=document.getElementById('nav');
   addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>20);});
   var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
+  // ---- Visualizador em tela cheia ----
+  (function(){
+    var box=document.getElementById('lbx'), img=document.getElementById('lbxImg'),
+        cap=document.getElementById('lbxCap'), num=document.getElementById('lbxN'),
+        stage=document.getElementById('lbxStage');
+    if(!box) return;
+    var lista=[], idx=0, voltarPara=null;
+
+    function mostrar(){
+      var it=lista[idx]; if(!it) return;
+      img.src=it.url; img.alt=it.cap||'';
+      cap.textContent=it.cap||'';
+      num.textContent=(idx+1)+' / '+lista.length;
+      box.classList.toggle('solo', lista.length<2);
+      // pre-carrega vizinhas para a troca ser instantanea
+      [idx+1, idx-1].forEach(function(j){
+        var v=lista[(j+lista.length)%lista.length];
+        if(v&&v.url){ var pre=new Image(); pre.src=v.url; }
+      });
+    }
+    function abrir(itens,i,origem){
+      lista=itens.filter(function(x){return x&&x.url;});
+      if(!lista.length) return;
+      idx=Math.max(0,Math.min(i||0,lista.length-1));
+      voltarPara=origem||null;
+      box.hidden=false;
+      document.body.style.overflow='hidden';
+      mostrar();
+      document.getElementById('lbxX').focus();
+    }
+    function fechar(){
+      box.hidden=true; img.src='';
+      document.body.style.overflow='';
+      if(voltarPara&&voltarPara.focus) voltarPara.focus();
+    }
+    function ir(passo){ if(lista.length<2) return; idx=(idx+passo+lista.length)%lista.length; mostrar(); }
+
+    document.querySelectorAll('[data-lb]').forEach(function(el){
+      el.addEventListener('click',function(){ abrir(FOTOS, parseInt(el.getAttribute('data-lb'),10)||0, el); });
+    });
+    document.querySelectorAll('[data-lbp]').forEach(function(el){
+      el.addEventListener('click',function(){
+        var todas=PLANTAS.filter(function(x){return x.url;});
+        var alvo=PLANTAS[parseInt(el.getAttribute('data-lbp'),10)||0];
+        abrir(todas, Math.max(0,todas.indexOf(alvo)), el);
+      });
+    });
+
+    document.getElementById('lbxX').addEventListener('click',fechar);
+    document.getElementById('lbxPrev').addEventListener('click',function(){ir(-1);});
+    document.getElementById('lbxNext').addEventListener('click',function(){ir(1);});
+    box.addEventListener('click',function(ev){ if(ev.target===box||ev.target===stage) fechar(); });
+    addEventListener('keydown',function(ev){
+      if(box.hidden) return;
+      if(ev.key==='Escape') fechar();
+      else if(ev.key==='ArrowLeft') ir(-1);
+      else if(ev.key==='ArrowRight') ir(1);
+    });
+    // arrastar com o dedo no celular
+    var x0=null,y0=null;
+    stage.addEventListener('touchstart',function(ev){ x0=ev.touches[0].clientX; y0=ev.touches[0].clientY; },{passive:true});
+    stage.addEventListener('touchend',function(ev){
+      if(x0===null) return;
+      var dx=ev.changedTouches[0].clientX-x0, dy=ev.changedTouches[0].clientY-y0;
+      if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)) ir(dx<0?1:-1);
+      else if(dy>90) fechar();
+      x0=null;
+    },{passive:true});
+  })();
+
   var lf=document.getElementById('leadForm');
   if(lf){lf.addEventListener('submit',function(ev){
     ev.preventDefault();
