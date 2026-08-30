@@ -4,6 +4,16 @@ const db = require('../lib/db');
 const { asArray, fmtPreco, shade, tituloBusca } = require('../lib/helpers');
 const roleta = require('../lib/roleta');
 
+// Domínio definitivo do site. Definido em SITE_DOMINIO, ele vira a única
+// URL indexável: o endereço interno do Railway passa a redirecionar para cá,
+// e o canonical aponta sempre para ele. Sem isso o mesmo conteúdo responde
+// em dois endereços e o Google divide a força entre os dois.
+const DOMINIO = (process.env.SITE_DOMINIO || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+function baseUrl(req) {
+  return DOMINIO ? `https://${DOMINIO}` : `${req.protocol}://${req.get('host')}`;
+}
+
 // Prepara o objeto do empreendimento para a view (parse dos jsonb + cores derivadas)
 function prep(e) {
   const green = e.cor_principal || '#0E9E4A';
@@ -30,6 +40,16 @@ function prep(e) {
   };
 }
 
+// Todo acesso por outro endereço (o domínio interno do Railway, por
+// exemplo) é redirecionado em definitivo para o domínio oficial.
+router.use((req, res, next) => {
+  if (!DOMINIO) return next();
+  const host = String(req.get('host') || '').toLowerCase();
+  if (host === DOMINIO.toLowerCase()) return next();
+  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) return next();
+  return res.redirect(301, `https://${DOMINIO}${req.originalUrl}`);
+});
+
 // Raiz do site. Com um empreendimento marcado como "página inicial", ele
 // ocupa a raiz: toda a autoridade do domínio se concentra numa URL só, em
 // vez de dividir entre uma vitrine magra e a landing de verdade.
@@ -44,7 +64,7 @@ router.get('/', async (req, res, next) => {
 
 // Robôs não devem seguir (nem indexar) o link da roleta.
 router.get('/robots.txt', (req, res) => {
-  const base = `${req.protocol}://${req.get('host')}`;
+  const base = baseUrl(req);
   res.type('text/plain').send(
     `User-agent: *\nDisallow: /wa/\nDisallow: /admin/\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`
   );
@@ -53,7 +73,7 @@ router.get('/robots.txt', (req, res) => {
 // Sitemap com as landings publicadas — o Google encontra tudo sem depender de link.
 router.get('/sitemap.xml', async (req, res, next) => {
   try {
-    const base = `${req.protocol}://${req.get('host')}`;
+    const base = baseUrl(req);
     const rows = await db.list({ publishedOnly: true });
     const home = rows.find((r) => r.home);
     const dia = (r) => (r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : null);
@@ -113,7 +133,7 @@ function enviarParaWhats(res, telefone, msg) {
 
 function renderLanding(req, res, row, { naRaiz = false } = {}) {
   const e = prep(row);
-  const base = `${req.protocol}://${req.get('host')}`;
+  const base = baseUrl(req);
   return res.render('landing', {
     // Canonical sempre na URL preferida: sem isso a mesma página em duas
     // URLs vira conteúdo duplicado e o Google divide a força entre as duas.
