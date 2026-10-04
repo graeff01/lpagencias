@@ -87,7 +87,7 @@ Sem o Cloudinary configurado, o upload fica desativado, mas você ainda pode **c
 
 ### Pronto para publicar
 A lateral do cadastro mostra o que falta. **Obrigatórios** (nome, cidade e bairro,
-foto de capa, dormitórios e área, texto "Sobre" e registro de incorporação)
+foto de capa, dormitórios, texto "Sobre" e registro de incorporação)
 travam a *primeira* publicação: sem eles, o empreendimento é salvo como rascunho.
 Quem já está no ar continua no ar; o painel só avisa. Os **recomendados**
 (galeria, plantas, FAQ, resumo do card, medição, corretores) apenas avisam.

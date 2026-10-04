@@ -224,14 +224,15 @@
     if (campo('vagas')) tipo.push(campo('vagas') + (campo('vagas') === '1' ? ' vaga' : ' vagas'));
     var preco = Number(campo('preco_inicial').replace(/\D/g, ''));
     var st = form.querySelector('[name="status"]');
+    var selo = campo('card_selo') || (st ? st.value : '');
     prev.innerHTML = '<div class="vt-card"><div class="vt-cover">' + (capa ? '<img src="' + esc(capa) + '" alt="">' : '') +
-      '<span class="vt-selo">' + esc(campo('card_selo') || (st ? st.value : 'Lançamento')) + '</span></div><div class="vt-bd">' +
+      (selo ? '<span class="vt-selo">' + esc(selo) + '</span>' : '') + '</div><div class="vt-bd">' +
       (campo('construtora') ? '<div class="vt-cst">' + esc(campo('construtora')) + '</div>' : '') +
       '<h3>' + esc(campo('nome') || 'Nome do empreendimento') + '</h3>' +
       (local ? '<div class="vt-loc">' + esc(local) + '</div>' : '') +
       (tipo.length ? '<div class="vt-tipo">' + esc(tipo.join(' · ')) + '</div>' : '') +
       (campo('card_resumo') ? '<p class="vt-res">' + esc(campo('card_resumo')) + '</p>' : '') +
-      '<div class="vt-foot"><div class="vt-pr"><small>a partir de</small>' + (preco ? 'R$ ' + preco.toLocaleString('pt-BR') : 'Sob consulta') + '</div><span class="vt-go">Conhecer</span></div></div></div>';
+      '<div class="vt-foot"><div class="vt-pr"><small>' + (preco ? 'a partir de' : 'valores') + '</small>' + (preco ? 'R$ ' + preco.toLocaleString('pt-BR') : 'Sob consulta') + '</div><span class="vt-go">Conhecer</span></div></div></div>';
   }
   form.addEventListener('input', desenharCard);
   form.addEventListener('change', desenharCard);

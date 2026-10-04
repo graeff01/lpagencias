@@ -76,7 +76,8 @@
           <div class="frow three">
             <div class="field"><label>Cidade</label><input name="cidade" value="<%= val(v.cidade) %>"></div>
             <div class="field"><label>Bairro</label><input name="bairro" value="<%= val(v.bairro) %>"></div>
-            <div class="field"><label>Status</label><select name="status">
+            <div class="field"><label>Fase</label><select name="status">
+              <option value="" <%= !v.status ? 'selected' : '' %>>Não informar</option>
               <% ['Lançamento','Pré-lançamento','Em obras','Pronto para morar'].forEach(function(s){ %><option <%= v.status===s?'selected':'' %>><%= s %></option><% }); %>
             </select></div>
           </div>
@@ -303,7 +304,7 @@
         <div class="fieldset" data-step="7">
           <div class="leg">Card na vitrine do portal</div>
           <div class="frow">
-            <div class="field"><label>Selo do card</label><input name="card_selo" value="<%= val(v.card_selo) %>" placeholder="ex.: Alto padrão, Últimas unidades" maxlength="28" data-prev="selo"><div class="hint">Vazio, usa o status (<%= v.status || 'Lançamento' %>).</div></div>
+            <div class="field"><label>Selo do card</label><input name="card_selo" value="<%= val(v.card_selo) %>" placeholder="ex.: Alto padrão, Últimas unidades" maxlength="28" data-prev="selo"><div class="hint">Vazio, usa a fase<%= v.status ? ' (' + v.status + ')' : '' %>; sem fase, o card fica sem selo.</div></div>
             <div class="field"><label>Ordem na vitrine</label><input name="vitrine_ordem" type="number" value="<%= val(v.vitrine_ordem) || 0 %>"><div class="hint">Menor aparece primeiro. Empate: o mais recente na frente.</div></div>
           </div>
           <div class="field"><label>Resumo do card (1 a 2 frases)</label><textarea name="card_resumo" rows="2" maxlength="170" data-prev="resumo" style="min-height:60px"><%= val(v.card_resumo) %></textarea><div class="hint">O que faz alguém clicar: localização, diferencial, condição. Até 170 caracteres.</div></div>
@@ -375,7 +376,7 @@
           <% if (!ck.pronto) { %><p class="side-note">Enquanto faltar item obrigatório, o empreendimento é salvo como <b>rascunho</b>.</p><% } %>
         </div>
         <% } else { %>
-        <div class="side-card"><div class="side-h">Pronto para publicar</div><p class="side-note">Salve uma primeira vez para ver o que falta. Obrigatórios: nome, cidade e bairro, foto de capa, dormitórios e área, texto "Sobre" e registro de incorporação.</p></div>
+        <div class="side-card"><div class="side-h">Pronto para publicar</div><p class="side-note">Salve uma primeira vez para ver o que falta. Obrigatórios: nome, cidade e bairro, foto de capa, dormitórios, texto "Sobre" e registro de incorporação.</p></div>
         <% } %>
         <div class="side-card">
           <div class="side-h">Prévia do card na vitrine</div>

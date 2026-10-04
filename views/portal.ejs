@@ -23,7 +23,7 @@
   ];
   var cidades = regioes.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome); });
   var dormsTodos = []; emps.forEach(function(e){ e._dorms.forEach(function(d){ if (dormsTodos.indexOf(d) < 0) dormsTodos.push(d); }); }); dormsTodos.sort();
-  var fases = []; emps.forEach(function(e){ var f = e.status || 'Lançamento'; if (fases.indexOf(f) < 0) fases.push(f); });
+  var fases = []; emps.forEach(function(e){ var f = e.status; if (f && fases.indexOf(f) < 0) fases.push(f); });
   var temPreco = emps.some(function(e){ return e.preco_inicial; });
   var mostrarFiltros = emps.length > 3;
 %>

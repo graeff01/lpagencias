@@ -149,7 +149,7 @@
   <div class="hero-inner">
     <div class="hero-grid">
       <div>
-        <span class="badge"><span class="d"></span><%= e.status || 'Lançamento' %><% if (e.construtora) { %> · <%= e.construtora %><% } %></span>
+        <% var selo = [e.status, e.construtora].filter(Boolean).join(' · '); %><% if (selo) { %><span class="badge"><span class="d"></span><%= selo %></span><% } %>
         <h1><%= e.nome %></h1>
         <% var subBusca = h.subtituloBusca(e); %>
         <% if (subBusca) { %><p class="sub-h1"><%= subBusca %></p><% } %>
@@ -160,13 +160,13 @@
         </div>
       </div>
       <div class="hero-card">
-        <div class="pl">Apartamentos a partir de</div>
+        <div class="pl"><%= e._precoFmt ? 'Apartamentos a partir de' : 'Valores e condições' %></div>
         <div class="pv"><%= e._precoFmt || 'Sob consulta' %></div>
         <div class="g4">
           <div class="st"><span class="ic"><%- icoBed %></span><b><%= e.dormitorios || '—' %></b><span>Dormitórios</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span><b><%= e.area ? e.area + ' m²' : '—' %></b><span>Área privativa</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span><b><%= e.area ? e.area + ' m²' : 'Consulte' %></b><span>Área privativa</span></div>
           <div class="st"><span class="ic"><%- icoCar %></span><b><%= e.vagas || '—' %></b><span>Vagas</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><b><%= e.entrega || '—' %></b><span>Entrega</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><b><%= e.entrega || 'Consulte' %></b><span>Entrega</span></div>
         </div>
       </div>
     </div>

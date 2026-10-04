@@ -48,7 +48,7 @@ function prepCard(e) {
     _capa: capa,
     _tipologia: linhaTipologia(x),
     _resumo: x.card_resumo || '',
-    _selo: x.card_selo || x.status || 'Lançamento',
+    _selo: x.card_selo || x.status || '',
     _dorms: dormsLista(x.dormitorios),
     _cidadeSlug: slugify(x.cidade),
     _bairroSlug: slugify(x.bairro),

@@ -7,7 +7,7 @@
 %>
 <a class="vt-card" href="<%= href %>" data-vt-link data-emp="<%= c.nome %>"
    data-cidade="<%= c._cidadeSlug %>" data-dorms="<%= c._dorms.join(',') %>"
-   data-fase="<%= h.slugify(c.status || 'Lançamento') %>" data-preco="<%= c.preco_inicial || '' %>"
+   data-fase="<%= h.slugify(c.status || '') %>" data-preco="<%= c.preco_inicial || '' %>"
    itemscope itemtype="https://schema.org/Residence">
   <div class="vt-cover">
     <% if (c._capa) { %>
@@ -16,7 +16,7 @@
         <img src="<%= c._capa %>" alt="<%= c.nome %><%= local ? ' — ' + local : '' %>" loading="lazy" decoding="async" itemprop="image">
       </picture>
     <% } %>
-    <span class="vt-selo"><%= c._selo %></span>
+    <% if (c._selo) { %><span class="vt-selo"><%= c._selo %></span><% } %>
   </div>
   <div class="vt-bd">
     <% if (c.construtora) { %><div class="vt-cst"><%= c.construtora %></div><% } %>
@@ -25,7 +25,7 @@
     <% if (c._tipologia) { %><div class="vt-tipo"><%= c._tipologia %></div><% } %>
     <% if (c._resumo) { %><p class="vt-res"><%= c._resumo %></p><% } %>
     <div class="vt-foot">
-      <div class="vt-pr"><small>a partir de</small><%= c._precoFmt || 'Sob consulta' %></div>
+      <div class="vt-pr"><small><%= c._precoFmt ? 'a partir de' : 'valores' %></small><%= c._precoFmt || 'Sob consulta' %></div>
       <span class="vt-go">Conhecer<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
   </div>
