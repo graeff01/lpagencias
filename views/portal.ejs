@@ -305,7 +305,7 @@
   function comUtm(href){
     var u=new URL(href,location.origin);
     Object.keys(UTM).forEach(function(k){ if(!u.searchParams.has(k)) u.searchParams.set(k,UTM[k]); });
-    return u.pathname+u.search+u.hash;
+    return u.origin===location.origin?u.pathname+u.search+u.hash:u.href;
   }
   document.querySelectorAll('a[href^="/wa/"],a[data-vt-link]').forEach(function(a){ a.setAttribute('href',comUtm(a.getAttribute('href'))); });
 
@@ -325,7 +325,7 @@
   document.querySelectorAll('.vt-card').forEach(function(a,i){
     a.addEventListener('click',function(){
       var nome=a.getAttribute('data-emp');
-      if(window.gtag) gtag('event','select_item',{item_list_name:'vitrine',items:[{item_id:a.getAttribute('href').split('?')[0].slice(1),item_name:nome,index:i}]});
+      if(window.gtag) gtag('event','select_item',{item_list_name:'vitrine',items:[{item_id:a.getAttribute('data-emp'),item_name:nome,index:i}]});
       if(window.fbq) fbq('track','ViewContent',{content_name:nome,content_type:'empreendimento'});
     });
   });

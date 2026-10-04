@@ -1,8 +1,11 @@
 <%
   var capaWebp = c._capa ? h.webpDe(c._capa) : null;
   var local = [c.bairro, c.cidade].filter(Boolean).join(' · ');
+  // Empreendimento com domínio próprio abre no domínio dele (é o endereço
+  // oficial da landing); os demais abrem dentro do portal.
+  var href = c.dominio ? 'https://' + c.dominio + '/' : (typeof base !== 'undefined' && base ? base : '') + '/' + c.slug;
 %>
-<a class="vt-card" href="<%= typeof base !== 'undefined' && base ? base : '' %>/<%= c.slug %>" data-vt-link data-emp="<%= c.nome %>"
+<a class="vt-card" href="<%= href %>" data-vt-link data-emp="<%= c.nome %>"
    data-cidade="<%= c._cidadeSlug %>" data-dorms="<%= c._dorms.join(',') %>"
    data-fase="<%= h.slugify(c.status || 'Lançamento') %>" data-preco="<%= c.preco_inicial || '' %>"
    itemscope itemtype="https://schema.org/Residence">
