@@ -1,0 +1,30 @@
+<%
+  // Botões flutuantes: WhatsApp (direita) e voltar ao topo (esquerda).
+  // Espera: wa (rota da roleta), msgBalao (texto do balão).
+  var waIco = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>';
+%>
+<div class="wa-fab">
+  <div class="wa-balao" id="waBalao" role="status">
+    <button type="button" class="x" id="waBalaoX" aria-label="Fechar">×</button>
+    <a href="<%= wa %>?src=balao" target="_blank" rel="noopener nofollow"><b>Olá! 👋</b><%= msgBalao %></a>
+  </div>
+  <a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="wa-btn" aria-label="Falar no WhatsApp">
+    <span class="pulse"></span><span class="pulse p2"></span><%- waIco %><span class="badge" aria-hidden="true">1</span>
+  </a>
+</div>
+<button type="button" class="topo-btn" id="topoBtn" aria-label="Voltar ao topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+<script>
+  (function(){
+    // Voltar ao topo: só aparece depois que a pessoa rolou.
+    var topo=document.getElementById('topoBtn');
+    function ver(){ topo.classList.toggle('on', scrollY>600); }
+    addEventListener('scroll',ver,{passive:true}); ver();
+    topo.addEventListener('click',function(){ scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); });
+    // Balão do WhatsApp: aparece uma vez por visita, alguns segundos depois.
+    var balao=document.getElementById('waBalao'), fechado=false;
+    try{ fechado=sessionStorage.getItem('ap_balao')==='x'; }catch(_){}
+    function fechar(){ balao.classList.remove('on'); try{ sessionStorage.setItem('ap_balao','x'); }catch(_){} }
+    document.getElementById('waBalaoX').addEventListener('click',fechar);
+    if(!fechado){ setTimeout(function(){ balao.classList.add('on'); setTimeout(fechar,11000); },5000); }
+  })();
+</script>

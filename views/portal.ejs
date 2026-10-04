@@ -3,7 +3,7 @@
 <head>
 <%
   var heroImg = cfg.hero_imagem || (emps[0] && emps[0]._capa) || '';
-  var heroWebp = heroImg ? h.webpDe(heroImg) : null;
+  var heroV = h.imgVar(heroImg);
   var desc = regiao
     ? 'Lançamentos de apartamentos ' + (regiao.tipo === 'bairro' ? 'no ' : 'em ') + regiao.nome + ' selecionados pela Auxiliadora Predial. Compare plantas, localização e condições.'
     : cfg.meta_description;
@@ -45,9 +45,13 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="<%= cfg.cor_principal %>">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <% if (heroImg) { %><link rel="preload" as="image" href="<%= heroWebp || heroImg %>"<% if (heroWebp) { %> type="image/webp"<% } %> fetchpriority="high"><% } %>
+  <% if (heroV.src) { %>
+  <link rel="preload" as="image" href="<%= heroV.src %>" fetchpriority="high"<% if (heroV.sm) { %> media="(min-width:761px)"<% } %>>
+  <% if (heroV.sm) { %><link rel="preload" as="image" href="<%= heroV.sm %>" fetchpriority="high" media="(max-width:760px)"><% } %>
+  <% } %>
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/portal.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/flutuantes.css?v=<%= v %>">
   <link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>">
   <style>
     :root{
@@ -55,7 +59,8 @@
       --green-bright:<%= h.shade(cfg.cor_principal, 30) %>; --green-ink:<%= h.shade(cfg.cor_principal, -78) %>;
       --orange:<%= cfg.cor_accent %>; --orange-deep:<%= h.shade(cfg.cor_accent, -34) %>;
     }
-    <% if (heroImg) { %>.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),<%- h.bgImagem(heroImg) %>}<% } %>
+    <% if (heroV.src) { %>.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),url("<%= heroV.src %>")}
+    <% if (heroV.sm) { %>@media(max-width:760px){.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),url("<%= heroV.sm %>")}}<% } %><% } %>
   </style>
   <script type="application/ld+json">
   <%- JSON.stringify({
@@ -181,7 +186,7 @@
   <div class="pt-wrap pt-sobre">
     <div class="pt-persona<%= cfg.persona_foto ? ' foto' : '' %>">
       <div class="pic">
-        <% if (cfg.persona_foto) { var pfWebp = h.webpDe(cfg.persona_foto); %><picture><% if (pfWebp) { %><source srcset="<%= pfWebp %>" type="image/webp"><% } %><img src="<%= cfg.persona_foto %>" alt="<%= cfg.persona_nome %> — <%= cfg.persona_cargo %>" loading="lazy" decoding="async"></picture>
+        <% if (cfg.persona_foto) { %><%- h.img(cfg.persona_foto, { alt: cfg.persona_nome + ' — ' + cfg.persona_cargo, sizes: '(max-width:900px) 100vw, 640px' }) %>
         <% } else { %><div class="mono"><%= iniciais %></div><% } %>
       </div>
       <div class="tag"><b><%= cfg.persona_nome %></b><span><%= cfg.persona_cargo %><%= cfg.creci ? ' · ' + cfg.creci : '' %></span></div>
@@ -284,7 +289,7 @@
   </div>
 </footer>
 
-<a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="pt-fab" title="Falar no WhatsApp"><%- waSvg %></a>
+<%- include('partials/flutuantes', { wa: wa, msgBalao: ' Quer ajuda para escolher seu lançamento? Fale com um consultor.' }) %>
 
 <script>
   var ADS_CONV = <%- JSON.stringify(cfg.ads_conversao || '') %>;
@@ -399,7 +404,7 @@
   }
   if(vitrine){
     if(!CALMO) vitrine.classList.add('vt-espera');
-    new IntersectionObserver(function(es,o){ es.forEach(function(e){ if(e.isIntersecting){ vitrine.classList.remove('vt-espera'); animarEntrada(); o.disconnect(); } }); },{threshold:.15}).observe(vitrine);
+    new IntersectionObserver(function(es,o){ es.forEach(function(e){ if(e.isIntersecting){ vitrine.classList.remove('vt-espera'); animarEntrada(); o.disconnect(); } }); },{threshold:0,rootMargin:'0px 0px 120px 0px'}).observe(vitrine);
   }
 
   // ---- Filtros da vitrine (estado também na URL: dá para anunciar /?cidade=canoas) ----

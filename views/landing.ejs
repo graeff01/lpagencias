@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>document.documentElement.classList.add('js')</script>
   <title><%= title %></title>
   <% if (e.meta_description) { %><meta name="description" content="<%= e.meta_description %>"><% } %>
   <meta property="og:title" content="<%= e.nome %>">
@@ -21,13 +22,17 @@
   <% if (e.hero_image) { %><meta name="twitter:image" content="<%= canonical.replace(/\/[^\/]*$/, '') + e.hero_image %>"><% } %>
   <meta name="theme-color" content="<%= e._green %>">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <% var heroWebp = e.hero_image ? h.webpDe(e.hero_image) : null; %>
-  <% if (e.hero_image) { %><link rel="preload" as="image" href="<%= heroWebp || e.hero_image %>"<% if (heroWebp) { %> type="image/webp"<% } %> fetchpriority="high"><% } %>
+  <% var heroV = h.imgVar(e.hero_image); %>
+  <% if (heroV.src) { %>
+  <link rel="preload" as="image" href="<%= heroV.src %>" fetchpriority="high"<% if (heroV.sm) { %> media="(min-width:761px)"<% } %>>
+  <% if (heroV.sm) { %><link rel="preload" as="image" href="<%= heroV.sm %>" fetchpriority="high" media="(max-width:760px)"><% } %>
+  <% } %>
   <link rel="canonical" href="<%= canonical %>">
   <meta property="og:url" content="<%= canonical %>">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/landing.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/flutuantes.css?v=<%= v %>">
   <% if (outros && outros.length) { %><link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>"><% } %>
   <style>
     :root{
@@ -35,7 +40,8 @@
       --green-bright:<%= e._greenBright %>; --green-ink:<%= e._greenInk %>;
       --orange:<%= e._accent %>; --orange-deep:<%= e._accentDeep %>;
     }
-    .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (e.hero_image) { %>,<%- h.bgImagem(e.hero_image) %><% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
+    .hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%)<% if (heroV.src) { %>,url("<%= heroV.src %>")<% } else { %>,linear-gradient(60deg,var(--green-deep),var(--green-bright))<% } %>;}
+    <% if (heroV.sm) { %>@media(max-width:760px){.hero .bg{background-image:linear-gradient(105deg,rgba(6,20,12,.92) 0%,rgba(6,20,12,.55) 42%,rgba(6,20,12,.2) 100%),url("<%= heroV.sm %>")}}<% } %>
   </style>
   <script type="application/ld+json">
   <%- JSON.stringify({
@@ -189,10 +195,7 @@
     <div class="gal rv">
       <% gal.slice(0,5).forEach(function(g, i){ %>
         <button type="button" class="c<%= i===0 ? ' big' : '' %>" data-lb="<%= i %>" aria-label="Abrir foto <%= i+1 %> de <%= gal.length %><%= g.tag ? ': ' + g.tag : '' %>">
-          <picture>
-            <% var gw = h.webpDe(g.url); if (gw) { %><source srcset="<%= gw %>" type="image/webp"><% } %>
-            <img src="<%= g.url %>" alt="<%= h.altFoto(g.tag, e) %>" width="800" height="600" loading="<%= i===0 ? 'eager' : 'lazy' %>"<%= i===0 ? ' fetchpriority="high"' : '' %>/>
-          </picture>
+          <%- h.img(g.url, { alt: h.altFoto(g.tag, e), w: 800, h: 600, sizes: i===0 ? '(max-width:760px) 100vw, 60vw' : '(max-width:760px) 50vw, 25vw' }) %>
           <% if (i===4 && gal.length>5) { %>
             <div class="more"><span class="n">+<%= gal.length-5 %></span><span class="t">fotos</span></div>
           <% } else { %>
@@ -234,10 +237,7 @@
         <div class="plant<%= p.imagem ? ' has-img' : '' %>">
           <% if (p.imagem) { %>
             <button type="button" class="draw" data-lbp="<%= i %>" aria-label="Ampliar planta <%= p.titulo %>">
-              <picture>
-                <% var pw = h.webpDe(p.imagem); if (pw) { %><source srcset="<%= pw %>" type="image/webp"><% } %>
-                <img src="<%= p.imagem %>" alt="Planta humanizada — <%= p.titulo %>, <%= p.area || '' %>" width="1000" height="850" loading="lazy"/>
-              </picture>
+              <%- h.img(p.imagem, { alt: 'Planta humanizada — ' + p.titulo + (p.area ? ', ' + p.area : ''), w: 1000, h: 850, sizes: '(max-width:760px) 80vw, 33vw' }) %>
               <% if (p.final) { %><span class="fl"><%= p.final %></span><% } %>
               <span class="zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg></span>
             </button>
@@ -328,7 +328,7 @@
   <div class="wrap">
     <div class="about rv">
       <div class="img">
-        <% if (aboutImg) { %><img src="<%= aboutImg %>" alt="<%= e.nome %>"/><% } %>
+        <% if (aboutImg) { %><%- h.img(aboutImg, { alt: e.nome, sizes: '(max-width:820px) 100vw, 50vw' }) %><% } %>
         <div class="fc"><span class="ic"><%- icoCheck %></span><div><b>Agende sua visita</b><span>Fale com um consultor</span></div></div>
       </div>
       <div class="about-txt">
@@ -483,7 +483,7 @@
   <div class="lbx-bar"><span class="cap" id="lbxCap"></span><span class="n" id="lbxN"></span></div>
 </div>
 
-<a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="fab" title="Falar no WhatsApp"><span class="pin">1</span><%- waSvg %></a>
+<%- include('partials/flutuantes', { wa: wa, msgBalao: ' Quer saber valores e condições do ' + e.nome + '? Fale com um consultor.' }) %>
 
 <script>
   var WA_URL = "<%= wa %>";
@@ -493,7 +493,7 @@
   var EMP = <%- JSON.stringify(e.nome) %>;
   var nav=document.getElementById('nav');
   addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>20);});
-  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
+  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:0,rootMargin:'0px 0px 140px 0px'});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
   // ---- Campanha: as UTMs/gclid da chegada acompanham o visitante ----

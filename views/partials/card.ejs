@@ -1,5 +1,4 @@
 <%
-  var capaWebp = c._capa ? h.webpDe(c._capa) : null;
   var local = [c.bairro, c.cidade].filter(Boolean).join(' · ');
   // Empreendimento com domínio próprio abre no domínio dele (é o endereço
   // oficial da landing); os demais abrem dentro do portal.
@@ -11,12 +10,7 @@
    data-fase="<%= h.slugify(c.status || '') %>" data-preco="<%= c.preco_inicial || '' %>"
    itemscope itemtype="https://schema.org/Residence">
   <div class="vt-cover">
-    <% if (c._capa) { %>
-      <picture>
-        <% if (capaWebp) { %><source srcset="<%= capaWebp %>" type="image/webp"><% } %>
-        <img src="<%= c._capa %>" alt="<%= c.nome %><%= local ? ' — ' + local : '' %>" loading="lazy" decoding="async" itemprop="image">
-      </picture>
-    <% } %>
+    <% if (c._capa) { %><%- h.img(c._capa, { alt: c.nome + (local ? ' — ' + local : ''), sizes: '(max-width:620px) 84vw, (max-width:960px) 50vw, 380px', itemprop: 'image' }) %><% } %>
     <% if (c._selo) { %><span class="vt-selo"><%= c._selo %></span><% } %>
   </div>
   <div class="vt-bd">
