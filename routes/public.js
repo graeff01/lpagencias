@@ -94,14 +94,25 @@ function regioesDe(emps) {
   return [...mapa.values()].map(r => ({ ...r, total: r.ids.size }));
 }
 
-// Todo acesso por outro endereço (o domínio interno do Railway, por
-// exemplo) é redirecionado em definitivo para o domínio oficial.
-router.use((req, res, next) => {
+// Todo acesso por outro endereço é redirecionado em definitivo para o
+// domínio oficial. Se o endereço for o domínio próprio de um empreendimento
+// (cadastrado no painel), a raiz dele leva direto à landing: quem clicou num
+// anúncio antigo de vangoghpetropolis.com.br cai em /van-gogh, com a
+// query string (gclid, UTMs) preservada.
+router.use(async (req, res, next) => {
   if (!DOMINIO) return next();
-  const host = String(req.get('host') || '').toLowerCase();
+  const host = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
   if (host === DOMINIO.toLowerCase()) return next();
-  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) return next();
-  return res.redirect(301, `https://${DOMINIO}${req.originalUrl}`);
+  if (host === 'localhost' || host === '127.0.0.1') return next();
+  let destino = req.originalUrl;
+  try {
+    const emp = await db.getByDominio(host);
+    if (emp && emp.published && db.normalizarDominio(DOMINIO) !== emp.dominio && req.path === '/') {
+      const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+      destino = `/${emp.slug}${qs}`;
+    }
+  } catch (e) { /* sem banco, cai no redirecionamento comum */ }
+  return res.redirect(301, `https://${DOMINIO}${destino}`);
 });
 
 // Raiz do site: o portal institucional com a vitrine de empreendimentos.

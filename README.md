@@ -45,6 +45,15 @@ npm start
 6. Em **Settings → Networking → Generate Domain** para ter a URL pública. Pronto: o painel fica em `sua-url/admin`.
 
 ### Domínio próprio
+O domínio do site principal é o da variável `SITE_DOMINIO`: todo acesso por
+outro endereço é redirecionado (301) para ele.
+
+**Domínio de um empreendimento**: no cadastro (etapa *Publicação*), o campo
+*Domínio próprio* liga um domínio ao empreendimento. Com esse domínio apontado
+para este serviço no Railway, quem acessa a raiz dele vai direto para
+`SITE_DOMINIO/<slug>`, com gclid e UTMs preservados. Ex.: `vangoghpetropolis.com.br`
+→ `/van-gogh`.
+
 Em **Settings → Networking → Custom Domain**, aponte o seu domínio (ex: `lancamentos.auxiliadora.com.br`) conforme as instruções do Railway.
 
 ---

@@ -354,6 +354,7 @@
           </div>
           <div class="frow one">
             <div class="field"><label>Endereço da página (deixe em branco para gerar do nome)</label><div class="inp-prefix"><span class="pf" style="font-size:12px">/</span><input name="slug" value="<%= val(v.slug) %>" placeholder="reserva-moinhos"></div></div>
+            <div class="field"><label>Domínio próprio (opcional)</label><input name="dominio" value="<%= val(v.dominio) %>" placeholder="vangoghpetropolis.com.br"><div class="hint">Se o empreendimento tem um domínio só dele apontado para este site, quem acessar esse domínio vai direto para esta landing, dentro do site principal. Mantém anúncios e links antigos funcionando.</div></div>
           </div>
           <div class="field"><label>Meta description (SEO)</label><textarea name="meta_description" style="min-height:60px"><%= val(v.meta_description) %></textarea></div>
         </div>
