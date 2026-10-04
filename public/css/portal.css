@@ -318,3 +318,10 @@ a.pt-gnota:hover{border-color:var(--green)}
   .pt-marquee{margin:0 -16px}
   .mq-track>figure{flex-basis:290px;margin-right:14px}
 }
+
+/* Topo da página inicial na altura do conteúdo (antes ocupava a tela toda
+   e sobrava imagem vazia acima do título) */
+.pt-hero{min-height:0}
+.pt-hero-in{padding-top:128px}
+.pt-hero.reg{min-height:0}
+@media(max-width:620px){.pt-hero-in{padding-top:104px;padding-bottom:40px}}

@@ -133,14 +133,12 @@
 %>
 
 <nav class="nav" id="nav">
-  <a class="nav-back" href="<%= portalBase %>/" data-vt-link aria-label="Voltar para todos os lançamentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7"/></svg><span>Todos os lançamentos</span></a>
-  <div class="links">
-    <% if (gal.length) { %><a href="#galeria">Galeria</a><% } %>
-    <% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %>
-    <% if (e.infra.length) { %><a href="#lazer">Lazer</a><% } %>
-    <% if ((e.acabamentos||[]).length) { %><a href="#acabamentos">Acabamentos</a><% } %>
-    <a href="#local">Localização</a>
-  </div>
+  <a class="nav-back" href="<%= portalBase %>/" data-vt-link>
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span>
+    <span class="tx"><small>Voltar para</small><b><span class="lg">Todos os lançamentos</span><span class="sm">Lançamentos</span></b></span>
+  </a>
+  <div class="nav-nome" aria-hidden="true"><%= e.nome %></div>
+  <a class="nav-cta" href="#contato"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="lg">Agendar visita</span><span class="sm">Agendar</span></a>
 </nav>
 
 <% if (isPreview) { %><div class="ribbon"><span class="d"></span>Pré-visualização · rascunho não publicado</div><% } %>
