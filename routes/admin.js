@@ -8,6 +8,7 @@ const roleta = require('../lib/roleta');
 const portal = require('../lib/portal');
 const checklist = require('../lib/checklist');
 const dominios = require('../lib/dominios');
+const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
@@ -184,9 +185,42 @@ router.post('/salvar', async (req, res, next) => {
     else emp = await db.create(data);
 
     dominios.limparCache();
+    pontosAutomaticos(emp);
     const passo = Number(req.body._passo) || 1;
     res.redirect(`/admin/editar/${emp.id}?salvo=1&passo=${passo}${virouRascunho ? '&rascunho=1' : ''}`);
   } catch (e) { next(e); }
+});
+
+// Pontos próximos automáticos: se o empreendimento tem endereço e a lista
+// está vazia, ela é montada em segundo plano (a busca leva ~15-40 s e não
+// pode segurar o salvar). Sem ponto confirmado no mapa, usa o endereço
+// localizado automaticamente. Quem preencheu a lista à mão não é tocado.
+function pontosAutomaticos(emp) {
+  if (!emp || asArray(emp.pois).length) return;
+  if (!emp.endereco && !emp.bairro) return;
+  (async () => {
+    let lat = emp.lat, lon = emp.lon, novoPonto = false;
+    if (lat == null || lon == null) {
+      const [g] = await pois.geocodificar(emp);
+      if (!g) return;
+      lat = g.lat; lon = g.lon; novoPonto = true;
+    }
+    const lista = await pois.proximos(lat, lon);
+    if (!lista.length) return;
+    const atual = await db.getById(emp.id);
+    if (!atual || asArray(atual.pois).length) return;   // alguém preencheu nesse meio-tempo
+    await db.setPois(emp.id, lista, novoPonto ? lat : null, novoPonto ? lon : null);
+  })().catch(e => console.error('[pois] automático falhou:', e.message));
+}
+
+// Usados pelo mapa do formulário (localizar o endereço e buscar o entorno).
+router.get('/geo', async (req, res) => {
+  try { res.json({ ok: true, candidatos: await pois.geocodificar(req.query) }); }
+  catch (e) { res.status(502).json({ ok: false, erro: 'Não consegui localizar agora. Tente de novo em instantes.' }); }
+});
+router.get('/pois-proximos', async (req, res) => {
+  try { res.json({ ok: true, pois: await pois.proximos(req.query.lat, req.query.lon) }); }
+  catch (e) { res.status(502).json({ ok: false, erro: 'Busca indisponível agora. Tente de novo em instantes.' }); }
 });
 
 // ---- Excluir ----

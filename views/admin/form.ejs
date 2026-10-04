@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
   <link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 </head>
 <%
   var v = emp || {};
@@ -19,7 +20,7 @@
   var stats = h.asArray(v.construtora_stats);
   var acabamentos = h.asArray(v.acabamentos);
   function val(x){ return (x===undefined||x===null)?'':String(x); }
-  var PASSOS = ['Identificação','Fotos','Valores','Textos','Plantas & lazer','Obra & FAQ','Vitrine & cores','Publicação'];
+  var PASSOS = ['Identificação','Fotos','Valores','Textos','Plantas & lazer','Mapa, obra & FAQ','Vitrine & cores','Publicação'];
   var qs = typeof q !== 'undefined' && q ? q : {};
 %>
 <body>
@@ -272,12 +273,22 @@
 
         <!-- LOCALIZAÇÃO / POIs -->
         <div class="fieldset" data-step="6">
-          <div class="leg">Pontos de interesse (mapa)</div>
-          <div class="rep" data-rep="pois">
+          <div class="leg">Localização no mapa e pontos próximos</div>
+          <div class="geo">
+            <div class="geo-bar">
+              <button type="button" class="btn btn-ghost btn-sm" id="geoLocalizar">Localizar endereço</button>
+              <button type="button" class="btn btn-green btn-sm" id="geoBuscar">Buscar pontos próximos</button>
+              <span class="geo-st" id="geoStatus"></span>
+            </div>
+            <div class="geo-mapa" id="geoMapa"></div>
+            <input type="hidden" name="lat" value="<%= val(v.lat) %>">
+            <input type="hidden" name="lon" value="<%= val(v.lon) %>">
+            <div class="hint">O alfinete marca o empreendimento e é a base das distâncias. <b>Confira se ele está no prédio</b> e arraste se precisar: os pontos são buscados de novo sozinhos. As distâncias são em linha reta. Revise os nomes antes de publicar (a base é colaborativa, pode ter erro de grafia).</div>
+          </div>
+          <div class="rep" data-rep="pois" style="margin-top:12px">
             <% pois.forEach(function(p){ %>
-              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">
-                <div><span class="lbl">Texto (com emoji)</span><input data-k="label" value="<%= val(p.label) %>" placeholder="🌳 Parque · 400m"></div>
-                <div><span class="lbl">Posição (CSS)</span><input data-k="pos" value="<%= val(p.pos) %>" placeholder="top:22%;left:16%"></div>
+              <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">
+                <div><span class="lbl">Ponto (aparece como etiqueta abaixo do mapa)</span><input data-k="label" value="<%= val(p.label) %>" placeholder="🛒 Supermercado X · 400 m"></div>
               </div></div>
             <% }); %>
           </div>
@@ -399,6 +410,7 @@
     </form>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="/js/admin-form.js?v=<%= v %>"></script>
 </body>
 </html>

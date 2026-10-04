@@ -361,6 +361,7 @@
     <div class="poi-list rv">
       <% e.pois.forEach(function(p){ %><span class="poi-chip"><%= p.label %></span><% }); %>
     </div>
+    <% if (e.pois.some(function(p){ return /·\s*[\d,]+\s*(m|km)\b/.test(p.label || ''); })) { %><p class="poi-nota">Distâncias aproximadas, em linha reta a partir do empreendimento.</p><% } %>
     <% } %>
   </div>
 </section>

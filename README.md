@@ -92,6 +92,16 @@ travam a *primeira* publicação: sem eles, o empreendimento é salvo como rascu
 Quem já está no ar continua no ar; o painel só avisa. Os **recomendados**
 (galeria, plantas, FAQ, resumo do card, medição, corretores) apenas avisam.
 
+### Mapa e pontos próximos
+Na etapa *Mapa, obra & FAQ*, o endereço é localizado sozinho num mapa com
+alfinete arrastável (OpenStreetMap/Nominatim, sem chave). A partir do ponto,
+o sistema busca o mais perto de cada categoria (supermercado, farmácia,
+escola, saúde, faculdade, shopping, parque, banco, estação) e preenche as
+etiquetas com nome e distância em linha reta. Quando a base não conhece o
+número do prédio, o alfinete fica no meio da rua e o painel pede para
+arrastar. Ao salvar um empreendimento com endereço e sem pontos, a lista é
+montada em segundo plano.
+
 ### Perfis de acesso
 - `ADMIN_PASSWORD`: tudo.
 - `CADASTRO_PASSWORD`: cria e edita empreendimentos. **Não** vê corretores nem

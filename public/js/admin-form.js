@@ -32,9 +32,8 @@
     faq: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">' +
       '<div><span class="lbl">Pergunta</span><input data-k="q"></div>' +
       '<div><span class="lbl">Resposta</span><textarea data-k="a" rows="2"></textarea></div></div></div>',
-    pois: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:2fr 1fr">' +
-      '<div><span class="lbl">Texto (com emoji)</span><input data-k="label" placeholder="🌳 Parque · 400m"></div>' +
-      '<div><span class="lbl">Posição (CSS)</span><input data-k="pos" placeholder="top:22%;left:16%"></div></div></div>',
+    pois: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">' +
+      '<div><span class="lbl">Ponto (aparece como etiqueta abaixo do mapa)</span><input data-k="label" placeholder="🛒 Supermercado X · 400 m"></div></div></div>',
     construtora_stats: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:1fr 2fr">' +
       '<div><span class="lbl">Número</span><input data-k="num" placeholder="80+"></div>' +
       '<div><span class="lbl">Legenda</span><input data-k="label" placeholder="obras entregues"></div></div></div>',
@@ -237,6 +236,74 @@
   form.addEventListener('input', desenharCard);
   form.addEventListener('change', desenharCard);
   desenharCard();
+
+  // ---------- Mapa: ponto do empreendimento e pontos próximos ----------
+  // Localiza o endereço, põe um alfinete arrastável e busca o entorno a
+  // partir dele. O alfinete confirmado vai para lat/lon e é a base das
+  // distâncias; quando o endereço não tem o número na base, o aviso pede
+  // para conferir.
+  (function () {
+    var div = document.getElementById('geoMapa'); if (!div || !window.L) return;
+    var st = document.getElementById('geoStatus');
+    var inLat = form.querySelector('[name=lat]'), inLon = form.querySelector('[name=lon]');
+    var rep = document.querySelector('.rep[data-rep="pois"]');
+    var mapa = null, pino = null;
+    function status(t, tipo) { st.textContent = t || ''; st.className = 'geo-st' + (tipo ? ' ' + tipo : ''); }
+    function garantirMapa(lat, lon) {
+      if (!mapa) {
+        mapa = L.map(div, { scrollWheelZoom: false }).setView([lat, lon], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapa);
+        pino = L.marker([lat, lon], { draggable: true }).addTo(mapa);
+        pino.on('dragend', function () { var p = pino.getLatLng(); salvarPonto(p.lat, p.lng); buscar(); });
+      } else { mapa.setView([lat, lon], 16); pino.setLatLng([lat, lon]); }
+      setTimeout(function () { mapa.invalidateSize(); }, 50);
+    }
+    function salvarPonto(lat, lon) { inLat.value = (+lat).toFixed(6); inLon.value = (+lon).toFixed(6); }
+    function campo(n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; }
+    function localizar() {
+      if (!campo('endereco') && !campo('bairro')) { status('Preencha o endereço na etapa 1.', 'erro'); return Promise.resolve(false); }
+      status('Localizando endereço…');
+      var q = new URLSearchParams({ endereco: campo('endereco'), bairro: campo('bairro'), cidade: campo('cidade') });
+      return fetch('/admin/geo?' + q).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok || !j.candidatos.length) { status(j.erro || 'Endereço não encontrado. Confira a etapa 1.', 'erro'); return false; }
+        var c = j.candidatos[0]; salvarPonto(c.lat, c.lon); garantirMapa(c.lat, c.lon);
+        status(c.exato ? 'Endereço localizado. Confira o alfinete.' : 'O número não está na base: o alfinete está no meio da rua. Arraste até o prédio.', c.exato ? 'ok' : 'aviso');
+        return true;
+      }).catch(function () { status('Não consegui localizar agora.', 'erro'); return false; });
+    }
+    function buscar() {
+      if (!inLat.value) { status('Localize o endereço primeiro.', 'erro'); return; }
+      status('Buscando pontos próximos… (leva até 40 segundos)');
+      var q = new URLSearchParams({ lat: inLat.value, lon: inLon.value });
+      fetch('/admin/pois-proximos?' + q).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok) { status(j.erro, 'erro'); return; }
+        if (!j.pois.length) { status('Nada encontrado num raio razoável. Adicione à mão se quiser.', 'aviso'); return; }
+        rep.innerHTML = '';
+        j.pois.forEach(function (p) {
+          var tmp = document.createElement('div'); tmp.innerHTML = T.pois; var item = tmp.firstChild;
+          item.querySelector('[data-k="label"]').value = p.label; rep.appendChild(item);
+        });
+        status(j.pois.length + ' pontos encontrados. Revise os nomes e salve.', 'ok');
+      }).catch(function () { status('Busca indisponível agora.', 'erro'); });
+    }
+    document.getElementById('geoLocalizar').addEventListener('click', function () { localizar().then(function (ok) { if (ok) buscar(); }); });
+    document.getElementById('geoBuscar').addEventListener('click', buscar);
+    // Ao abrir a etapa do mapa: mostra o ponto salvo, ou localiza sozinho
+    // (e busca o entorno se a lista estiver vazia).
+    var feito = false;
+    function aoMostrar() {
+      if (feito || div.offsetParent === null) return; feito = true;
+      if (inLat.value && inLon.value) { garantirMapa(+inLat.value, +inLon.value); status('Ponto salvo. Arraste o alfinete para ajustar.'); }
+      else localizar().then(function (ok) { if (ok && !rep.querySelector('.item')) buscar(); });
+    }
+    new MutationObserver(aoMostrar).observe(div.closest('.fieldset'), { attributes: true, attributeFilter: ['hidden'] });
+    aoMostrar();
+    // Endereço mudou: o ponto antigo não vale mais.
+    ['endereco', 'bairro', 'cidade'].forEach(function (n) {
+      var el = form.querySelector('[name="' + n + '"]');
+      if (el) el.addEventListener('change', function () { inLat.value = ''; inLon.value = ''; feito = false; });
+    });
+  })();
 
   // ---------- Serialização no submit ----------
   form.addEventListener('submit', function () {
