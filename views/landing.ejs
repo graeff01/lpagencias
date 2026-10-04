@@ -177,9 +177,9 @@
 <% if (e.construtora_stats && e.construtora_stats.length) { %>
 <div class="trust">
   <div class="wrap"><div class="row">
-    <% e.construtora_stats.forEach(function(s){ %>
-      <div class="it"><span class="ic"><%- icoCheck %></span><div><b><%= s.num %></b> <%= s.label %></div></div>
-    <% }); %>
+    <% [0, 1].forEach(function(copia){ e.construtora_stats.forEach(function(s){ %>
+      <div class="it<%= copia ? ' dup' : '' %>"<%- copia ? ' aria-hidden="true"' : '' %>><span class="ic"><%- icoCheck %></span><div><b><%= s.num %></b> <%= s.label %></div></div>
+    <% }); }); %>
   </div></div>
 </div>
 <% } %>
@@ -285,7 +285,7 @@
       var aneis = [lz.slice(0, nExt), lz.slice(nExt)].filter(function(a){ return a.length; });
     %>
     <div class="orbita rv" data-orbita>
-      <div class="hub" aria-live="polite"><div class="hub-in"><span class="hub-ic"></span><b class="hub-t"></b><span class="hub-s"></span><small class="hub-n"></small></div></div>
+      <div class="hub" aria-live="polite"><div class="hub-in"><span class="hub-ic"></span><b class="hub-t"></b><span class="hub-s"></span></div></div>
       <% aneis.forEach(function(anel, a){ %>
         <div class="anel a<%= a + 1 %>">
           <% anel.forEach(function(it, k){ var idx = a === 0 ? k : nExt + k; %>
@@ -294,9 +294,7 @@
         </div>
       <% }); %>
     </div>
-    <ul class="lz-chips rv">
-      <% lz.forEach(function(it){ %><li class="cor-<%= it.cor %>"><%= it.t %></li><% }); %>
-    </ul>
+
   </div>
 </section>
 <% } %>
@@ -667,7 +665,7 @@
   (function(){
     var orb=document.querySelector('[data-orbita]'); if(!orb) return;
     var bolhas=[].slice.call(orb.querySelectorAll('.bolha')).sort(function(a,b){ return a.dataset.i-b.dataset.i; });
-    var hub=orb.querySelector('.hub-in'), ic=orb.querySelector('.hub-ic'), t=orb.querySelector('.hub-t'), sb=orb.querySelector('.hub-s'), nn=orb.querySelector('.hub-n');
+    var hub=orb.querySelector('.hub-in'), ic=orb.querySelector('.hub-ic'), t=orb.querySelector('.hub-t'), sb=orb.querySelector('.hub-s');
     var atual=-1, timer=null, n=bolhas.length;
     function mostrar(i){
       atual=((i%n)+n)%n; var b=bolhas[atual];
@@ -675,7 +673,7 @@
       hub.classList.add('troca');
       setTimeout(function(){
         ic.innerHTML=b.querySelector('span').innerHTML; ic.className='hub-ic '+[].filter.call(b.classList,function(c){return c.indexOf('cor-')===0;}).join(' ');
-        t.textContent=b.dataset.t; sb.textContent=b.dataset.s||''; nn.textContent=(atual+1)+' de '+n;
+        t.textContent=b.dataset.t; sb.textContent=b.dataset.s||'';
         hub.classList.remove('troca');
       }, atual===0&&!timer?0:220);
     }

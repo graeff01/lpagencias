@@ -521,3 +521,22 @@ section{scroll-margin-top:72px}
 @media(max-width:480px){
   .hero .cta-row .btn{flex:1 1 100%;justify-content:center;white-space:nowrap;padding:14px 18px}
 }
+
+/* =========================================================
+   Celular: topo na altura do conteúdo e faixa de números passando
+   ========================================================= */
+.trust .dup{display:none}
+@media(max-width:760px){
+  .hero{min-height:0;align-items:flex-end}
+  .hero-inner{padding:92px 18px 26px}
+  .trust{padding:12px 0;overflow:hidden}
+  .trust .wrap{padding:0;max-width:none}
+  .trust .row{flex-wrap:nowrap;justify-content:flex-start;gap:0;width:max-content;animation:faixa 26s linear infinite}
+  .trust .it{flex:none;white-space:nowrap;margin-right:28px;font-size:12.5px}
+  .trust .it b{font-size:16px}
+  .trust .it .ic{width:28px;height:28px;border-radius:8px}
+  .trust .it .ic svg{width:15px;height:15px}
+  .trust .dup{display:flex}
+}
+@keyframes faixa{to{transform:translateX(-50%)}}
+@media(max-width:760px) and (prefers-reduced-motion:reduce){.trust{overflow-x:auto}.trust .dup{display:none}}
