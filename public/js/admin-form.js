@@ -219,7 +219,7 @@
     if (!capa) { var g = grid && grid.querySelector('.gcell[data-url]'); if (g) capa = g.getAttribute('data-url'); }
     var local = [campo('bairro'), campo('cidade')].filter(Boolean).join(' · ');
     var tipo = [];
-    if (campo('dormitorios')) tipo.push(campo('dormitorios') + ' dorm.');
+    if (campo('dormitorios')) tipo.push(/^[\d\s,aeou–-]+$/i.test(campo('dormitorios')) ? campo('dormitorios') + ' dorm.' : campo('dormitorios'));
     if (campo('area')) tipo.push(campo('area') + ' m²');
     if (campo('vagas')) tipo.push(campo('vagas') + (campo('vagas') === '1' ? ' vaga' : ' vagas'));
     var preco = Number(campo('preco_inicial').replace(/\D/g, ''));

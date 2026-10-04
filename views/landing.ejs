@@ -187,7 +187,7 @@
 <% if (gal.length) { %>
 <section class="sec" id="galeria">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Galeria</div><h2 class="sec-h2">Cada detalhe pensado para viver bem</h2><p class="lead">Ambientes amplos, iluminação natural e acabamento de alto padrão em cada apartamento e área comum.</p></div>
+    <div class="sec-head rv"><div class="kick">Galeria</div><h2 class="sec-h2">Cada detalhe pensado para viver bem</h2><p class="lead">Perspectivas do empreendimento, das áreas comuns e do apartamento.</p></div>
     <div class="gal rv">
       <% gal.slice(0,5).forEach(function(g, i){ %>
         <button type="button" class="c<%= i===0 ? ' big' : '' %>" data-lb="<%= i %>" aria-label="Abrir foto <%= i+1 %> de <%= gal.length %><%= g.tag ? ': ' + g.tag : '' %>">
@@ -230,7 +230,7 @@
 <% if (e.plantas.length) { %>
 <section class="sec" id="plantas">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Plantas</div><h2 class="sec-h2">Escolha a planta ideal para você</h2><p class="lead">Opções com plantas flexíveis, suíte máster e living ampliado.</p></div>
+    <div class="sec-head rv"><div class="kick">Plantas</div><h2 class="sec-h2">Escolha a planta ideal para você</h2><p class="lead">Conheça as opções de planta e encontre a que combina com você.</p></div>
     <div class="plants rv">
       <% e.plantas.forEach(function(p, i){ %>
         <div class="plant<%= p.imagem ? ' has-img' : '' %>">
@@ -253,9 +253,9 @@
           <div class="pt">
             <div class="top"><b><%= p.titulo %></b><% if (p.area) { %><span class="area"><%= p.area %></span><% } %></div>
             <div class="specs">
-              <% if (p.quartos) { %><span class="sp"><%- icoBed %><%= /\d\s*$/.test(String(p.quartos)) ? p.quartos + ' quartos' : p.quartos %></span><% } %>
-              <% if (p.banheiros) { %><span class="sp"><%- icoBath %><%= /\d\s*$/.test(String(p.banheiros)) ? p.banheiros + ' banhos' : p.banheiros %></span><% } %>
-              <% if (p.vagas) { %><span class="sp"><%- icoCar %><%= /\d\s*$/.test(String(p.vagas)) ? p.vagas + ' vagas' : p.vagas %></span><% } %>
+              <% if (p.quartos) { %><span class="sp"><%- icoBed %><%= /\d\s*$/.test(String(p.quartos)) ? p.quartos + (String(p.quartos).trim() === '1' ? ' quarto' : ' quartos') : p.quartos %></span><% } %>
+              <% if (p.banheiros) { %><span class="sp"><%- icoBath %><%= /\d\s*$/.test(String(p.banheiros)) ? p.banheiros + (String(p.banheiros).trim() === '1' ? ' banho' : ' banhos') : p.banheiros %></span><% } %>
+              <% if (p.vagas) { %><span class="sp"><%- icoCar %><%= /\d\s*$/.test(String(p.vagas)) ? p.vagas + (String(p.vagas).trim() === '1' ? ' vaga' : ' vagas') : p.vagas %></span><% } %>
             </div>
             <% if (p.imagem) { %>
             <div class="ver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg>Toque para ampliar a planta</div>
@@ -284,7 +284,7 @@
 <% if ((e.acabamentos||[]).length) { %>
 <section class="sec" id="acabamentos">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Seu apartamento</div><h2 class="sec-h2">Já vem pronto para viver</h2><p class="lead">Itens de série entregues em todas as unidades — sem obra depois das chaves.</p></div>
+    <div class="sec-head rv"><div class="kick">Seu apartamento</div><h2 class="sec-h2">O que vem no apartamento</h2><p class="lead">Itens de série previstos para as unidades.</p></div>
     <ul class="acab rv">
       <% e.acabamentos.forEach(function(a){ %>
         <li><span class="ck"><%- icoCheck %></span><div><b><%= a.item %></b><% if (a.det) { %><span><%= a.det %></span><% } %></div></li>
@@ -313,7 +313,7 @@
     <div class="about rv">
       <div class="img">
         <% if (aboutImg) { %><img src="<%= aboutImg %>" alt="<%= e.nome %>"/><% } %>
-        <div class="fc"><span class="ic"><%- icoCheck %></span><div><b>Decorado disponível</b><span>Agende sua visita presencial</span></div></div>
+        <div class="fc"><span class="ic"><%- icoCheck %></span><div><b>Agende sua visita</b><span>Fale com um consultor</span></div></div>
       </div>
       <div>
         <div class="kick">Sobre o empreendimento</div>
@@ -333,7 +333,7 @@
 
 <section class="sec" id="local">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">No endereço mais desejado da região</h2><p class="lead">Tudo ao seu redor: gastronomia, lazer, saúde e educação a poucos minutos de casa.</p></div>
+    <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">Localização</h2><p class="lead">Veja onde fica o empreendimento e o que há por perto.</p></div>
     <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', ')); %>
     <div class="map rv">
       <iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
@@ -397,11 +397,11 @@
       <div class="left">
         <div class="kick">Fale com um consultor</div>
         <h2>Agende sua visita hoje</h2>
-        <p>Preencha seus dados e um consultor especialista entra em contato em poucos minutos com todas as condições exclusivas.</p>
+        <p>Preencha seus dados e um consultor continua o atendimento pelo WhatsApp com valores, condições e disponibilidade.</p>
         <ul>
           <li><%- icoCheck %>Atendimento imediato via WhatsApp</li>
           <li><%- icoCheck %>Tabela de valores e plantas completas</li>
-          <li><%- icoCheck %>Condições exclusivas de lançamento</li>
+          <li><%- icoCheck %>Valores, condições e disponibilidade</li>
         </ul>
       </div>
       <div class="right">
