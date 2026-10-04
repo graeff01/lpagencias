@@ -161,13 +161,12 @@
         </div>
       </div>
       <div class="hero-card">
-        <div class="pl"><%= e._precoFmt ? 'Apartamentos a partir de' : 'Valores e condições' %></div>
-        <div class="pv"><%= e._precoFmt || 'Sob consulta' %></div>
+        <div class="hc-preco"><span class="pl"><%= e._precoFmt ? 'Apartamentos a partir de' : 'Valores e condições' %></span><span class="pv"><%= e._precoFmt || 'Sob consulta' %></span></div>
         <div class="g4">
-          <div class="st"><span class="ic"><%- icoBed %></span><b><%= e.dormitorios || '—' %></b><span>Dormitórios</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span><b><%= e.area ? e.area + ' m²' : 'Consulte' %></b><span>Área privativa</span></div>
-          <div class="st"><span class="ic"><%- icoCar %></span><b><%= e.vagas || '—' %></b><span>Vagas</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><b><%= e.entrega || 'Consulte' %></b><span>Entrega</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19v-7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7M2 15h20M5 10V7.5A1.5 1.5 0 0 1 6.5 6h4A1.5 1.5 0 0 1 12 7.5V10M12 10V7.5A1.5 1.5 0 0 1 13.5 6h4A1.5 1.5 0 0 1 19 7.5V10"/></svg></span><b><%= e.dormitorios ? h.dormsTexto(e.dormitorios).replace(/ dorm\.$/, '') : '—' %></b><span>Dormitórios</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7M3 3v7M21 21h-7M21 21v-7M3 3l7 7M21 21l-7-7"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span><b><%= e.area ? e.area + ' m²' : 'Consulte' %></b><span>Área privativa</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V11l2-5h10l2 5v5M3 16h18v3H3zM6 19v2M18 19v2"/><circle cx="7.5" cy="13" r=".8" fill="currentColor"/><circle cx="16.5" cy="13" r=".8" fill="currentColor"/></svg></span><b><%= e.vagas || '—' %></b><span>Vagas</span></div>
+          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span><b><%= e.entrega || 'Consulte' %></b><span>Entrega</span></div>
         </div>
       </div>
     </div>
@@ -232,7 +231,7 @@
 <section class="sec" id="plantas">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Plantas</div><h2 class="sec-h2">Escolha a planta ideal para você</h2><p class="lead">Conheça as opções de planta e encontre a que combina com você.</p></div>
-    <div class="plants rv">
+    <div class="plants rv" data-cf>
       <% e.plantas.forEach(function(p, i){ %>
         <div class="plant<%= p.imagem ? ' has-img' : '' %>">
           <% if (p.imagem) { %>
@@ -273,11 +272,31 @@
 <section class="sec alt" id="lazer">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Infraestrutura &amp; Lazer</div><h2 class="sec-h2">Um clube completo dentro de casa</h2><p class="lead">Itens de lazer para aproveitar o dia inteiro sem precisar sair do condomínio.</p></div>
+    <% var lz = e.infra.map(function(it){ var t = it.titulo || it; var ic = h.lazer(t); return { t: t, sub: it.sub || '', svg: ic.svg, cor: ic.cor }; }); %>
     <div class="infra rv">
-      <% e.infra.forEach(function(it, i){ %>
-        <div class="it"><div class="ic"><%- infraIcons[i % infraIcons.length] %></div><b><%= it.titulo || it %></b><% if (it.sub) { %><span><%= it.sub %></span><% } %></div>
+      <% lz.forEach(function(it){ %>
+        <div class="it cor-<%= it.cor %>"><div class="ic"><%- it.svg %></div><b><%= it.t %></b><% if (it.sub) { %><span><%= it.sub %></span><% } %></div>
       <% }); %>
     </div>
+    <%
+      // Celular: os itens orbitam em dois anéis ao redor de um centro que
+      // mostra, um de cada vez, o nome do item em destaque.
+      var nExt = lz.length > 8 ? Math.ceil(lz.length * 0.58) : lz.length;
+      var aneis = [lz.slice(0, nExt), lz.slice(nExt)].filter(function(a){ return a.length; });
+    %>
+    <div class="orbita rv" data-orbita>
+      <div class="hub" aria-live="polite"><div class="hub-in"><span class="hub-ic"></span><b class="hub-t"></b><span class="hub-s"></span><small class="hub-n"></small></div></div>
+      <% aneis.forEach(function(anel, a){ %>
+        <div class="anel a<%= a + 1 %>">
+          <% anel.forEach(function(it, k){ var idx = a === 0 ? k : nExt + k; %>
+            <button type="button" class="bolha cor-<%= it.cor %>" style="--a:<%= (360 / anel.length * k).toFixed(2) %>deg" data-i="<%= idx %>" data-t="<%= it.t %>" data-s="<%= it.sub %>" aria-label="<%= it.t %>"><span><%- it.svg %></span></button>
+          <% }); %>
+        </div>
+      <% }); %>
+    </div>
+    <ul class="lz-chips rv">
+      <% lz.forEach(function(it){ %><li class="cor-<%= it.cor %>"><%= it.t %></li><% }); %>
+    </ul>
   </div>
 </section>
 <% } %>
@@ -299,9 +318,9 @@
 <section class="sec" id="diferenciais">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Diferenciais</div><h2 class="sec-h2">Por que morar no <%= e.nome %></h2></div>
-    <div class="diff rv">
+    <div class="diff">
       <% e.diferenciais.forEach(function(d, i){ %>
-        <div class="d"><div class="n"><%= String(i+1).padStart(2,'0') %></div><h3><%= d.titulo %></h3><p><%= d.texto %></p></div>
+        <div class="d rv" style="transition-delay:<%= i * 120 %>ms"><div class="n"><%= String(i+1).padStart(2,'0') %></div><h3><%= d.titulo %></h3><p><%= d.texto %></p></div>
       <% }); %>
     </div>
   </div>
@@ -316,7 +335,7 @@
         <% if (aboutImg) { %><img src="<%= aboutImg %>" alt="<%= e.nome %>"/><% } %>
         <div class="fc"><span class="ic"><%- icoCheck %></span><div><b>Agende sua visita</b><span>Fale com um consultor</span></div></div>
       </div>
-      <div>
+      <div class="about-txt">
         <div class="kick">Sobre o empreendimento</div>
         <h2 class="sec-h2">Viver bem é viver aqui</h2>
         <p class="lead"><%= e.descricao %></p>
@@ -334,7 +353,7 @@
 
 <section class="sec" id="local">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">Localização</h2><p class="lead">Veja onde fica o empreendimento e o que há por perto.</p></div>
+    <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">Onde fica o <%= e.nome %></h2><p class="lead">Veja onde fica o empreendimento e o que há por perto.</p></div>
     <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', ')); %>
     <div class="map rv">
       <iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
@@ -580,6 +599,90 @@
       else if(dy>90) fechar();
       x0=null;
     },{passive:true});
+  })();
+
+
+  var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches, CEL=matchMedia('(max-width: 760px)');
+
+  // ---- Plantas no celular: carrossel 3D infinito ----
+  // A planta da frente fica inteira; as vizinhas aparecem menores, giradas e
+  // esmaecidas dos lados. Gira sozinho, aceita arrastar, e tocar numa vizinha
+  // traz ela para a frente (só a da frente abre a planta ampliada).
+  (function(){
+    var box=document.querySelector('[data-cf]'); if(!box) return;
+    var cards=[].slice.call(box.querySelectorAll('.plant')), n=cards.length; if(n<2) return;
+    var nav=document.createElement('div'); nav.className='cf-nav';
+    nav.innerHTML='<button type="button" aria-label="Planta anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7"/></svg></button>'+
+      '<div class="cf-prog"><span class="cf-cont"></span><span class="cf-bar"><i></i></span></div>'+
+      '<button type="button" aria-label="Próxima planta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5l7 7-7 7"/></svg></button>';
+    box.parentNode.insertBefore(nav, box.nextSibling);
+    var bar=nav.querySelector('.cf-bar i'), cont=nav.querySelector('.cf-cont');
+    var atual=0, timer=null, TEMPO=3600, ligado=false, visto=false;
+    function off(i){ var d=(i-atual)%n; if(d<0) d+=n; if(d>n/2) d-=n; return d; }
+    function pintar(){
+      if(!ligado) return;
+      cards.forEach(function(c,i){
+        var d=off(i), a=Math.abs(d);
+        c.style.transform='translateX(calc(-50% + '+(d*62)+'%)) translateZ('+(-a*120)+'px) rotateY('+(-d*24)+'deg) scale('+(1-a*.1)+')';
+        c.style.opacity=a>1.5?0:(a?.55:1);
+        c.style.zIndex=10-a;
+        c.style.pointerEvents=a>1.5?'none':'';
+        c.classList.toggle('ativa',d===0);
+      });
+      box.style.height=(Math.max.apply(null,cards.map(function(c){return c.offsetHeight;}))+40)+'px';
+      cont.innerHTML=String(atual+1).padStart(2,'0')+' <small>/ '+String(n).padStart(2,'0')+'</small>';
+      bar.classList.remove('anda'); void bar.offsetWidth;
+      if(timer){ bar.style.animationDuration=TEMPO+'ms'; bar.classList.add('anda'); }
+    }
+    function ir(i){ atual=((i%n)+n)%n; pintar(); }
+    function iniciar(){ clearInterval(timer); timer=null; if(!CALMO&&ligado){ timer=setInterval(function(){ ir(atual+1); },TEMPO); } pintar(); }
+    function ligar(){
+      ligado=CEL.matches; box.classList.toggle('cf',ligado);
+      if(!ligado){ clearInterval(timer); timer=null; box.style.height=''; cards.forEach(function(c){ c.style.cssText=''; c.classList.remove('ativa'); }); return; }
+      pintar(); if(visto) iniciar();
+    }
+    // Toque numa vizinha: traz para a frente em vez de abrir a planta.
+    box.addEventListener('click',function(ev){
+      if(!ligado) return;
+      var c=ev.target.closest('.plant'); if(!c||c.classList.contains('ativa')) return;
+      ev.preventDefault(); ev.stopPropagation(); ir(cards.indexOf(c)); iniciar();
+    },true);
+    nav.children[0].addEventListener('click',function(){ ir(atual-1); iniciar(); });
+    nav.children[2].addEventListener('click',function(){ ir(atual+1); iniciar(); });
+    var x0=null;
+    box.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; clearInterval(timer); },{passive:true});
+    box.addEventListener('touchend',function(e){ if(x0!==null){ var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) ir(atual+(dx<0?1:-1)); } x0=null; iniciar(); },{passive:true});
+    // Entrada: as plantas sobem de baixo e se encaixam no carrossel.
+    if(!CALMO) box.classList.add('cf-pre');
+    new IntersectionObserver(function(es){ es.forEach(function(e){
+      if(e.isIntersecting){ if(!visto){ visto=true; cards.forEach(function(c){ var a=Math.abs(off(cards.indexOf(c))); c.style.transitionDelay=(a*110)+'ms'; }); box.classList.remove('cf-pre'); setTimeout(function(){ cards.forEach(function(c){ c.style.transitionDelay=''; }); },900); } iniciar(); }
+      else { clearInterval(timer); timer=null; }
+    }); },{threshold:.25}).observe(box);
+    (CEL.addEventListener?CEL.addEventListener('change',ligar):CEL.addListener(ligar));
+    addEventListener('resize',function(){ if(ligado) pintar(); });
+    ligar();
+  })();
+
+  // ---- Lazer no celular: órbita com um item em destaque por vez ----
+  (function(){
+    var orb=document.querySelector('[data-orbita]'); if(!orb) return;
+    var bolhas=[].slice.call(orb.querySelectorAll('.bolha')).sort(function(a,b){ return a.dataset.i-b.dataset.i; });
+    var hub=orb.querySelector('.hub-in'), ic=orb.querySelector('.hub-ic'), t=orb.querySelector('.hub-t'), sb=orb.querySelector('.hub-s'), nn=orb.querySelector('.hub-n');
+    var atual=-1, timer=null, n=bolhas.length;
+    function mostrar(i){
+      atual=((i%n)+n)%n; var b=bolhas[atual];
+      bolhas.forEach(function(x){ x.classList.toggle('on',x===b); });
+      hub.classList.add('troca');
+      setTimeout(function(){
+        ic.innerHTML=b.querySelector('span').innerHTML; ic.className='hub-ic '+[].filter.call(b.classList,function(c){return c.indexOf('cor-')===0;}).join(' ');
+        t.textContent=b.dataset.t; sb.textContent=b.dataset.s||''; nn.textContent=(atual+1)+' de '+n;
+        hub.classList.remove('troca');
+      }, atual===0&&!timer?0:220);
+    }
+    function iniciar(){ clearInterval(timer); timer=null; if(!CALMO) timer=setInterval(function(){ mostrar(atual+1); },2300); }
+    bolhas.forEach(function(b,i){ b.addEventListener('click',function(){ mostrar(i); iniciar(); }); });
+    mostrar(0);
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) iniciar(); else { clearInterval(timer); timer=null; } }); },{threshold:.3}).observe(orb);
   })();
 
   var lf=document.getElementById('leadForm');
