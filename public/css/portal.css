@@ -246,7 +246,7 @@ a.pt-gnota:hover{border-color:var(--green)}
 @media(max-width:760px){
   .pt-serv{display:block;position:relative;max-width:440px;margin:0 auto}
   .pt-serv .it{position:absolute;top:0;left:0;right:0;padding:30px 26px;cursor:pointer;transform-origin:50% 100%;
-    transition:transform .65s cubic-bezier(.2,.75,.2,1),opacity .55s,box-shadow .55s;will-change:transform}
+    transition:transform .45s cubic-bezier(.2,.75,.2,1),opacity .4s,box-shadow .4s;will-change:transform}
   .pt-serv .it:hover{transform:none;box-shadow:none}
   .pt-serv .it[data-pos="0"]{z-index:4;box-shadow:0 30px 60px -32px rgba(10,63,33,.55)}
   .pt-serv .it[data-pos="1"]{z-index:3;transform:translateY(14px) scale(.94);opacity:.9}
@@ -295,3 +295,26 @@ a.pt-gnota:hover{border-color:var(--green)}
 /* A moldura atrás da foto da equipe passava da borda da tela no celular */
 #sobre{overflow-x:clip}
 @media(max-width:620px){.pt-persona::before{inset:16px -10px -16px 16px}}
+
+/* Números do topo: no celular saem (ocupavam a primeira dobra) */
+@media(max-width:620px){.pt-stats{display:none}.pt-hero-in{padding-bottom:56px}}
+
+/* Serviços: grade que se ajusta à quantidade de cards no desktop */
+@media(min-width:961px){.pt-serv{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+
+/* =========================================================
+   Avaliações: faixa infinita
+   ========================================================= */
+.pt-marquee{position:relative;overflow:hidden;margin:0 -24px;padding:10px 0 30px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.mq-track{display:flex;width:max-content}
+.pt-marquee.on .mq-track{animation:mq 60s linear infinite}
+.pt-marquee:hover .mq-track,.pt-marquee.pausa .mq-track{animation-play-state:paused}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mq-track>figure{flex:0 0 360px;margin:0 20px 0 0;transition:transform .3s,box-shadow .3s}
+.mq-track>figure:hover{transform:translateY(-4px);box-shadow:0 26px 50px -30px rgba(10,63,33,.5)}
+.pt-marquee.manual{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+@media(max-width:620px){
+  .pt-marquee{margin:0 -16px}
+  .mq-track>figure{flex-basis:290px;margin-right:14px}
+}

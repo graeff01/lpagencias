@@ -19,7 +19,10 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>',
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 19h8"/></svg>',
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"/><path d="M9 12l2 2 4-4"/></svg>'
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"/><path d="M9 12l2 2 4-4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M6 9h1M17 9h1M6 13h1M17 13h1"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/><path d="M9 10h6M9 14h4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>'
   ];
   var cidades = regioes.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome); });
   var dormsTodos = []; emps.forEach(function(e){ e._dorms.forEach(function(d){ if (dormsTodos.indexOf(d) < 0) dormsTodos.push(d); }); }); dormsTodos.sort();
@@ -217,12 +220,12 @@
   <div class="pt-wrap">
     <div class="pt-head">
       <span class="pt-eyebrow">Depoimentos</span><h2>Quem já foi atendido por nós</h2>
-      <% if (cfg.google_nota) { var gPct = Math.max(0, Math.min(100, (parseFloat(String(cfg.google_nota).replace(',', '.')) || 0) * 20)); var gIn = '<span class="g">G</span><b>' + h.esc(cfg.google_nota) + '</b><span class="st" aria-hidden="true"><span style="width:' + gPct + '%">★★★★★</span>★★★★★</span><span>no Google' + (cfg.google_link ? ' · ver todas as avaliações' : '') + '</span>'; %>
+      <% if (cfg.google_nota) { var gPct = Math.max(0, Math.min(100, (parseFloat(String(cfg.google_nota).replace(',', '.')) || 0) * 20)); var gIn = '<span class="g">G</span><b>' + h.esc(cfg.google_nota) + '</b><span class="st" aria-hidden="true"><span style="width:' + gPct + '%">★★★★★</span>★★★★★</span><span>no Google' + (cfg.google_unidade ? ' · ' + h.esc(cfg.google_unidade) : '') + (cfg.google_link ? ' · ver avaliações' : '') + '</span>'; %>
         <% if (cfg.google_link) { %><a class="pt-gnota" href="<%= cfg.google_link %>" target="_blank" rel="noopener"><%- gIn %></a><% } else { %><div class="pt-gnota"><%- gIn %></div><% } %>
       <% } %>
     </div>
-    <div class="pt-rail" data-rail data-auto="4500">
-    <div class="rail-track pt-depo">
+    <div class="pt-marquee" data-marquee>
+    <div class="mq-track pt-depo">
       <% depos.forEach(function(d){ var n = Math.max(0, Math.min(5, parseInt(d.estrelas, 10) || 0)); %>
         <figure>
           <% if (n) { %><div class="st" aria-label="<%= n %> de 5 estrelas"><%= '★★★★★'.slice(0, n) %></div><% } %>
@@ -231,7 +234,6 @@
         </figure>
       <% }); %>
     </div>
-    <div class="rail-dots" aria-hidden="true"></div>
     </div>
   </div>
 </section>
@@ -370,6 +372,23 @@
   }
   var rails=[].map.call(document.querySelectorAll('[data-rail]'),function(el){ return Rail(el); });
 
+  // ---- Avaliações: faixa infinita passando sozinha ----
+  // Os cards são duplicados uma vez e a faixa anda metade da largura em
+  // loop: quando chega ao fim, está exatamente no começo, sem salto.
+  // Para com o mouse em cima ou o dedo segurando; no "reduzir movimento"
+  // do sistema vira uma faixa parada com rolagem manual.
+  (function(){
+    var mq=document.querySelector('[data-marquee]'); if(!mq) return;
+    var track=mq.querySelector('.mq-track');
+    if(CALMO){ mq.classList.add('manual'); return; }
+    [].slice.call(track.children).forEach(function(c){ var k=c.cloneNode(true); k.setAttribute('aria-hidden','true'); track.appendChild(k); });
+    function ritmo(){ track.style.animationDuration=Math.max(20,(track.scrollWidth/2)/45)+'s'; }
+    ritmo(); addEventListener('resize',ritmo);
+    mq.addEventListener('touchstart',function(){ mq.classList.add('pausa'); },{passive:true});
+    mq.addEventListener('touchend',function(){ mq.classList.remove('pausa'); },{passive:true});
+    mq.classList.add('on');
+  })();
+
   // ---- Entrada dos cards: sobem em sequência quando a vitrine aparece ----
   var vitrine=document.getElementById('vitrine');
   function animarEntrada(){
@@ -446,9 +465,9 @@
       if(!mq.matches) return;
       var frente=cards[ordem[0]];
       frente.setAttribute('data-pos','sai');
-      setTimeout(function(){ ordem.push(ordem.shift()); pintar(); }, CALMO?0:420);
+      setTimeout(function(){ ordem.push(ordem.shift()); pintar(); }, CALMO?0:300);
     }
-    function iniciar(){ clearInterval(timer); if(!CALMO&&mq.matches) timer=setInterval(trocar,3800); }
+    function iniciar(){ clearInterval(timer); if(!CALMO&&mq.matches) timer=setInterval(trocar,2400); }
     deck.addEventListener('click',function(){ trocar(); iniciar(); });
     var x0=null;
     deck.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});

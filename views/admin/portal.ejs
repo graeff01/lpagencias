@@ -104,6 +104,9 @@
           <div class="hint" style="margin:-6px 0 12px">A seção só aparece quando houver pelo menos um. Use apenas depoimentos reais, com o texto original (corte só no fim, marcando com “(…)”). Nome abreviado: “Maria Carolina J.”.</div>
           <div class="frow">
             <div class="field"><label>Nota no Google</label><input name="google_nota" value="<%= val(cfg.google_nota) %>" placeholder="4,3"><div class="hint">Mostrada como está no perfil. Vazio esconde o selo.</div></div>
+            <div class="field"><label>Unidade da nota</label><input name="google_unidade" value="<%= val(cfg.google_unidade) %>" placeholder="Canoas Jardim do Lago"><div class="hint">De qual perfil do Google é a nota acima.</div></div>
+          </div>
+          <div class="frow">
             <div class="field"><label>Link das avaliações no Google</label><input name="google_link" value="<%= val(cfg.google_link) %>" placeholder="https://share.google/..."></div>
           </div>
           <%- lista('depoimentos') %>
