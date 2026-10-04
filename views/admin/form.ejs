@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %></title>
-  <link rel="stylesheet" href="/css/admin.css">
-  <link rel="stylesheet" href="/css/vitrine.css">
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>">
 </head>
 <%
   var v = emp || {};
@@ -399,6 +399,6 @@
     </form>
   </div>
 
-  <script src="/js/admin-form.js"></script>
+  <script src="/js/admin-form.js?v=<%= v %>"></script>
 </body>
 </html>

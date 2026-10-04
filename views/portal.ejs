@@ -44,8 +44,8 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <% if (heroImg) { %><link rel="preload" as="image" href="<%= heroWebp || heroImg %>"<% if (heroWebp) { %> type="image/webp"<% } %> fetchpriority="high"><% } %>
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
-  <link rel="stylesheet" href="/css/portal.css">
-  <link rel="stylesheet" href="/css/vitrine.css">
+  <link rel="stylesheet" href="/css/portal.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>">
   <style>
     :root{
       --green:<%= cfg.cor_principal %>; --green-deep:<%= h.shade(cfg.cor_principal, -40) %>;

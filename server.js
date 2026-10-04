@@ -33,8 +33,14 @@ if (process.env.DATABASE_URL) {
 }
 app.use(session(sessionConfig));
 
+// Versão dos arquivos de estilo/script: muda a cada deploy. Eles ficam 7
+// dias no cache do navegador; com a versão no endereço, um deploy novo
+// nunca convive com o CSS antigo guardado (página nova + estilo velho quebra).
+const VERSAO = (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 8) || Date.now().toString(36);
+
 // ---- Helpers disponíveis em todas as views ----
 app.use((req, res, next) => {
+  res.locals.v = VERSAO;
   res.locals.h = helpers;
   res.locals.isAdmin = !!(req.session && req.session.admin);
   next();

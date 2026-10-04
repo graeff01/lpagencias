@@ -27,8 +27,8 @@
   <meta property="og:url" content="<%= canonical %>">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
-  <link rel="stylesheet" href="/css/landing.css">
-  <% if (outros && outros.length) { %><link rel="stylesheet" href="/css/vitrine.css"><% } %>
+  <link rel="stylesheet" href="/css/landing.css?v=<%= v %>">
+  <% if (outros && outros.length) { %><link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>"><% } %>
   <style>
     :root{
       --green:<%= e._green %>; --green-deep:<%= e._greenDeep %>;
