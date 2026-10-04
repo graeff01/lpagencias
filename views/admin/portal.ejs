@@ -87,7 +87,7 @@
             <div class="field"><label>Nome</label><input name="persona_nome" value="<%= val(cfg.persona_nome) %>"><div class="hint">Pessoa real do time ou o nome da equipe.</div></div>
             <div class="field"><label>Cargo / assinatura</label><input name="persona_cargo" value="<%= val(cfg.persona_cargo) %>"></div>
           </div>
-          <div class="field"><label>Foto</label><%- imagem('persona_foto', 'Enviar foto', 66, 82) %><div class="hint">Retrato vertical (4:5). Sem foto, aparecem as iniciais.</div></div>
+          <div class="field"><label>Foto</label><%- imagem('persona_foto', 'Enviar foto', 99, 66) %><div class="hint">Foto horizontal (3:2), de preferência a equipe. Em branco, volta para a foto padrão da equipe.</div></div>
           <div class="field" style="margin-top:14px"><label>Título</label><input name="persona_titulo" value="<%= val(cfg.persona_titulo) %>"></div>
           <div class="field" style="margin-top:14px"><label>Texto</label><textarea name="persona_texto" rows="4"><%= val(cfg.persona_texto) %></textarea></div>
           <div style="margin-top:14px"><span class="lbl" style="font-size:12.5px;font-weight:560;display:block;margin-bottom:8px">Diferenciais (lista com check)</span><%- lista('persona_bullets') %></div>

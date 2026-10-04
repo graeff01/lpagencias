@@ -183,9 +183,9 @@
 
 <section class="pt-sec" id="sobre">
   <div class="pt-wrap pt-sobre">
-    <div class="pt-persona">
+    <div class="pt-persona<%= cfg.persona_foto ? ' foto' : '' %>">
       <div class="pic">
-        <% if (cfg.persona_foto) { %><img src="<%= cfg.persona_foto %>" alt="<%= cfg.persona_nome %> — <%= cfg.persona_cargo %>" loading="lazy">
+        <% if (cfg.persona_foto) { var pfWebp = h.webpDe(cfg.persona_foto); %><picture><% if (pfWebp) { %><source srcset="<%= pfWebp %>" type="image/webp"><% } %><img src="<%= cfg.persona_foto %>" alt="<%= cfg.persona_nome %> — <%= cfg.persona_cargo %>" loading="lazy" decoding="async"></picture>
         <% } else { %><div class="mono"><%= iniciais %></div><% } %>
       </div>
       <div class="tag"><b><%= cfg.persona_nome %></b><span><%= cfg.persona_cargo %><%= cfg.creci ? ' · ' + cfg.creci : '' %></span></div>
