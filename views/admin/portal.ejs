@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<%
+  function val(x){ return (x===undefined||x===null)?'':String(x); }
+  var up = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>';
+  var LISTAS = {
+    numeros: { campos: [['num','Número','90+'],['label','Legenda','anos de mercado']], cols: '1fr 2fr', add: '+ Adicionar número' },
+    persona_bullets: { campos: [['texto','Item','Análise documental e segurança jurídica']], cols: '1fr', add: '+ Adicionar item' },
+    servicos: { campos: [['titulo','Título','Visita ao decorado'],['texto','Texto','',true]], cols: '1fr', add: '+ Adicionar serviço' },
+    depoimentos: { campos: [['nome','Nome','Mariana S.'],['detalhe','Detalhe','Avaliação no Google'],['estrelas','Estrelas','5'],['texto','Depoimento','',true]], cols: '2fr 2fr 1fr', add: '+ Adicionar depoimento' },
+  };
+  function item(nome, dados){
+    var cfgL = LISTAS[nome], h = '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:' + cfgL.cols + '">';
+    cfgL.campos.forEach(function(c){
+      var v = dados ? val(dados[c[0]]).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') : '';
+      h += '<div' + (c[3] ? ' style="grid-column:1/-1"' : '') + '><span class="lbl">' + c[1] + '</span>' +
+        (c[3] ? '<textarea data-k="' + c[0] + '" rows="2">' + v + '</textarea>' : '<input data-k="' + c[0] + '" value="' + v + '" placeholder="' + c[2] + '">') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function lista(nome){
+    var h = '<div class="rep" data-rep="' + nome + '">';
+    (cfg[nome] || []).forEach(function(d){ h += item(nome, d); });
+    h += '</div><button type="button" class="add-btn" data-add="' + nome + '" style="margin-top:10px">' + LISTAS[nome].add + '</button>';
+    h += '<template data-tpl="' + nome + '">' + item(nome, null) + '</template>';
+    h += '<input type="hidden" name="' + nome + '" id="hidden-' + nome + '">';
+    return h;
+  }
+  function imagem(campo, rotulo, w, hgt){
+    return '<div class="imgfield"><div class="thumb" id="thumb-' + campo + '" style="width:' + w + 'px;height:' + hgt + 'px;' + (cfg[campo] ? "background-image:url('" + val(cfg[campo]) + "')" : '') + '"></div><div class="up">' +
+      '<label class="uplabel">' + up + rotulo + '<input type="file" accept="image/*" data-upload="' + campo + '"></label>' +
+      '<input name="' + campo + '" value="' + val(cfg[campo]).replace(/"/g,'&quot;') + '" placeholder="ou cole a URL da imagem" style="margin-top:8px"><div class="upstate" data-state="' + campo + '"></div></div></div>';
+  }
+%>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Página principal</small></span></a>
+    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal" class="on">Portal</a></nav>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/" target="_blank">Ver site</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap" style="max-width:900px">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Página principal</div>
+        <h1>Configurações do portal</h1>
+        <p>Textos, números, persona e contato da página que lista todos os empreendimentos. Os cards entram sozinhos a partir dos empreendimentos publicados.</p>
+      </div>
+    </div>
+
+    <% if (q.ok) { %><div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Portal atualizado. <a href="/" target="_blank" style="color:inherit;font-weight:700;text-decoration:underline">Ver no site</a></div><% } %>
+    <% if (q.erro === 'whats') { %><div class="flash err">WhatsApp inválido. Use DDD + número de celular, ex.: (51) 99999-0000. Nada foi salvo.</div><% } %>
+    <% if (cfg._exemplo) { %><div class="warn-box"><b>O portal está no ar com textos de exemplo.</b> Revise principalmente os <b>números</b> e a <b>persona</b> antes de anunciar, e salve esta página.</div><% } %>
+
+    <form method="POST" action="/admin/portal" id="portalForm">
+      <div class="form-pane">
+        <div class="fieldset">
+          <div class="leg">Topo da página</div>
+          <div class="field"><label>Frase pequena acima do título</label><input name="hero_kicker" value="<%= val(cfg.hero_kicker) %>"></div>
+          <div class="field" style="margin-top:14px"><label>Título principal (H1)</label><input name="hero_titulo" value="<%= val(cfg.hero_titulo) %>" maxlength="110"><div class="hint">Para anúncio de busca, inclua o que a pessoa procura: "lançamentos", "apartamentos", a cidade.</div></div>
+          <div class="field" style="margin-top:14px"><label>Texto de apoio</label><textarea name="hero_sub" rows="2" style="min-height:60px"><%= val(cfg.hero_sub) %></textarea></div>
+          <div class="frow" style="margin-top:14px">
+            <div class="field"><label>Texto do botão</label><input name="hero_cta" value="<%= val(cfg.hero_cta) %>"></div>
+          </div>
+          <div class="field"><label>Foto de fundo</label><%- imagem('hero_imagem', 'Enviar foto', 110, 66) %><div class="hint">Vazio, usa a capa do primeiro empreendimento da vitrine.</div></div>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Números</div>
+          <div class="hint" style="margin:-6px 0 12px">Use <code>{{empreendimentos}}</code> ou <code>{{cidades}}</code> no número para o site contar sozinho a partir da vitrine. Só publique números que a empresa consegue comprovar.</div>
+          <%- lista('numeros') %>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Persona (seção "Sobre")</div>
+          <div class="frow">
+            <div class="field"><label>Nome</label><input name="persona_nome" value="<%= val(cfg.persona_nome) %>"><div class="hint">Pessoa real do time ou o nome da equipe.</div></div>
+            <div class="field"><label>Cargo / assinatura</label><input name="persona_cargo" value="<%= val(cfg.persona_cargo) %>"></div>
+          </div>
+          <div class="field"><label>Foto</label><%- imagem('persona_foto', 'Enviar foto', 66, 82) %><div class="hint">Retrato vertical (4:5). Sem foto, aparecem as iniciais.</div></div>
+          <div class="field" style="margin-top:14px"><label>Título</label><input name="persona_titulo" value="<%= val(cfg.persona_titulo) %>"></div>
+          <div class="field" style="margin-top:14px"><label>Texto</label><textarea name="persona_texto" rows="4"><%= val(cfg.persona_texto) %></textarea></div>
+          <div style="margin-top:14px"><span class="lbl" style="font-size:12.5px;font-weight:560;display:block;margin-bottom:8px">Diferenciais (lista com check)</span><%- lista('persona_bullets') %></div>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Serviços</div>
+          <div class="field" style="margin-bottom:12px"><label>Título da seção</label><input name="servicos_titulo" value="<%= val(cfg.servicos_titulo) %>"></div>
+          <%- lista('servicos') %>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Depoimentos</div>
+          <div class="hint" style="margin:-6px 0 12px">A seção só aparece quando houver pelo menos um. Use apenas depoimentos reais, com o texto original (corte só no fim, marcando com “(…)”). Nome abreviado: “Maria Carolina J.”.</div>
+          <div class="frow">
+            <div class="field"><label>Nota no Google</label><input name="google_nota" value="<%= val(cfg.google_nota) %>" placeholder="4,3"><div class="hint">Mostrada como está no perfil. Vazio esconde o selo.</div></div>
+            <div class="field"><label>Link das avaliações no Google</label><input name="google_link" value="<%= val(cfg.google_link) %>" placeholder="https://share.google/..."></div>
+          </div>
+          <%- lista('depoimentos') %>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Contato</div>
+          <div class="field"><label>Título</label><input name="contato_titulo" value="<%= val(cfg.contato_titulo) %>"></div>
+          <div class="field" style="margin-top:14px"><label>Texto</label><textarea name="contato_texto" rows="2" style="min-height:60px"><%= val(cfg.contato_texto) %></textarea></div>
+          <div class="frow" style="margin-top:14px">
+            <div class="field"><label>WhatsApp reserva do portal</label><input name="whatsapp" value="<%= val(cfg.whatsapp) %>" placeholder="(51) 99000-0000"><div class="hint">Usado só se não houver corretor ativo na <a href="/admin/corretores/0" style="color:var(--green);font-weight:600">roleta do portal</a> (<%= ativos %> ativo<%= ativos === 1 ? '' : 's' %>). Não aparece no site.</div></div>
+            <div class="field"><label>Instagram</label><input name="instagram" value="<%= val(cfg.instagram) %>" placeholder="@auxiliadorapredial"></div>
+          </div>
+          <div class="frow">
+            <div class="field"><label>E-mail</label><input name="email" value="<%= val(cfg.email) %>"></div>
+            <div class="field"><label>CRECI</label><input name="creci" value="<%= val(cfg.creci) %>" placeholder="CRECI-RS 00000-J"></div>
+          </div>
+          <div class="field"><label>Endereço</label><input name="endereco" value="<%= val(cfg.endereco) %>"></div>
+        </div>
+
+        <div class="fieldset">
+          <div class="leg">Google &amp; medição</div>
+          <div class="field"><label>Título para o Google</label><input name="seo_titulo" value="<%= val(cfg.seo_titulo) %>" maxlength="70"><div class="hint">50 a 60 caracteres.</div></div>
+          <div class="field" style="margin-top:14px"><label>Meta description</label><textarea name="meta_description" rows="2" style="min-height:60px"><%= val(cfg.meta_description) %></textarea></div>
+          <div class="frow" style="margin-top:14px">
+            <div class="field"><label>Google Analytics 4</label><input name="ga_id" value="<%= val(cfg.ga_id) %>" placeholder="G-XXXXXXXXXX"></div>
+            <div class="field"><label>Meta Pixel</label><input name="pixel_id" value="<%= val(cfg.pixel_id) %>" placeholder="000000000000000"></div>
+          </div>
+          <div class="field"><label>Google Ads: conversão (send_to)</label><input name="ads_conversao" value="<%= val(cfg.ads_conversao) %>" placeholder="AW-123456789/AbC-D_efGhIjK"><div class="hint">Disparada no clique em WhatsApp e no envio do formulário do portal. O clique num card dispara <b>select_item</b> (GA4) e <b>ViewContent</b> (Meta), que servem para remarketing, mas não contam como conversão.</div></div>
+        </div>
+
+        <div class="fieldset" style="margin-bottom:0">
+          <div class="leg">Cores</div>
+          <div class="color-row">
+            <div class="field" style="margin:0"><label>Principal</label><input type="color" name="cor_principal" value="<%= cfg.cor_principal || '#0E9E4A' %>"></div>
+            <div class="field" style="margin:0"><label>Destaque (botões)</label><input type="color" name="cor_accent" value="<%= cfg.cor_accent || '#F47B20' %>"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-foot">
+        <a class="btn btn-ghost" href="/admin/corretores/0">Roleta do portal</a>
+        <a class="btn btn-ghost" href="/admin/leads/0">Leads do portal</a>
+        <div class="sp"></div>
+        <button class="btn btn-primary" type="submit">Salvar portal</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+  (function(){
+    var form=document.getElementById('portalForm');
+    document.querySelectorAll('[data-add]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var n=b.getAttribute('data-add');
+        var tpl=document.querySelector('template[data-tpl="'+n+'"]');
+        document.querySelector('.rep[data-rep="'+n+'"]').appendChild(tpl.content.cloneNode(true));
+      });
+    });
+    document.addEventListener('click',function(ev){ var rm=ev.target.closest('[data-rm]'); if(rm){ ev.preventDefault(); rm.closest('.item').remove(); } });
+    document.querySelectorAll('[data-upload]').forEach(function(inp){
+      inp.addEventListener('change',function(){
+        if(!inp.files||!inp.files[0]) return;
+        var campo=inp.getAttribute('data-upload'), st=document.querySelector('[data-state="'+campo+'"]');
+        var fd=new FormData(); fd.append('file',inp.files[0]); st.textContent='Enviando…';
+        fetch('/admin/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(j){
+          if(j.error){ st.textContent=j.error; return; }
+          st.textContent='Enviada ✓';
+          form.querySelector('input[name="'+campo+'"]').value=j.url;
+          document.getElementById('thumb-'+campo).style.backgroundImage="url('"+j.url+"')";
+        }).catch(function(){ st.textContent='Falha no envio.'; });
+        inp.value='';
+      });
+    });
+    form.addEventListener('submit',function(){
+      document.querySelectorAll('.rep[data-rep]').forEach(function(rep){
+        var out=[];
+        rep.querySelectorAll('.item').forEach(function(it){
+          var o={}, tem=false;
+          it.querySelectorAll('[data-k]').forEach(function(f){ o[f.getAttribute('data-k')]=f.value.trim(); if(f.value.trim()) tem=true; });
+          if(tem) out.push(o);
+        });
+        document.getElementById('hidden-'+rep.getAttribute('data-rep')).value=JSON.stringify(out);
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

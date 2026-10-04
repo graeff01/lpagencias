@@ -9,6 +9,7 @@
 <body>
   <header class="topbar">
     <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <nav class="tabs"><a href="/admin" class="on">Empreendimentos</a><% if (ehAdmin) { %><a href="/admin/portal">Portal</a><% } %></nav>
     <div class="sp"></div>
     <div class="top-links">
       <a class="btn btn-ghost btn-sm" href="/" target="_blank">Ver site</a>
@@ -28,6 +29,9 @@
       </div>
     </div>
 
+    <% if (ehAdmin && portalExemplo) { %>
+      <div class="warn-box"><b>A página principal está com textos de exemplo.</b> Revise números e persona em <a href="/admin/portal" style="font-weight:700;text-decoration:underline">Portal</a> antes de anunciar.</div>
+    <% } %>
     <% if (q && q.ok) { %>
       <div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Empreendimento salvo com sucesso<% if (q.slug) { %> — no ar em <a href="/<%= q.slug %>" target="_blank" style="color:inherit;font-weight:700;text-decoration:underline">/<%= q.slug %></a><% } %>.</div>
     <% } %>
@@ -51,14 +55,17 @@
             <h3><%= e.nome %></h3>
             <div class="loc"><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
             <div class="url">/<%= e.slug %></div>
+            <div style="margin-top:8px"><% if (e._ck.pronto) { %><span class="pill ok">Completo <%= e._ck.pct %>%</span><% } else { %><span class="pill <%= e.published ? 'warn' : 'bad' %>" title="<%= e._ck.faltaObrig.map(function(i){return i.txt;}).join(', ') %>">Falta<%= e._ck.faltaObrig.length > 1 ? 'm' : '' %> <%= e._ck.faltaObrig.length %> obrigatório<%= e._ck.faltaObrig.length > 1 ? 's' : '' %></span><% } %></div>
             <div class="foot">
               <a class="btn btn-ghost btn-sm" href="/<%= e.slug %>" target="_blank">Ver</a>
+              <% if (ehAdmin) { %>
               <a class="btn btn-ghost btn-sm" href="/admin/corretores/<%= e.id %>" title="Corretores da roleta">Corretores</a>
               <a class="btn btn-ghost btn-sm" href="/admin/leads/<%= e.id %>" title="Leads por corretor">Leads</a>
+              <% } %>
               <a class="btn btn-green btn-sm" href="/admin/editar/<%= e.id %>">Editar</a>
-              <form method="POST" action="/admin/excluir/<%= e.id %>" onsubmit="return confirm('Excluir <%= e.nome %>? Esta ação não pode ser desfeita.')">
+              <% if (ehAdmin) { %><form method="POST" action="/admin/excluir/<%= e.id %>" onsubmit="return confirm('Excluir <%= e.nome %>? Esta ação não pode ser desfeita.')">
                 <button class="btn btn-danger btn-sm" type="submit" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
-              </form>
+              </form><% } %>
             </div>
           </div>
         </div>

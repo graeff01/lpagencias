@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<%
+  var heroImg = cfg.hero_imagem || (emps[0] && emps[0]._capa) || '';
+  var heroWebp = heroImg ? h.webpDe(heroImg) : null;
+  var desc = regiao
+    ? 'Lançamentos de apartamentos ' + (regiao.tipo === 'bairro' ? 'no ' : 'em ') + regiao.nome + ' selecionados pela Auxiliadora Predial. Compare plantas, localização e condições.'
+    : cfg.meta_description;
+  var h1 = regiao ? ('Lançamentos ' + (regiao.tipo === 'bairro' ? 'no ' : 'em ') + regiao.nome) : cfg.hero_titulo;
+  var sub = regiao ? (emps.length + (emps.length === 1 ? ' empreendimento selecionado' : ' empreendimentos selecionados') + ' pela Auxiliadora Predial. ' + cfg.hero_sub) : cfg.hero_sub;
+  var waNum = h.onlyDigits(cfg.whatsapp);
+  var tagPrincipal = cfg.ga_id || (cfg.ads_conversao || '').split('/')[0];
+  var iniciais = String(cfg.persona_nome || 'AP').split(/\s+/).filter(function(p){ return p.length > 2; }).slice(0, 2).map(function(p){ return p[0]; }).join('').toUpperCase();
+  var waSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>';
+  var logoSvg = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg>';
+  var icoCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>';
+  var icoServ = [
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 19h8"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z"/><path d="M9 12l2 2 4-4"/></svg>'
+  ];
+  var cidades = regioes.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+  var dormsTodos = []; emps.forEach(function(e){ e._dorms.forEach(function(d){ if (dormsTodos.indexOf(d) < 0) dormsTodos.push(d); }); }); dormsTodos.sort();
+  var fases = []; emps.forEach(function(e){ var f = e.status || 'Lançamento'; if (fases.indexOf(f) < 0) fases.push(f); });
+  var temPreco = emps.some(function(e){ return e.preco_inicial; });
+  var mostrarFiltros = emps.length > 3;
+%>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= title %></title>
+  <meta name="description" content="<%= desc %>">
+  <link rel="canonical" href="<%= canonical %>">
+  <% if (regiao && regiao.tipo === 'bairro' && regiao.total < 2) { %><meta name="robots" content="noindex, follow"><% } %>
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="<%= canonical %>">
+  <meta property="og:title" content="<%= title %>">
+  <meta property="og:description" content="<%= desc %>">
+  <meta property="og:site_name" content="Auxiliadora Predial">
+  <meta property="og:locale" content="pt_BR">
+  <% if (heroImg) { %><meta property="og:image" content="<%= /^https?:/.test(heroImg) ? heroImg : base + heroImg %>"><% } %>
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="<%= cfg.cor_principal %>">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <% if (heroImg) { %><link rel="preload" as="image" href="<%= heroWebp || heroImg %>"<% if (heroWebp) { %> type="image/webp"<% } %> fetchpriority="high"><% } %>
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="stylesheet" href="/css/portal.css">
+  <link rel="stylesheet" href="/css/vitrine.css">
+  <style>
+    :root{
+      --green:<%= cfg.cor_principal %>; --green-deep:<%= h.shade(cfg.cor_principal, -40) %>;
+      --green-bright:<%= h.shade(cfg.cor_principal, 30) %>; --green-ink:<%= h.shade(cfg.cor_principal, -78) %>;
+      --orange:<%= cfg.cor_accent %>; --orange-deep:<%= h.shade(cfg.cor_accent, -34) %>;
+    }
+    <% if (heroImg) { %>.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),<%- h.bgImagem(heroImg) %>}<% } %>
+  </style>
+  <script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Auxiliadora Predial",
+    "url": base + "/",
+    "description": cfg.meta_description,
+    "telephone": waNum ? "+" + waNum : undefined,
+    "email": cfg.email || undefined,
+    "address": cfg.endereco ? { "@type": "PostalAddress", "streetAddress": cfg.endereco, "addressRegion": "RS", "addressCountry": "BR" } : undefined,
+    "areaServed": regioes.map(function(r){ return { "@type": "City", "name": r.nome }; }),
+    "sameAs": cfg.instagram ? ["https://www.instagram.com/" + cfg.instagram.replace(/^@/, "")] : undefined
+  }, function(k, v){ return v === undefined ? undefined : v; }) %>
+  </script>
+  <% if (emps.length) { %>
+  <script type="application/ld+json">
+  <%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": h1,
+    "itemListElement": emps.map(function(e, i){ return { "@type": "ListItem", "position": i + 1, "url": base + "/" + e.slug, "name": e.nome }; })
+  }) %>
+  </script>
+  <% } %>
+  <% if (tagPrincipal) { %>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= tagPrincipal %>"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());
+    <% if (cfg.ga_id) { %>gtag('config','<%= cfg.ga_id %>');<% } %>
+    <% if (cfg.ads_conversao) { %>gtag('config','<%= cfg.ads_conversao.split('/')[0] %>');<% } %>
+  </script>
+  <% } %>
+  <% if (cfg.pixel_id) { %>
+  <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','<%= cfg.pixel_id %>');fbq('track','PageView');</script>
+  <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=<%= cfg.pixel_id %>&ev=PageView&noscript=1"/></noscript>
+  <% } %>
+</head>
+<body>
+
+<nav class="pt-nav" id="nav">
+  <a class="pt-logo" href="/"><span class="m"><%- logoSvg %></span><span>Auxiliadora Predial<small>Lançamentos</small></span></a>
+  <div class="pt-links">
+    <a href="#empreendimentos">Empreendimentos</a>
+    <a href="#sobre">Sobre</a>
+    <% if (cfg.servicos.length) { %><a href="#servicos">Serviços</a><% } %>
+    <a href="#contato">Contato</a>
+  </div>
+  <a class="pt-nav-wa" href="<%= wa %>?src=topo" target="_blank" rel="noopener nofollow"><%- waSvg %><span>Fale conosco</span></a>
+</nav>
+
+<header class="pt-hero<%= regiao ? ' reg' : '' %>">
+  <div class="bg"></div>
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="pt-wrap pt-hero-in">
+    <% if (regiao) { %>
+      <nav class="pt-crumb" aria-label="Você está em"><a href="/">Início</a><span>/</span><span><%= regiao.nome %></span></nav>
+    <% } else if (cfg.hero_kicker) { %>
+      <span class="pt-kick"><span class="d"></span><%= cfg.hero_kicker %></span>
+    <% } %>
+    <h1><%= h1 %></h1>
+    <% if (sub) { %><p class="pt-sub"><%= sub %></p><% } %>
+    <div class="pt-ctas">
+      <a href="#empreendimentos" class="pt-btn pri"><%= cfg.hero_cta || 'Ver empreendimentos' %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="pt-btn wa"><%- waSvg %>Falar com um consultor</a>
+    </div>
+  </div>
+  <% if (numeros.length) { %>
+  <div class="pt-wrap">
+    <div class="pt-stats">
+      <% numeros.forEach(function(n){ %><div class="st"><b><%= n.num %></b><span><%= n.label %></span></div><% }); %>
+    </div>
+  </div>
+  <% } %>
+</header>
+
+<section class="pt-sec alt" id="empreendimentos">
+  <div class="pt-wrap">
+    <div class="pt-head">
+      <span class="pt-eyebrow">Portfólio</span>
+      <h2><%= regiao ? 'Empreendimentos ' + (regiao.tipo === 'bairro' ? 'no ' : 'em ') + regiao.nome : 'Nossos empreendimentos' %></h2>
+      <p>Lançamentos selecionados com critério: localização, construtora e projeto analisados antes de chegar até você.</p>
+    </div>
+
+    <% if (mostrarFiltros) { %>
+    <div class="pt-filtros" id="filtros">
+      <% if (cidades.length > 1 && !regiao) { %>
+      <div class="fg"><span class="lb">Cidade</span><div class="chips" data-f="cidade">
+        <% cidades.forEach(function(c){ %><button type="button" class="chip" data-v="<%= c.slug %>"><%= c.nome %></button><% }); %>
+      </div></div>
+      <% } %>
+      <% if (dormsTodos.length > 1) { %>
+      <div class="fg"><span class="lb">Dormitórios</span><div class="chips" data-f="dorm">
+        <% dormsTodos.forEach(function(d){ %><button type="button" class="chip" data-v="<%= d %>"><%= d %><%= d >= 4 ? '+' : '' %></button><% }); %>
+      </div></div>
+      <% } %>
+      <% if (fases.length > 1) { %>
+      <div class="fg"><span class="lb">Fase</span><div class="chips" data-f="fase">
+        <% fases.forEach(function(f){ %><button type="button" class="chip" data-v="<%= h.slugify(f) %>"><%= f %></button><% }); %>
+      </div></div>
+      <% } %>
+      <% if (temPreco) { %>
+      <div class="fg"><span class="lb">Valor</span><select class="sel" data-f="ate" aria-label="Valor máximo">
+        <option value="">Qualquer valor</option>
+        <option value="500000">Até R$ 500 mil</option>
+        <option value="800000">Até R$ 800 mil</option>
+        <option value="1200000">Até R$ 1,2 milhão</option>
+        <option value="2000000">Até R$ 2 milhões</option>
+      </select></div>
+      <% } %>
+      <div class="pt-fstate" id="fstate" hidden><span id="fcount"></span><button type="button" id="flimpar">Limpar filtros</button></div>
+    </div>
+    <% } %>
+
+    <% if (!emps.length) { %>
+      <div class="pt-empty">Em breve novos lançamentos por aqui. <a href="<%= wa %>?src=vazio" target="_blank" rel="noopener nofollow">Fale com um consultor</a> e seja avisado em primeira mão.</div>
+    <% } else { %>
+      <div class="vt-grid" id="vitrine">
+        <% emps.forEach(function(c){ %><%- include('partials/card', { c: c }) %><% }); %>
+      </div>
+      <div class="pt-empty" id="semres" hidden>Nenhum empreendimento com esses filtros. <button type="button" data-limpar>Limpar filtros</button></div>
+    <% } %>
+
+    <% if (regiao) { %><div style="text-align:center;margin-top:36px"><a class="pt-btn ghost" href="/#empreendimentos">Ver lançamentos de todas as regiões</a></div><% } %>
+  </div>
+</section>
+
+<section class="pt-sec" id="sobre">
+  <div class="pt-wrap pt-sobre">
+    <div class="pt-persona">
+      <div class="pic">
+        <% if (cfg.persona_foto) { %><img src="<%= cfg.persona_foto %>" alt="<%= cfg.persona_nome %> — <%= cfg.persona_cargo %>" loading="lazy">
+        <% } else { %><div class="mono"><%= iniciais %></div><% } %>
+      </div>
+      <div class="tag"><b><%= cfg.persona_nome %></b><span><%= cfg.persona_cargo %><%= cfg.creci ? ' · ' + cfg.creci : '' %></span></div>
+    </div>
+    <div>
+      <span class="pt-eyebrow">Sobre nós</span>
+      <h2 class="pt-h2"><%= cfg.persona_titulo %></h2>
+      <p class="pt-txt"><%= cfg.persona_texto %></p>
+      <% if (cfg.persona_bullets.length) { %>
+      <ul class="pt-checks">
+        <% cfg.persona_bullets.forEach(function(b){ if (!b.texto) return; %><li><span class="ic"><%- icoCheck %></span><%= b.texto %></li><% }); %>
+      </ul>
+      <% } %>
+      <a href="<%= wa %>?src=sobre" target="_blank" rel="noopener nofollow" class="pt-btn pri" style="margin-top:28px"><%- waSvg %>Conversar com a equipe</a>
+    </div>
+  </div>
+</section>
+
+<% if (cfg.servicos.length) { %>
+<section class="pt-sec alt" id="servicos">
+  <div class="pt-wrap">
+    <div class="pt-head"><span class="pt-eyebrow">Serviços</span><h2><%= cfg.servicos_titulo %></h2></div>
+    <div class="pt-serv">
+      <% cfg.servicos.forEach(function(s, i){ %>
+        <div class="it"><span class="ic"><%- icoServ[i % icoServ.length] %></span><h3><%= s.titulo %></h3><p><%= s.texto %></p></div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% var depos = cfg.depoimentos.filter(function(d){ return d.texto; }); %>
+<% if (depos.length) { %>
+<section class="pt-sec" id="depoimentos">
+  <div class="pt-wrap">
+    <div class="pt-head">
+      <span class="pt-eyebrow">Depoimentos</span><h2>Quem já foi atendido por nós</h2>
+      <% if (cfg.google_nota) { var gPct = Math.max(0, Math.min(100, (parseFloat(String(cfg.google_nota).replace(',', '.')) || 0) * 20)); var gIn = '<span class="g">G</span><b>' + h.esc(cfg.google_nota) + '</b><span class="st" aria-hidden="true"><span style="width:' + gPct + '%">★★★★★</span>★★★★★</span><span>no Google' + (cfg.google_link ? ' · ver todas as avaliações' : '') + '</span>'; %>
+        <% if (cfg.google_link) { %><a class="pt-gnota" href="<%= cfg.google_link %>" target="_blank" rel="noopener"><%- gIn %></a><% } else { %><div class="pt-gnota"><%- gIn %></div><% } %>
+      <% } %>
+    </div>
+    <div class="pt-depo">
+      <% depos.forEach(function(d){ var n = Math.max(0, Math.min(5, parseInt(d.estrelas, 10) || 0)); %>
+        <figure>
+          <% if (n) { %><div class="st" aria-label="<%= n %> de 5 estrelas"><%= '★★★★★'.slice(0, n) %></div><% } %>
+          <blockquote>“<%= d.texto %>”</blockquote>
+          <figcaption><b><%= d.nome %></b><% if (d.detalhe) { %><span><%= d.detalhe %></span><% } %></figcaption>
+        </figure>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="pt-sec pt-contato" id="contato">
+  <div class="pt-wrap pt-contato-g">
+    <div>
+      <span class="pt-eyebrow light">Contato</span>
+      <h2 class="pt-h2"><%= cfg.contato_titulo %></h2>
+      <p class="pt-txt"><%= cfg.contato_texto %></p>
+      <div class="pt-cinfo">
+        <a href="<%= wa %>?src=contato-info" target="_blank" rel="noopener nofollow"><span class="ic"><%- waSvg %></span><span><small>WhatsApp</small>Atendimento imediato</span></a>
+        <% if (cfg.instagram) { %><a href="https://www.instagram.com/<%= cfg.instagram.replace(/^@/, '') %>" target="_blank" rel="noopener"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg></span><span><small>Instagram</small>@<%= cfg.instagram.replace(/^@/, '') %></span></a><% } %>
+        <% if (cfg.email) { %><a href="mailto:<%= cfg.email %>"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><small>E-mail</small><%= cfg.email %></span></a><% } %>
+        <% if (cfg.endereco) { %><div class="row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span><span><small>Endereço</small><%= cfg.endereco %></span></div><% } %>
+      </div>
+    </div>
+    <form class="pt-form" id="leadForm">
+      <h3>Receba as melhores opções</h3>
+      <p class="sh">Responda em 20 segundos. O consultor continua pelo WhatsApp.</p>
+      <label>Seu nome<input name="nome" required autocomplete="name" placeholder="Como podemos te chamar?"></label>
+      <label>WhatsApp<input name="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 9 0000-0000"></label>
+      <label>Tenho interesse em<select name="emp">
+        <option value="">Ainda não sei, quero ajuda para escolher</option>
+        <% emps.forEach(function(e){ %><option value="<%= e.slug %>"><%= e.nome %><%= e.bairro ? ' — ' + e.bairro : '' %></option><% }); %>
+      </select></label>
+      <label>Mensagem (opcional)<textarea name="msg" rows="3" placeholder="Ex.: 3 dormitórios, perto do trabalho, até R$ 900 mil"></textarea></label>
+      <button type="submit"><%- waSvg %>Continuar no WhatsApp</button>
+      <div class="terms">Seus dados são usados só para este atendimento.</div>
+    </form>
+  </div>
+</section>
+
+<footer class="pt-foot">
+  <div class="pt-wrap">
+    <div class="top">
+      <div>
+        <div class="pt-logo light"><span class="m"><%- logoSvg %></span><span>Auxiliadora Predial<small>Lançamentos</small></span></div>
+        <p>Lançamentos selecionados e atendimento consultivo do primeiro contato à entrega das chaves.</p>
+      </div>
+      <div class="col"><h5>Navegação</h5><a href="#empreendimentos">Empreendimentos</a><a href="#sobre">Sobre</a><a href="#contato">Contato</a></div>
+      <% if (regioes.length) { %><div class="col"><h5>Regiões</h5><% regioes.slice(0, 6).forEach(function(r){ %><a href="/<%= r.slug %>">Lançamentos em <%= r.nome %></a><% }); %></div><% } %>
+      <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">WhatsApp</a><% if (cfg.instagram) { %><a href="https://www.instagram.com/<%= cfg.instagram.replace(/^@/, '') %>" target="_blank" rel="noopener">Instagram</a><% } %><% if (cfg.email) { %><a href="mailto:<%= cfg.email %>"><%= cfg.email %></a><% } %></div>
+    </div>
+    <div class="bot"><span>© <%= new Date().getFullYear() %> Auxiliadora Predial · Todos os direitos reservados</span><span><%= cfg.creci || 'CRECI-RS' %> · Imagens meramente ilustrativas</span></div>
+  </div>
+</footer>
+
+<a href="<%= wa %>?src=flutuante" target="_blank" rel="noopener nofollow" class="pt-fab" title="Falar no WhatsApp"><%- waSvg %></a>
+
+<script>
+  var ADS_CONV = <%- JSON.stringify(cfg.ads_conversao || '') %>;
+  var nav=document.getElementById('nav');
+  addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>30);},{passive:true});
+
+  // ---- Campanha: UTMs/gclid da chegada acompanham o visitante ----
+  // Os cards levam para /slug com os mesmos parâmetros: a landing grava o
+  // gclid e a roleta registra a campanha certa no lead.
+  var UTM=(function(){
+    var CH=['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gbraid','wbraid','fbclid'];
+    var q=new URLSearchParams(location.search), s={}, a={};
+    try{ s=JSON.parse(sessionStorage.getItem('ap_utm')||'{}'); }catch(_){}
+    CH.forEach(function(k){ if(q.get(k)) a[k]=q.get(k); });
+    if(Object.keys(a).length){ s=a; try{ sessionStorage.setItem('ap_utm',JSON.stringify(s)); }catch(_){} }
+    return s;
+  })();
+  function comUtm(href){
+    var u=new URL(href,location.origin);
+    Object.keys(UTM).forEach(function(k){ if(!u.searchParams.has(k)) u.searchParams.set(k,UTM[k]); });
+    return u.pathname+u.search+u.hash;
+  }
+  document.querySelectorAll('a[href^="/wa/"],a[data-vt-link]').forEach(function(a){ a.setAttribute('href',comUtm(a.getAttribute('href'))); });
+
+  // ---- Medição ----
+  function conversao(evento,dados){
+    if(window.gtag){ gtag('event',evento,dados||{}); if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV}); }
+    if(window.fbq) fbq('track','Contact',dados||{});
+  }
+  document.querySelectorAll('a[href^="/wa/"]').forEach(function(a){
+    a.addEventListener('click',function(){
+      var origem=(a.getAttribute('href').split('src=')[1]||'link').split('&')[0];
+      conversao('contato_whatsapp',{pagina:'portal',botao:origem});
+    });
+  });
+  // Clique no card não é conversão: é interesse. Serve para saber qual
+  // empreendimento puxa mais gente do portal e montar público de remarketing.
+  document.querySelectorAll('.vt-card').forEach(function(a,i){
+    a.addEventListener('click',function(){
+      var nome=a.getAttribute('data-emp');
+      if(window.gtag) gtag('event','select_item',{item_list_name:'vitrine',items:[{item_id:a.getAttribute('href').split('?')[0].slice(1),item_name:nome,index:i}]});
+      if(window.fbq) fbq('track','ViewContent',{content_name:nome,content_type:'empreendimento'});
+    });
+  });
+
+  // ---- Filtros da vitrine (estado também na URL: dá para anunciar /?dorm=3) ----
+  (function(){
+    var box=document.getElementById('filtros'), cards=[].slice.call(document.querySelectorAll('#vitrine .vt-card'));
+    if(!box||!cards.length) return;
+    var st={cidade:'',dorm:'',fase:'',ate:''};
+    var q=new URLSearchParams(location.search);
+    Object.keys(st).forEach(function(k){ st[k]=q.get(k)||''; });
+    function aplicar(){
+      var n=0;
+      cards.forEach(function(c){
+        var ok=(!st.cidade||c.dataset.cidade===st.cidade)
+          &&(!st.dorm||(','+c.dataset.dorms+',').indexOf(','+st.dorm+',')>-1||(+st.dorm>=4&&c.dataset.dorms.split(',').some(function(d){return +d>=4;})))
+          &&(!st.fase||c.dataset.fase===st.fase)
+          &&(!st.ate||!c.dataset.preco||+c.dataset.preco<=+st.ate);
+        c.hidden=!ok; if(ok) n++;
+      });
+      box.querySelectorAll('.chips').forEach(function(g){
+        var k=g.dataset.f; g.querySelectorAll('.chip').forEach(function(b){ b.classList.toggle('on',b.dataset.v===st[k]); b.setAttribute('aria-pressed',b.dataset.v===st[k]); });
+      });
+      var sel=box.querySelector('select[data-f]'); if(sel) sel.value=st.ate;
+      var ativo=Object.keys(st).some(function(k){return st[k];});
+      document.getElementById('fstate').hidden=!ativo;
+      document.getElementById('fcount').textContent='Mostrando '+n+' de '+cards.length;
+      document.getElementById('semres').hidden=n>0;
+      var u=new URL(location.href);
+      Object.keys(st).forEach(function(k){ if(st[k]) u.searchParams.set(k,st[k]); else u.searchParams.delete(k); });
+      history.replaceState(null,'',u.pathname+u.search+u.hash);
+    }
+    box.addEventListener('click',function(ev){
+      var b=ev.target.closest('.chip'); if(!b) return;
+      var k=b.parentNode.dataset.f; st[k]=st[k]===b.dataset.v?'':b.dataset.v; aplicar();
+    });
+    var sel=box.querySelector('select[data-f]'); if(sel) sel.addEventListener('change',function(){ st.ate=sel.value; aplicar(); });
+    function limpar(){ Object.keys(st).forEach(function(k){st[k]='';}); aplicar(); }
+    document.getElementById('flimpar').addEventListener('click',limpar);
+    document.querySelectorAll('[data-limpar]').forEach(function(b){ b.addEventListener('click',limpar); });
+    aplicar();
+  })();
+
+  // ---- Formulário: escolheu um empreendimento? O lead vai para a roleta dele ----
+  var lf=document.getElementById('leadForm');
+  lf.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var d=new FormData(lf), slug=d.get('emp')||'';
+    var sel=lf.querySelector('select[name=emp]'), nomeEmp=slug?sel.options[sel.selectedIndex].text:'';
+    var msg='Olá! Meu nome é '+(d.get('nome')||'')+'.';
+    msg+=slug?' Tenho interesse no '+nomeEmp+'.':' Quero ajuda para escolher um lançamento.';
+    if(d.get('msg')) msg+=' '+d.get('msg');
+    if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
+    if(window.gtag){ gtag('event','envio_formulario',{pagina:'portal',empreendimento:nomeEmp||'indefinido'}); if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV}); }
+    if(window.fbq) fbq('track','Lead',{content_name:nomeEmp||'portal'});
+    window.open(comUtm('/wa/'+(slug||'<%= wa.split('/').pop() %>')+'?src=formulario-portal&msg='+encodeURIComponent(msg)),'_blank');
+  });
+</script>
+</body>
+</html>

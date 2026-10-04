@@ -1,0 +1,29 @@
+<%
+  var capaWebp = c._capa ? h.webpDe(c._capa) : null;
+  var local = [c.bairro, c.cidade].filter(Boolean).join(' · ');
+%>
+<a class="vt-card" href="/<%= c.slug %>" data-vt-link data-emp="<%= c.nome %>"
+   data-cidade="<%= c._cidadeSlug %>" data-dorms="<%= c._dorms.join(',') %>"
+   data-fase="<%= h.slugify(c.status || 'Lançamento') %>" data-preco="<%= c.preco_inicial || '' %>"
+   itemscope itemtype="https://schema.org/Residence">
+  <div class="vt-cover">
+    <% if (c._capa) { %>
+      <picture>
+        <% if (capaWebp) { %><source srcset="<%= capaWebp %>" type="image/webp"><% } %>
+        <img src="<%= c._capa %>" alt="<%= c.nome %><%= local ? ' — ' + local : '' %>" loading="lazy" decoding="async" itemprop="image">
+      </picture>
+    <% } %>
+    <span class="vt-selo"><%= c._selo %></span>
+  </div>
+  <div class="vt-bd">
+    <% if (c.construtora) { %><div class="vt-cst"><%= c.construtora %></div><% } %>
+    <h3 itemprop="name"><%= c.nome %></h3>
+    <% if (local) { %><div class="vt-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span itemprop="address"><%= local %></span></div><% } %>
+    <% if (c._tipologia) { %><div class="vt-tipo"><%= c._tipologia %></div><% } %>
+    <% if (c._resumo) { %><p class="vt-res"><%= c._resumo %></p><% } %>
+    <div class="vt-foot">
+      <div class="vt-pr"><small>a partir de</small><%= c._precoFmt || 'Sob consulta' %></div>
+      <span class="vt-go">Conhecer<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </div>
+  </div>
+</a>

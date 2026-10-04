@@ -59,6 +59,10 @@
     if (rmg) { ev.preventDefault(); rmg.closest('.gcell').remove(); }
   });
 
+  function thumbDe(field) {
+    return { hero_image: 'hero', construtora_logo: 'logo', card_imagem: 'card' }[field] || field;
+  }
+
   // ---------- Upload de imagens ----------
   function upload(file, onDone, stateEl) {
     var fd = new FormData();
@@ -83,8 +87,9 @@
       upload(inp.files[0], function (url) {
         var target = document.querySelector('input[name="' + field + '"]');
         if (target) target.value = url;
-        var thumb = document.getElementById('thumb-' + (field === 'hero_image' ? 'hero' : 'logo'));
+        var thumb = document.getElementById('thumb-' + thumbDe(field));
         if (thumb) thumb.style.backgroundImage = "url('" + url + "')";
+        if (target) target.dispatchEvent(new Event('input', { bubbles: true }));
       }, stateEl);
       inp.value = '';
     });
@@ -115,11 +120,11 @@
   });
 
   // Sincroniza thumb quando cola URL manualmente
-  ['hero_image', 'construtora_logo'].forEach(function (field) {
+  ['hero_image', 'construtora_logo', 'card_imagem'].forEach(function (field) {
     var inp = document.querySelector('input[name="' + field + '"]');
     if (!inp) return;
     inp.addEventListener('input', function () {
-      var thumb = document.getElementById('thumb-' + (field === 'hero_image' ? 'hero' : 'logo'));
+      var thumb = document.getElementById('thumb-' + thumbDe(field));
       if (thumb) thumb.style.backgroundImage = inp.value ? "url('" + inp.value + "')" : '';
     });
   });
@@ -160,8 +165,79 @@
     });
   });
 
-  // ---------- Serialização no submit ----------
   var form = document.getElementById('empForm');
+
+  // ---------- Cadastro em etapas ----------
+  // Todos os campos continuam no mesmo formulário (só ficam escondidos), então
+  // salvar funciona de qualquer etapa e nada se perde ao trocar de passo.
+  var passos = document.querySelectorAll('.form-pane .fieldset[data-step]');
+  var stepper = document.getElementById('stepper');
+  var wizNav = document.getElementById('wizNav');
+  var passoInp = document.getElementById('passoAtual');
+  var TOTAL = 8;
+  var atual = Number(passoInp && passoInp.value) || 1;
+  function irPara(n) {
+    atual = n;
+    passos.forEach(function (f) { f.hidden = n !== 0 && Number(f.getAttribute('data-step')) !== n; });
+    stepper.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', Number(b.getAttribute('data-go')) === n); });
+    wizNav.hidden = n === 0;
+    wizNav.querySelector('[data-mv="-1"]').style.visibility = n <= 1 ? 'hidden' : '';
+    wizNav.querySelector('[data-mv="1"]').style.visibility = n >= TOTAL ? 'hidden' : '';
+    document.getElementById('wizPos').textContent = n ? 'Etapa ' + n + ' de ' + TOTAL : '';
+    if (passoInp) passoInp.value = n || 1;
+  }
+  if (stepper) {
+    document.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-go]');
+      if (!b) return;
+      ev.preventDefault();
+      irPara(Number(b.getAttribute('data-go')));
+      stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    wizNav.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-mv]');
+      if (!b) return;
+      irPara(Math.min(TOTAL, Math.max(1, atual + Number(b.getAttribute('data-mv')))));
+      stepper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    // Campo obrigatório escondido em outra etapa: abre a etapa dele em vez
+    // de o navegador travar o envio sem mostrar onde está o problema.
+    form.addEventListener('invalid', function (ev) {
+      var fs = ev.target.closest('.fieldset[data-step]');
+      if (fs && fs.hidden) irPara(Number(fs.getAttribute('data-step')));
+    }, true);
+    irPara(atual);
+  }
+
+  // ---------- Prévia do card da vitrine ----------
+  var prev = document.getElementById('prevCard');
+  function campo(n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function desenharCard() {
+    if (!prev) return;
+    var capa = campo('card_imagem') || campo('hero_image');
+    if (!capa) { var g = grid && grid.querySelector('.gcell[data-url]'); if (g) capa = g.getAttribute('data-url'); }
+    var local = [campo('bairro'), campo('cidade')].filter(Boolean).join(' · ');
+    var tipo = [];
+    if (campo('dormitorios')) tipo.push(campo('dormitorios') + ' dorm.');
+    if (campo('area')) tipo.push(campo('area') + ' m²');
+    if (campo('vagas')) tipo.push(campo('vagas') + (campo('vagas') === '1' ? ' vaga' : ' vagas'));
+    var preco = Number(campo('preco_inicial').replace(/\D/g, ''));
+    var st = form.querySelector('[name="status"]');
+    prev.innerHTML = '<div class="vt-card"><div class="vt-cover">' + (capa ? '<img src="' + esc(capa) + '" alt="">' : '') +
+      '<span class="vt-selo">' + esc(campo('card_selo') || (st ? st.value : 'Lançamento')) + '</span></div><div class="vt-bd">' +
+      (campo('construtora') ? '<div class="vt-cst">' + esc(campo('construtora')) + '</div>' : '') +
+      '<h3>' + esc(campo('nome') || 'Nome do empreendimento') + '</h3>' +
+      (local ? '<div class="vt-loc">' + esc(local) + '</div>' : '') +
+      (tipo.length ? '<div class="vt-tipo">' + esc(tipo.join(' · ')) + '</div>' : '') +
+      (campo('card_resumo') ? '<p class="vt-res">' + esc(campo('card_resumo')) + '</p>' : '') +
+      '<div class="vt-foot"><div class="vt-pr"><small>a partir de</small>' + (preco ? 'R$ ' + preco.toLocaleString('pt-BR') : 'Sob consulta') + '</div><span class="vt-go">Conhecer</span></div></div></div>';
+  }
+  form.addEventListener('input', desenharCard);
+  form.addEventListener('change', desenharCard);
+  desenharCard();
+
+  // ---------- Serialização no submit ----------
   form.addEventListener('submit', function () {
     // repetíveis
     Object.keys(T).forEach(function (name) {

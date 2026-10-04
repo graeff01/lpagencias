@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/vitrine.css">
 </head>
 <%
   var v = emp || {};
@@ -18,10 +19,13 @@
   var stats = h.asArray(v.construtora_stats);
   var acabamentos = h.asArray(v.acabamentos);
   function val(x){ return (x===undefined||x===null)?'':String(x); }
+  var PASSOS = ['Identificação','Fotos','Valores','Textos','Plantas & lazer','Obra & FAQ','Vitrine & cores','Publicação'];
+  var qs = typeof q !== 'undefined' && q ? q : {};
 %>
 <body>
   <header class="topbar">
     <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Cadastro de empreendimento</small></span></a>
+    <nav class="tabs"><a href="/admin" class="on">Empreendimentos</a><% if (ehAdmin) { %><a href="/admin/portal">Portal</a><% } %></nav>
     <div class="sp"></div>
     <a class="btn btn-ghost btn-sm" href="/admin">Voltar</a>
   </header>
@@ -31,9 +35,9 @@
       <div>
         <div class="eyebrow"><%= emp ? 'Editar' : 'Novo' %></div>
         <h1><%= emp ? emp.nome : 'Novo empreendimento' %></h1>
-        <p>Preencha os dados. Ao publicar, a landing page fica no ar automaticamente.</p>
+        <p>Preencha etapa por etapa. Ao publicar, a landing fica no ar e o card entra sozinho na vitrine do portal.</p>
       </div>
-      <% if (emp) { %><div class="actions"><a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank">Ver landing</a></div><% } %>
+      <% if (emp) { %><div class="actions"><a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank"><%= emp.published ? 'Ver landing' : 'Pré-visualizar rascunho' %></a></div><% } %>
     </div>
 
     <% if (!cloudinaryOn) { %>
@@ -43,12 +47,27 @@
     </div>
     <% } %>
 
+    <% if (qs.salvo) { %>
+      <div class="flash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Salvo<% if (emp && emp.published) { %> e no ar em <a href="/<%= emp.slug %>" target="_blank" style="color:inherit;font-weight:700;text-decoration:underline">/<%= emp.slug %></a><% } else { %> como rascunho<% } %>.</div>
+    <% } %>
+    <% if (error) { %>
+      <div class="flash err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span><%- error %></span></div>
+    <% } %>
+
     <form method="POST" action="/admin/salvar" id="empForm">
       <% if (emp) { %><input type="hidden" name="id" value="<%= emp.id %>"><% } %>
+      <input type="hidden" name="_passo" id="passoAtual" value="<%= val(qs.passo) || 1 %>">
+
+      <div class="wiz-grid">
+      <div class="wiz-main">
+      <nav class="stepper" id="stepper" aria-label="Etapas do cadastro">
+        <% PASSOS.forEach(function(nome, i){ %><button type="button" data-go="<%= i+1 %>"><span class="n"><%= i+1 %></span><span class="t"><%= nome %></span></button><% }); %>
+        <button type="button" class="all" data-go="0" title="Mostrar todas as etapas numa página só">Ver tudo</button>
+      </nav>
 
       <div class="form-pane">
         <!-- IDENTIFICAÇÃO -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="1">
           <div class="leg">Identificação</div>
           <div class="frow">
             <div class="field"><label>Nome do empreendimento <span class="req">*</span></label><input name="nome" value="<%= val(v.nome) %>" required></div>
@@ -76,7 +95,7 @@
         </div>
 
         <!-- IMAGEM PRINCIPAL -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="2">
           <div class="leg">Imagem principal (capa/hero)</div>
           <div class="imgfield">
             <div class="thumb" id="thumb-hero" style="width:110px;height:66px;<% if (v.hero_image) { %>background-image:url('<%= v.hero_image %>')<% } %>"></div>
@@ -89,7 +108,7 @@
         </div>
 
         <!-- VALORES -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="3">
           <div class="leg">Valores &amp; ficha técnica</div>
           <div class="frow">
             <div class="field"><label>Preço inicial (só números)</label><div class="inp-prefix"><span class="pf">R$</span><input name="preco_inicial" value="<%= val(v.preco_inicial) %>" inputmode="numeric" placeholder="890000"></div></div>
@@ -107,7 +126,7 @@
         </div>
 
         <!-- DESCRIÇÃO -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="4">
           <div class="leg">Descrição</div>
           <div class="field"><label>Sobre o empreendimento</label><textarea name="descricao"><%= val(v.descricao) %></textarea></div>
           <div class="field" style="margin-top:14px"><label>Aviso legal / registro de incorporação</label><textarea name="aviso_legal" rows="3"><%= val(v.aviso_legal) %></textarea><div class="hint">Registro de incorporação (nº do RI, cartório e data) e ressalvas. A publicidade imobiliária no Brasil exige a menção ao registro — Lei 4.591/64, art. 32.</div></div>
@@ -115,7 +134,7 @@
         </div>
 
         <!-- GALERIA -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="2">
           <div class="leg">Galeria de fotos</div>
           <div class="gallery-up" id="gallery-grid">
             <% gallery.forEach(function(g){ %>
@@ -132,7 +151,7 @@
         </div>
 
         <!-- MÍDIA -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="2">
           <div class="leg">Vídeo &amp; Tour</div>
           <div class="frow">
             <div class="field"><label>Vídeo (YouTube/Vimeo)</label><input name="video_url" value="<%= val(v.video_url) %>" placeholder="https://youtube.com/..."></div>
@@ -141,7 +160,7 @@
         </div>
 
         <!-- INFRA (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="5">
           <div class="leg">Infraestrutura &amp; lazer</div>
           <div class="rep" data-rep="infra">
             <% infra.forEach(function(it){ %>
@@ -156,7 +175,7 @@
         </div>
 
         <!-- PLANTAS (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="5">
           <div class="leg">Plantas</div>
           <div class="rep" data-rep="plantas">
             <% plantas.forEach(function(p){ %>
@@ -185,7 +204,7 @@
         </div>
 
         <!-- ACABAMENTOS DO APARTAMENTO (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="5">
           <div class="leg">O que já vem no apartamento</div>
           <div class="rep" data-rep="acabamentos">
             <% acabamentos.forEach(function(a){ %>
@@ -201,7 +220,7 @@
         </div>
 
         <!-- DIFERENCIAIS (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="4">
           <div class="leg">Diferenciais</div>
           <div class="rep" data-rep="diferenciais">
             <% diferenciais.forEach(function(d){ %>
@@ -216,7 +235,7 @@
         </div>
 
         <!-- TIMELINE (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="6">
           <div class="leg">Andamento da obra</div>
           <div class="rep" data-rep="timeline">
             <% timeline.forEach(function(t){ %>
@@ -236,7 +255,7 @@
         </div>
 
         <!-- FAQ (repetível) -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="6">
           <div class="leg">Dúvidas frequentes (FAQ)</div>
           <div class="rep" data-rep="faq">
             <% faq.forEach(function(f){ %>
@@ -251,7 +270,7 @@
         </div>
 
         <!-- LOCALIZAÇÃO / POIs -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="6">
           <div class="leg">Pontos de interesse (mapa)</div>
           <div class="rep" data-rep="pois">
             <% pois.forEach(function(p){ %>
@@ -266,7 +285,7 @@
         </div>
 
         <!-- CONSTRUTORA STATS -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="4">
           <div class="leg">Números da construtora</div>
           <div class="rep" data-rep="construtora_stats">
             <% stats.forEach(function(s){ %>
@@ -280,8 +299,28 @@
           <input type="hidden" name="construtora_stats" id="hidden-construtora_stats">
         </div>
 
+        <!-- VITRINE (card no portal) -->
+        <div class="fieldset" data-step="7">
+          <div class="leg">Card na vitrine do portal</div>
+          <div class="frow">
+            <div class="field"><label>Selo do card</label><input name="card_selo" value="<%= val(v.card_selo) %>" placeholder="ex.: Alto padrão, Últimas unidades" maxlength="28" data-prev="selo"><div class="hint">Vazio, usa o status (<%= v.status || 'Lançamento' %>).</div></div>
+            <div class="field"><label>Ordem na vitrine</label><input name="vitrine_ordem" type="number" value="<%= val(v.vitrine_ordem) || 0 %>"><div class="hint">Menor aparece primeiro. Empate: o mais recente na frente.</div></div>
+          </div>
+          <div class="field"><label>Resumo do card (1 a 2 frases)</label><textarea name="card_resumo" rows="2" maxlength="170" data-prev="resumo" style="min-height:60px"><%= val(v.card_resumo) %></textarea><div class="hint">O que faz alguém clicar: localização, diferencial, condição. Até 170 caracteres.</div></div>
+          <div class="field" style="margin-top:14px"><label>Foto do card</label>
+            <div class="imgfield">
+              <div class="thumb" id="thumb-card" style="width:110px;height:76px;<% if (v.card_imagem) { %>background-image:url('<%= v.card_imagem %>')<% } %>"></div>
+              <div class="up">
+                <label class="uplabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Enviar foto do card<input type="file" accept="image/*" data-upload="card_imagem"></label>
+                <input name="card_imagem" value="<%= val(v.card_imagem) %>" placeholder="opcional: vazio usa a foto de capa" style="margin-top:8px">
+                <div class="upstate" data-state="card_imagem"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- IDENTIDADE -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="7">
           <div class="leg">Identidade visual da página</div>
           <div class="color-row">
             <div class="field" style="margin:0"><label>Cor principal</label><input type="color" name="cor_principal" value="<%= v.cor_principal || '#0E9E4A' %>"><div class="hint">Estrutura da página</div></div>
@@ -301,11 +340,9 @@
         </div>
 
         <!-- CONTATO / SEO -->
-        <div class="fieldset">
+        <div class="fieldset" data-step="8">
           <div class="leg">Contato &amp; SEO</div>
           <div class="frow">
-            <label class="switch" style="margin-bottom:16px"><input type="checkbox" name="home" <%= v.home ? 'checked' : '' %>><span>Usar como <b>página inicial</b> do site</span></label>
-          <div class="hint" style="margin:-10px 0 16px">Modo "um empreendimento só": ele passa a ocupar o endereço raiz e <code>/<%= val(v.slug) || 'slug' %></code> redireciona para lá. Concentra toda a força de busca numa URL única, em vez de dividir com uma vitrine quase vazia. Só um empreendimento pode ocupar a raiz.</div>
           <div class="field"><label>Título para o Google (SEO)</label><input name="seo_titulo" value="<%= val(v.seo_titulo) %>" placeholder="deixe vazio para gerar automaticamente" maxlength="70"><div class="hint">É o que aparece como link azul na busca. Ideal 50–60 caracteres, contendo o que a pessoa digita: <b>tipo de imóvel + bairro + cidade</b>. Vazio, o sistema monta a partir do nome, dormitórios e localização.</div></div>
           <div class="frow">
             <div class="field"><label>Google Analytics 4 (ID de medição)</label><input name="ga_id" value="<%= val(v.ga_id) %>" placeholder="G-XXXXXXXXXX"><div class="hint">Cole o ID do GA4. Em branco, nenhum script é carregado.</div></div>
@@ -322,11 +359,40 @@
         </div>
       </div>
 
+      </div>
+
+      <aside class="wiz-side">
+        <% if (ck) { %>
+        <div class="side-card">
+          <div class="side-h">Pronto para publicar <b><%= ck.pct %>%</b></div>
+          <div class="bar"><span style="width:<%= ck.pct %>%"></span></div>
+          <ul class="ck">
+            <% ck.itens.forEach(function(i){ %>
+              <li class="<%= i.ok ? 'ok' : (i.obrig ? 'obr' : 'rec') %>"><% if (i.passo) { %><a href="#" data-go="<%= i.passo %>"><% } %><span class="dot"></span><%= i.txt %><% if (!i.ok && i.obrig) { %><em>obrigatório</em><% } %><% if (i.passo) { %></a><% } %></li>
+            <% }); %>
+          </ul>
+          <% if (!ck.pronto) { %><p class="side-note">Enquanto faltar item obrigatório, o empreendimento é salvo como <b>rascunho</b>.</p><% } %>
+        </div>
+        <% } else { %>
+        <div class="side-card"><div class="side-h">Pronto para publicar</div><p class="side-note">Salve uma primeira vez para ver o que falta. Obrigatórios: nome, cidade e bairro, foto de capa, dormitórios e área, texto "Sobre" e registro de incorporação.</p></div>
+        <% } %>
+        <div class="side-card">
+          <div class="side-h">Prévia do card na vitrine</div>
+          <div class="prev-card" id="prevCard"></div>
+        </div>
+      </aside>
+      </div>
+
       <div class="form-foot">
         <label class="switch"><input type="checkbox" name="published" <%= (!emp || v.published) ? 'checked' : '' %>> Publicar (deixar no ar)</label>
+        <div class="wiz-nav" id="wizNav">
+          <button type="button" class="btn btn-ghost btn-sm" data-mv="-1">← Anterior</button>
+          <span class="wiz-pos" id="wizPos"></span>
+          <button type="button" class="btn btn-green btn-sm" data-mv="1">Próximo →</button>
+        </div>
         <div class="sp"></div>
         <a class="btn btn-ghost" href="/admin">Cancelar</a>
-        <button class="btn btn-primary" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg><%= emp ? 'Salvar alterações' : 'Publicar landing page' %></button>
+        <button class="btn btn-primary" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg><%= emp ? 'Salvar' : 'Salvar empreendimento' %></button>
       </div>
     </form>
   </div>

@@ -25,7 +25,7 @@
         <p>Cada clique no WhatsApp da landing vai para o próximo da fila. <%= corretores.filter(c=>c.ativo).length %> ativo(s) de <%= corretores.length %> cadastrado(s).</p>
       </div>
       <div class="actions">
-        <a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank">Ver landing</a>
+        <a class="btn btn-ghost" href="/<%= emp.slug %>" target="_blank"><%= emp.id === 0 ? 'Ver portal' : 'Ver landing' %></a>
         <a class="btn btn-green" href="/admin/leads/<%= emp.id %>">Ver leads por corretor</a>
       </div>
     </div>
@@ -40,7 +40,7 @@
     <% if (!corretores.filter(c=>c.ativo).length) { %>
       <div class="flash" style="background:#fff6e8;border-color:#f3ddb6;color:#8a5a12">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v5M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
-        Nenhum corretor ativo: por enquanto os botões usam o WhatsApp geral do empreendimento (<%= emp.whatsapp || 'não informado' %>).
+        Nenhum corretor ativo: por enquanto os botões usam o WhatsApp reserva <%= emp.id === 0 ? 'do portal' : 'do empreendimento' %> (<%= emp.whatsapp || 'não informado' %>).
       </div>
     <% } %>
 

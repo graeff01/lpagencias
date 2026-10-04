@@ -28,6 +28,7 @@
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/landing.css">
+  <% if (outros && outros.length) { %><link rel="stylesheet" href="/css/vitrine.css"><% } %>
   <style>
     :root{
       --green:<%= e._green %>; --green-deep:<%= e._greenDeep %>;
@@ -420,6 +421,18 @@
   </div>
 </section>
 
+<% if (outros && outros.length) { %>
+<section class="sec alt" id="outros">
+  <div class="wrap">
+    <div class="sec-head rv" style="text-align:center"><div class="kick">Auxiliadora Predial</div><h2 class="sec-h2">Conheça também</h2><p class="lead" style="margin:0 auto">Outros lançamentos selecionados que podem combinar com você.</p></div>
+    <div class="vt-grid rv">
+      <% outros.forEach(function(c){ %><%- include('partials/card', { c: c }) %><% }); %>
+    </div>
+    <div style="text-align:center;margin-top:34px"><a href="/#empreendimentos" class="btn primary" data-vt-link>Ver todos os lançamentos</a></div>
+  </div>
+</section>
+<% } %>
+
 <footer class="foot">
   <div class="wrap">
     <div class="top">
@@ -428,7 +441,7 @@
         <p><%= e.nome %> é um empreendimento comercializado pela Auxiliadora Predial. Imagens meramente ilustrativas. Sujeito a alterações sem aviso prévio.</p>
       </div>
       <div class="col"><h5>Empreendimento</h5><% if (gal.length) { %><a href="#galeria">Galeria</a><% } %><% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %><% if (e.infra.length) { %><a href="#lazer">Infraestrutura</a><% } %><a href="#local">Localização</a></div>
-      <div class="col"><h5>Institucional</h5><% if (!naRaiz) { %><a href="/">Outros lançamentos</a><% } %><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
+      <div class="col"><h5>Institucional</h5><a href="/">Todos os lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
       <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape-wa" target="_blank" rel="noopener nofollow">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
     </div>
     <% if (e.aviso_legal) { %><div class="legal"><%= e.aviso_legal %></div><% } %>
@@ -466,6 +479,26 @@
   var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
+  // ---- Campanha: as UTMs/gclid da chegada acompanham o visitante ----
+  // A roleta grava utm_* de cada clique no WhatsApp; sem repassar, o
+  // relatório de leads não sabe de qual campanha o lead veio. Os links para
+  // outros empreendimentos também levam, para a atribuição não se perder.
+  (function(){
+    var CHAVES=['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gbraid','wbraid','fbclid'];
+    var q=new URLSearchParams(location.search), salvo={};
+    try{ salvo=JSON.parse(sessionStorage.getItem('ap_utm')||'{}'); }catch(_){}
+    var atual={}; CHAVES.forEach(function(k){ if(q.get(k)) atual[k]=q.get(k); });
+    if(Object.keys(atual).length){ salvo=atual; try{ sessionStorage.setItem('ap_utm',JSON.stringify(salvo)); }catch(_){} }
+    if(!Object.keys(salvo).length) return;
+    function anexar(a){
+      var u=new URL(a.getAttribute('href'),location.origin);
+      Object.keys(salvo).forEach(function(k){ if(!u.searchParams.has(k)) u.searchParams.set(k,salvo[k]); });
+      a.setAttribute('href',u.pathname+u.search+u.hash);
+    }
+    document.querySelectorAll('a[href^="/wa/"],a[data-vt-link]').forEach(anexar);
+    window.__utm=salvo;
+  })();
+
   // ---- Conversão: todo clique que leva ao WhatsApp vira evento ----
   document.querySelectorAll('a[href^="/wa/"]').forEach(function(a){
     a.addEventListener('click',function(){
@@ -559,7 +592,8 @@
     if(window.fbq) fbq('track','Lead',{content_name:EMP});
     var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
     if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
-    window.open(WA_URL+'?src=formulario&msg='+encodeURIComponent(msg),'_blank');
+    var extra=window.__utm?'&'+new URLSearchParams(window.__utm).toString():'';
+    window.open(WA_URL+'?src=formulario&msg='+encodeURIComponent(msg)+extra,'_blank');
   });}
 </script>
 </body>

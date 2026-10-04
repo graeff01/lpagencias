@@ -5,9 +5,19 @@ const db = require('../lib/db');
 const { slugify, asArray } = require('../lib/helpers');
 const { uploadBuffer, configured: cloudinaryOn } = require('../lib/cloudinary');
 const roleta = require('../lib/roleta');
+const portal = require('../lib/portal');
+const checklist = require('../lib/checklist');
+
+// Endereços que não podem virar slug de empreendimento: o portal usa
+// /wa/portal para a roleta dele, e os demais são rotas do próprio site.
+const SLUGS_RESERVADOS = new Set(['portal', 'admin', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
+const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+// Senha de quem só cadastra empreendimentos: não vê corretores nem leads
+// (dados pessoais), não exclui nada e não mexe na configuração do portal.
+const CADASTRO_PASSWORD = process.env.CADASTRO_PASSWORD || '';
 
 // ---- Proteção contra tentativa em massa no login ----
 // O painel guarda telefone e e-mail dos corretores: senha única sem limite de
@@ -63,11 +73,15 @@ router.post('/login', (req, res) => {
       error: `Muitas tentativas. Tente novamente em ${minutos} minuto(s).`,
     });
   }
-  if (req.body.password === ADMIN_PASSWORD) {
+  const senha = req.body.password;
+  const papel = senha === ADMIN_PASSWORD ? 'admin'
+    : (CADASTRO_PASSWORD && senha === CADASTRO_PASSWORD ? 'cadastro' : null);
+  if (papel) {
     tentativas.delete(ip);
     return req.session.regenerate((err) => {   // evita fixação de sessão
       if (err) return res.status(500).render('admin/login', { title: 'Entrar · Painel', error: 'Erro ao entrar. Tente de novo.' });
-      req.session.admin = true;
+      req.session.admin = true;   // logado no painel (vê rascunhos)
+      req.session.papel = papel;
       res.redirect('/admin');
     });
   }
@@ -81,25 +95,49 @@ router.post('/logout', (req, res) => {
 
 // A partir daqui, tudo exige login
 router.use(requireAuth);
+router.use((req, res, next) => {
+  // Sessões abertas antes dos perfis existirem eram todas de administrador.
+  res.locals.papel = req.session.papel || 'admin';
+  res.locals.ehAdmin = res.locals.papel === 'admin';
+  next();
+});
+
+function soAdmin(req, res, next) {
+  if (res.locals.ehAdmin) return next();
+  return res.status(403).render('404', { title: 'Acesso restrito ao administrador' });
+}
 
 // ---- Lista de empreendimentos ----
 router.get('/', async (req, res, next) => {
   try {
     const emps = await db.list({});
-    res.render('admin/list', { title: 'Empreendimentos · Painel', emps, q: req.query });
+    emps.forEach((e) => { e._ck = checklist.verificar(e); });
+    const cfg = await portal.carregar();
+    res.render('admin/list', { title: 'Empreendimentos · Painel', emps, q: req.query, portalExemplo: cfg._exemplo });
   } catch (e) { next(e); }
 });
 
 // ---- Novo / Editar ----
 router.get('/novo', (req, res) => {
-  res.render('admin/form', { title: 'Novo empreendimento', emp: null, cloudinaryOn, error: null });
+  res.render('admin/form', { title: 'Novo empreendimento', emp: null, cloudinaryOn, error: null, ck: null, q: req.query });
 });
+
+async function checklistCompleto(emp) {
+  const ativos = (await db.listCorretores(emp.id, { ativosOnly: true })).length;
+  return checklist.verificar(emp, { corretoresAtivos: ativos });
+}
 
 router.get('/editar/:id', async (req, res, next) => {
   try {
     const emp = await db.getById(req.params.id);
     if (!emp) return next();
-    res.render('admin/form', { title: `Editar · ${emp.nome}`, emp, cloudinaryOn, error: null });
+    const ck = await checklistCompleto(emp);
+    let error = null;
+    if (req.query.rascunho) {
+      error = '<b>Salvo como rascunho.</b> Para publicar, complete: '
+        + ck.faltaObrig.map(i => i.txt).join(', ') + '.';
+    }
+    res.render('admin/form', { title: `Editar · ${emp.nome}`, emp, cloudinaryOn, error, ck, q: req.query });
   } catch (e) { next(e); }
 });
 
@@ -112,7 +150,6 @@ function parseBody(body) {
     catch { data[f] = []; }
   }
   data.published = body.published === 'on' || body.published === 'true' || body.published === true;
-  data.home = body.home === 'on' || body.home === 'true' || body.home === true;
   return data;
 }
 
@@ -125,23 +162,33 @@ router.post('/salvar', async (req, res, next) => {
     // slug: usa o informado ou gera do nome; garante unicidade
     let slug = slugify(data.slug || data.nome);
     if (!slug) slug = 'empreendimento-' + Date.now();
+    if (SLUGS_RESERVADOS.has(slug)) slug = `${slug}-empreendimento`;
     let n = 1, base = slug;
     while (await db.slugExists(slug, id)) { slug = `${base}-${++n}`; }
     data.slug = slug;
+
+    // Primeira publicação só com o mínimo preenchido: sem isso entra no ar
+    // uma landing sem foto ou sem o registro de incorporação exigido por lei.
+    // Quem já está no ar continua no ar (o painel mostra o que falta).
+    const anterior = id ? await db.getById(id) : null;
+    const ck = checklist.verificar(data);
+    let virouRascunho = false;
+    if (data.published && !ck.pronto && !(anterior && anterior.published)) {
+      data.published = false;
+      virouRascunho = true;
+    }
 
     let emp;
     if (id) emp = await db.update(id, data);
     else emp = await db.create(data);
 
-    // Só um empreendimento pode ocupar a raiz do site.
-    if (data.home) await db.definirHome(emp.id);
-
-    res.redirect(`/admin?ok=1&slug=${emp.slug}`);
+    const passo = Number(req.body._passo) || 1;
+    res.redirect(`/admin/editar/${emp.id}?salvo=1&passo=${passo}${virouRascunho ? '&rascunho=1' : ''}`);
   } catch (e) { next(e); }
 });
 
 // ---- Excluir ----
-router.post('/excluir/:id', async (req, res, next) => {
+router.post('/excluir/:id', soAdmin, async (req, res, next) => {
   try { await db.remove(req.params.id); res.redirect('/admin?del=1'); }
   catch (e) { next(e); }
 });
@@ -150,10 +197,23 @@ router.post('/excluir/:id', async (req, res, next) => {
 //  ROLETA DE CORRETORES
 // =====================================================================
 
+// Corretores e leads são dados pessoais: só o administrador vê.
+router.use(['/corretores', '/leads', '/portal'], soAdmin);
+
+// O portal não é uma linha da tabela de empreendimentos: tem id 0 e o
+// WhatsApp reserva vem da configuração do portal.
+async function carregarEmp(id) {
+  if (Number(id) === PORTAL_ID) {
+    const cfg = await portal.carregar();
+    return { id: PORTAL_ID, slug: '', nome: 'Portal (página principal)', whatsapp: cfg.whatsapp, published: true };
+  }
+  return db.getById(id);
+}
+
 // ---- Cadastro dos corretores de um empreendimento ----
 router.get('/corretores/:id', async (req, res, next) => {
   try {
-    const emp = await db.getById(req.params.id);
+    const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const corretores = await db.listCorretores(emp.id);
     res.render('admin/corretores', {
@@ -221,7 +281,7 @@ router.post('/corretores/:id/zerar', async (req, res, next) => {
 // ---- Relatório de leads ----
 router.get('/leads/:id', async (req, res, next) => {
   try {
-    const emp = await db.getById(req.params.id);
+    const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const dias = req.query.dias ? Number(req.query.dias) : null;
     const [stats, perdidos, cliques, resumo] = await Promise.all([
@@ -240,7 +300,7 @@ router.get('/leads/:id', async (req, res, next) => {
 // ---- Exportação CSV (auditoria completa) ----
 router.get('/leads/:id/csv', async (req, res, next) => {
   try {
-    const emp = await db.getById(req.params.id);
+    const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const linhas = await db.cliquesRecentes(emp.id, 10000);
     const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
@@ -256,8 +316,33 @@ router.get('/leads/:id/csv', async (req, res, next) => {
     ].map(esc).join(';'))).join('\n');
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="leads-${emp.slug}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="leads-${emp.slug || 'portal'}.csv"`);
     res.send('﻿' + csv); // BOM para o Excel abrir com acento certo
+  } catch (e) { next(e); }
+});
+
+// =====================================================================
+//  PORTAL (página principal)
+// =====================================================================
+router.get('/portal', async (req, res, next) => {
+  try {
+    const cfg = await portal.carregar();
+    const ativos = (await db.listCorretores(PORTAL_ID, { ativosOnly: true })).length;
+    res.render('admin/portal', { title: 'Portal · Painel', cfg, cloudinaryOn, q: req.query, ativos });
+  } catch (e) { next(e); }
+});
+
+router.post('/portal', async (req, res, next) => {
+  try {
+    const dados = portal.limpar(req.body);
+    if (dados.whatsapp && !roleta.validarWhats(dados.whatsapp)) {
+      const cfg = { ...(await portal.carregar()), ...dados };
+      return res.status(400).render('admin/portal', {
+        title: 'Portal · Painel', cfg, cloudinaryOn, q: { erro: 'whats' }, ativos: 0,
+      });
+    }
+    await db.savePortal(dados);
+    res.redirect('/admin/portal?ok=1');
   } catch (e) { next(e); }
 });
 
