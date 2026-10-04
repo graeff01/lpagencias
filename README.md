@@ -55,9 +55,12 @@ landing como um site independente (canonical e sitemap próprios); `/<slug>`
 nele volta para a raiz e as demais páginas vão para o domínio principal.
 No portal a landing continua acessível pelo card, em `/<slug>`.
 
-**Domínio principal** (o portal): `SITE_DOMINIO`. Se ele for o domínio de um
-empreendimento, o principal passa a ser o endereço do Railway
-(`RAILWAY_PUBLIC_DOMAIN`, que o Railway injeta sozinho). Na migração, o
+**Domínio principal** (o portal): `PORTAL_DOMINIO`, se definido. Senão, o
+primeiro que não for domínio de empreendimento entre `SITE_DOMINIO`,
+`RAILWAY_PUBLIC_DOMAIN` e o endereço padrão do Railway
+(`<serviço>-<ambiente>.up.railway.app`, montado com variáveis que o Railway
+injeta). Com domínio personalizado, o `RAILWAY_PUBLIC_DOMAIN` vem com ele, por
+isso o endereço padrão entra como reserva. Na migração, o
 empreendimento que era a "página inicial" herda o `SITE_DOMINIO` como domínio
 próprio, então quem já ocupava a raiz continua nela.
 
