@@ -7,6 +7,7 @@
 %>
 <a class="vt-card" href="<%= href %>" data-vt-link data-emp="<%= c.nome %>"
    data-cidade="<%= c._cidadeSlug %>" data-dorms="<%= c._dorms.join(',') %>"
+   data-busca="<%= h.slugify([c.nome, c.bairro, c.cidade, c.construtora, c._selo].filter(Boolean).join(' ')).replace(/-/g, ' ') %>"
    data-fase="<%= h.slugify(c.status || '') %>" data-preco="<%= c.preco_inicial || '' %>"
    itemscope itemtype="https://schema.org/Residence">
   <div class="vt-cover">

@@ -25,7 +25,6 @@
   var dormsTodos = []; emps.forEach(function(e){ e._dorms.forEach(function(d){ if (dormsTodos.indexOf(d) < 0) dormsTodos.push(d); }); }); dormsTodos.sort();
   var fases = []; emps.forEach(function(e){ var f = e.status; if (f && fases.indexOf(f) < 0) fases.push(f); });
   var temPreco = emps.some(function(e){ return e.preco_inicial; });
-  var mostrarFiltros = emps.length > 3;
 %>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -138,31 +137,20 @@
       <p>Lançamentos selecionados com critério: localização, construtora e projeto analisados antes de chegar até você.</p>
     </div>
 
-    <% if (mostrarFiltros) { %>
-    <div class="pt-filtros" id="filtros">
+    <% if (emps.length) { %>
+    <div class="pt-busca" id="filtros" role="search">
+      <label class="campo q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" data-f="q" placeholder="Buscar por bairro, cidade ou nome" aria-label="Buscar empreendimento" autocomplete="off"></label>
       <% if (cidades.length > 1 && !regiao) { %>
-      <div class="fg"><span class="lb">Cidade</span><div class="chips" data-f="cidade">
-        <% cidades.forEach(function(c){ %><button type="button" class="chip" data-v="<%= c.slug %>"><%= c.nome %></button><% }); %>
-      </div></div>
+      <label class="campo"><span>Localização</span><select data-f="cidade"><option value="">Todas as cidades</option><% cidades.forEach(function(c){ %><option value="<%= c.slug %>"><%= c.nome %></option><% }); %></select></label>
       <% } %>
-      <% if (dormsTodos.length > 1) { %>
-      <div class="fg"><span class="lb">Dormitórios</span><div class="chips" data-f="dorm">
-        <% dormsTodos.forEach(function(d){ %><button type="button" class="chip" data-v="<%= d %>"><%= d %><%= d >= 4 ? '+' : '' %></button><% }); %>
-      </div></div>
+      <% if (dormsTodos.length) { %>
+      <label class="campo"><span>Dormitórios</span><select data-f="dorm"><option value="">Qualquer</option><% dormsTodos.forEach(function(d){ %><option value="<%= d %>"><%= d %><%= d >= 4 ? '+' : '' %> dorm.</option><% }); %></select></label>
       <% } %>
-      <% if (fases.length > 1) { %>
-      <div class="fg"><span class="lb">Fase</span><div class="chips" data-f="fase">
-        <% fases.forEach(function(f){ %><button type="button" class="chip" data-v="<%= h.slugify(f) %>"><%= f %></button><% }); %>
-      </div></div>
+      <% if (fases.length) { %>
+      <label class="campo"><span>Fase</span><select data-f="fase"><option value="">Todas</option><% fases.forEach(function(f){ %><option value="<%= h.slugify(f) %>"><%= f %></option><% }); %></select></label>
       <% } %>
       <% if (temPreco) { %>
-      <div class="fg"><span class="lb">Valor</span><select class="sel" data-f="ate" aria-label="Valor máximo">
-        <option value="">Qualquer valor</option>
-        <option value="500000">Até R$ 500 mil</option>
-        <option value="800000">Até R$ 800 mil</option>
-        <option value="1200000">Até R$ 1,2 milhão</option>
-        <option value="2000000">Até R$ 2 milhões</option>
-      </select></div>
+      <label class="campo"><span>Valor</span><select data-f="ate"><option value="">Qualquer valor</option><option value="500000">Até R$ 500 mil</option><option value="800000">Até R$ 800 mil</option><option value="1200000">Até R$ 1,2 milhão</option><option value="2000000">Até R$ 2 milhões</option></select></label>
       <% } %>
       <div class="pt-fstate" id="fstate" hidden><span id="fcount"></span><button type="button" id="flimpar">Limpar filtros</button></div>
     </div>
@@ -171,8 +159,13 @@
     <% if (!emps.length) { %>
       <div class="pt-empty">Em breve novos lançamentos por aqui. <a href="<%= wa %>?src=vazio" target="_blank" rel="noopener nofollow">Fale com um consultor</a> e seja avisado em primeira mão.</div>
     <% } else { %>
-      <div class="vt-grid" id="vitrine">
-        <% emps.forEach(function(c){ %><%- include('partials/card', { c: c, base: '' }) %><% }); %>
+      <div class="pt-rail" data-rail data-auto="5000">
+        <button type="button" class="rail-btn prev" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="rail-track vt-track" id="vitrine">
+          <% emps.forEach(function(c){ %><%- include('partials/card', { c: c, base: '' }) %><% }); %>
+        </div>
+        <button type="button" class="rail-btn next" aria-label="Próximo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5l7 7-7 7"/></svg></button>
+        <div class="rail-dots" aria-hidden="true"></div>
       </div>
       <div class="pt-empty" id="semres" hidden>Nenhum empreendimento com esses filtros. <button type="button" data-limpar>Limpar filtros</button></div>
     <% } %>
@@ -208,11 +201,12 @@
 <section class="pt-sec alt" id="servicos">
   <div class="pt-wrap">
     <div class="pt-head"><span class="pt-eyebrow">Serviços</span><h2><%= cfg.servicos_titulo %></h2></div>
-    <div class="pt-serv">
+    <div class="pt-serv" data-deck>
       <% cfg.servicos.forEach(function(s, i){ %>
-        <div class="it"><span class="ic"><%- icoServ[i % icoServ.length] %></span><h3><%= s.titulo %></h3><p><%= s.texto %></p></div>
+        <div class="it"><span class="ic"><%- icoServ[i % icoServ.length] %></span><span class="n"><%= String(i + 1).padStart(2, '0') %></span><h3><%= s.titulo %></h3><p><%= s.texto %></p></div>
       <% }); %>
     </div>
+    <div class="deck-dots" aria-hidden="true"></div>
   </div>
 </section>
 <% } %>
@@ -227,7 +221,8 @@
         <% if (cfg.google_link) { %><a class="pt-gnota" href="<%= cfg.google_link %>" target="_blank" rel="noopener"><%- gIn %></a><% } else { %><div class="pt-gnota"><%- gIn %></div><% } %>
       <% } %>
     </div>
-    <div class="pt-depo">
+    <div class="pt-rail" data-rail data-auto="4500">
+    <div class="rail-track pt-depo">
       <% depos.forEach(function(d){ var n = Math.max(0, Math.min(5, parseInt(d.estrelas, 10) || 0)); %>
         <figure>
           <% if (n) { %><div class="st" aria-label="<%= n %> de 5 estrelas"><%= '★★★★★'.slice(0, n) %></div><% } %>
@@ -236,11 +231,14 @@
         </figure>
       <% }); %>
     </div>
+    <div class="rail-dots" aria-hidden="true"></div>
+    </div>
   </div>
 </section>
 <% } %>
 
 <section class="pt-sec pt-contato" id="contato">
+  <div class="pt-deco" aria-hidden="true"><span class="ring r1"></span><span class="ring r2"></span><span class="glow g1"></span><span class="glow g2"></span><span class="beam"></span><span class="dots"></span><span class="grain"></span></div>
   <div class="pt-wrap pt-contato-g">
     <div>
       <span class="pt-eyebrow light">Contato</span>
@@ -330,43 +328,135 @@
     });
   });
 
-  // ---- Filtros da vitrine (estado também na URL: dá para anunciar /?dorm=3) ----
+  var CALMO = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Carrossel lateral (vitrine e avaliações) ----
+  // Rolagem nativa com snap (o dedo arrasta como em qualquer app), setas no
+  // desktop, bolinhas de posição e avanço automático que para assim que a
+  // pessoa mexe. Sem cards sobrando para os lados, vira uma linha parada.
+  function Rail(el){
+    var track=el.querySelector('.rail-track'), dots=el.querySelector('.rail-dots');
+    var prev=el.querySelector('.prev'), next=el.querySelector('.next');
+    var auto=+el.getAttribute('data-auto')||0, timer=null, parado=false;
+    function itens(){ return [].slice.call(track.children).filter(function(c){ return !c.hidden; }); }
+    function passo(){ var it=itens(); return it.length>1 ? it[1].offsetLeft-it[0].offsetLeft : track.clientWidth; }
+    function sobra(){ return track.scrollWidth-track.clientWidth>4; }
+    function atual(){ return Math.round(track.scrollLeft/Math.max(1,passo())); }
+    function paginas(){ return Math.max(1, Math.round((track.scrollWidth-track.clientWidth)/Math.max(1,passo()))+1); }
+    function ir(i){ track.scrollTo({left:i*passo(),behavior:CALMO?'auto':'smooth'}); }
+    function desenhar(){
+      var tem=sobra(); el.classList.toggle('parado',!tem);
+      if(!dots) return;
+      var n=tem?paginas():0, a=atual();
+      if(dots.childElementCount!==n){ dots.innerHTML=''; for(var i=0;i<n;i++){ var b=document.createElement('button'); b.type='button'; b.dataset.i=i; dots.appendChild(b); } }
+      [].forEach.call(dots.children,function(b,i){ b.classList.toggle('on',i===a); });
+      if(prev) prev.disabled=a<=0; if(next) next.disabled=a>=n-1;
+    }
+    function avancar(){ if(!sobra()) return; var a=atual(); ir(a>=paginas()-1?0:a+1); }
+    function iniciar(){ parar(); if(auto&&!CALMO&&!parado) timer=setInterval(avancar,auto); }
+    function parar(){ clearInterval(timer); timer=null; }
+    function usuario(){ parado=true; parar(); }
+    if(prev) prev.addEventListener('click',function(){ usuario(); ir(Math.max(0,atual()-1)); });
+    if(next) next.addEventListener('click',function(){ usuario(); ir(atual()+1); });
+    if(dots) dots.addEventListener('click',function(ev){ var b=ev.target.closest('button'); if(b){ usuario(); ir(+b.dataset.i); } });
+    ['pointerdown','touchstart','wheel'].forEach(function(t){ track.addEventListener(t,usuario,{passive:true}); });
+    el.addEventListener('mouseenter',parar); el.addEventListener('mouseleave',function(){ if(!parado) iniciar(); });
+    var raf; track.addEventListener('scroll',function(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(desenhar); },{passive:true});
+    addEventListener('resize',desenhar);
+    // Só começa a girar quando aparece na tela.
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) iniciar(); else parar(); }); },{threshold:.3}).observe(el);
+    desenhar();
+    return { atualizar:function(){ track.scrollLeft=0; desenhar(); } };
+  }
+  var rails=[].map.call(document.querySelectorAll('[data-rail]'),function(el){ return Rail(el); });
+
+  // ---- Entrada dos cards: sobem em sequência quando a vitrine aparece ----
+  var vitrine=document.getElementById('vitrine');
+  function animarEntrada(){
+    if(!vitrine||CALMO) return;
+    [].filter.call(vitrine.children,function(c){ return !c.hidden; }).forEach(function(c,i){
+      c.classList.remove('vt-in'); void c.offsetWidth; c.style.animationDelay=(i*90)+'ms'; c.classList.add('vt-in');
+    });
+  }
+  if(vitrine){
+    if(!CALMO) vitrine.classList.add('vt-espera');
+    new IntersectionObserver(function(es,o){ es.forEach(function(e){ if(e.isIntersecting){ vitrine.classList.remove('vt-espera'); animarEntrada(); o.disconnect(); } }); },{threshold:.15}).observe(vitrine);
+  }
+
+  // ---- Filtros da vitrine (estado também na URL: dá para anunciar /?cidade=canoas) ----
   (function(){
-    var box=document.getElementById('filtros'), cards=[].slice.call(document.querySelectorAll('#vitrine .vt-card'));
+    var box=document.getElementById('filtros'), cards=vitrine?[].slice.call(vitrine.querySelectorAll('.vt-card')):[];
     if(!box||!cards.length) return;
-    var st={cidade:'',dorm:'',fase:'',ate:''};
+    function norm(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+    var st={q:'',cidade:'',dorm:'',fase:'',ate:''};
     var q=new URLSearchParams(location.search);
     Object.keys(st).forEach(function(k){ st[k]=q.get(k)||''; });
-    function aplicar(){
-      var n=0;
+    var campos=box.querySelectorAll('[data-f]');
+    function aplicar(animar){
+      var n=0, termos=norm(st.q).split(' ').filter(Boolean);
       cards.forEach(function(c){
         var ok=(!st.cidade||c.dataset.cidade===st.cidade)
           &&(!st.dorm||(','+c.dataset.dorms+',').indexOf(','+st.dorm+',')>-1||(+st.dorm>=4&&c.dataset.dorms.split(',').some(function(d){return +d>=4;})))
           &&(!st.fase||c.dataset.fase===st.fase)
-          &&(!st.ate||!c.dataset.preco||+c.dataset.preco<=+st.ate);
+          &&(!st.ate||!c.dataset.preco||+c.dataset.preco<=+st.ate)
+          &&termos.every(function(t){ return (' '+c.dataset.busca+' ').indexOf(t)>-1; });
         c.hidden=!ok; if(ok) n++;
       });
-      box.querySelectorAll('.chips').forEach(function(g){
-        var k=g.dataset.f; g.querySelectorAll('.chip').forEach(function(b){ b.classList.toggle('on',b.dataset.v===st[k]); b.setAttribute('aria-pressed',b.dataset.v===st[k]); });
-      });
-      var sel=box.querySelector('select[data-f]'); if(sel) sel.value=st.ate;
+      [].forEach.call(campos,function(f){ if(f.value!==st[f.dataset.f]) f.value=st[f.dataset.f]; });
       var ativo=Object.keys(st).some(function(k){return st[k];});
       document.getElementById('fstate').hidden=!ativo;
       document.getElementById('fcount').textContent='Mostrando '+n+' de '+cards.length;
       document.getElementById('semres').hidden=n>0;
+      vitrine.parentNode.hidden=n===0;
       var u=new URL(location.href);
       Object.keys(st).forEach(function(k){ if(st[k]) u.searchParams.set(k,st[k]); else u.searchParams.delete(k); });
       history.replaceState(null,'',u.pathname+u.search+u.hash);
+      if(rails[0]) rails[0].atualizar();
+      if(animar) animarEntrada();
     }
-    box.addEventListener('click',function(ev){
-      var b=ev.target.closest('.chip'); if(!b) return;
-      var k=b.parentNode.dataset.f; st[k]=st[k]===b.dataset.v?'':b.dataset.v; aplicar();
+    var esperar;
+    [].forEach.call(campos,function(f){
+      f.addEventListener(f.tagName==='SELECT'?'change':'input',function(){
+        st[f.dataset.f]=f.value;
+        clearTimeout(esperar); esperar=setTimeout(function(){ aplicar(true); }, f.tagName==='SELECT'?0:180);
+      });
     });
-    var sel=box.querySelector('select[data-f]'); if(sel) sel.addEventListener('change',function(){ st.ate=sel.value; aplicar(); });
-    function limpar(){ Object.keys(st).forEach(function(k){st[k]='';}); aplicar(); }
+    function limpar(){ Object.keys(st).forEach(function(k){st[k]='';}); aplicar(true); }
     document.getElementById('flimpar').addEventListener('click',limpar);
     document.querySelectorAll('[data-limpar]').forEach(function(b){ b.addEventListener('click',limpar); });
-    aplicar();
+    aplicar(false);
+  })();
+
+  // ---- Serviços no celular: um card por vez, o de trás vem para a frente ----
+  (function(){
+    var deck=document.querySelector('[data-deck]'), dots=document.querySelector('.deck-dots');
+    if(!deck) return;
+    var cards=[].slice.call(deck.children), ordem=cards.map(function(_,i){return i;}), timer=null, mq=matchMedia('(max-width: 760px)');
+    function pintar(){
+      if(!mq.matches){ cards.forEach(function(c){ c.removeAttribute('data-pos'); }); deck.style.height=''; return; }
+      ordem.forEach(function(ci,pos){ cards[ci].setAttribute('data-pos',Math.min(pos,3)); });
+      var alt=Math.max.apply(null,cards.map(function(c){ return c.offsetHeight; }));
+      deck.style.height=(alt+30)+'px';
+      if(dots){
+        if(dots.childElementCount!==cards.length){ dots.innerHTML=''; cards.forEach(function(){ dots.appendChild(document.createElement('span')); }); }
+        [].forEach.call(dots.children,function(d,i){ d.classList.toggle('on',i===ordem[0]); });
+      }
+    }
+    function trocar(){
+      if(!mq.matches) return;
+      var frente=cards[ordem[0]];
+      frente.setAttribute('data-pos','sai');
+      setTimeout(function(){ ordem.push(ordem.shift()); pintar(); }, CALMO?0:420);
+    }
+    function iniciar(){ clearInterval(timer); if(!CALMO&&mq.matches) timer=setInterval(trocar,3800); }
+    deck.addEventListener('click',function(){ trocar(); iniciar(); });
+    var x0=null;
+    deck.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+    deck.addEventListener('touchend',function(e){ if(x0!==null&&Math.abs(e.changedTouches[0].clientX-x0)>40){ trocar(); iniciar(); } x0=null; },{passive:true});
+    (mq.addEventListener?mq.addEventListener('change',function(){ pintar(); iniciar(); }):mq.addListener(function(){ pintar(); iniciar(); }));
+    addEventListener('resize',pintar);
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) iniciar(); else clearInterval(timer); }); },{threshold:.3}).observe(deck);
+    pintar();
   })();
 
   // ---- Formulário: escolheu um empreendimento? O lead vai para a roleta dele ----
