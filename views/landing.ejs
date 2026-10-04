@@ -426,9 +426,9 @@
   <div class="wrap">
     <div class="sec-head rv" style="text-align:center"><div class="kick">Auxiliadora Predial</div><h2 class="sec-h2">Conheça também</h2><p class="lead" style="margin:0 auto">Outros lançamentos selecionados que podem combinar com você.</p></div>
     <div class="vt-grid rv">
-      <% outros.forEach(function(c){ %><%- include('partials/card', { c: c }) %><% }); %>
+      <% outros.forEach(function(c){ %><%- include('partials/card', { c: c, base: portalBase }) %><% }); %>
     </div>
-    <div style="text-align:center;margin-top:34px"><a href="/#empreendimentos" class="btn primary" data-vt-link>Ver todos os lançamentos</a></div>
+    <div style="text-align:center;margin-top:34px"><a href="<%= portalBase %>/#empreendimentos" class="btn primary" data-vt-link>Ver todos os lançamentos</a></div>
   </div>
 </section>
 <% } %>
@@ -441,7 +441,7 @@
         <p><%= e.nome %> é um empreendimento comercializado pela Auxiliadora Predial. Imagens meramente ilustrativas. Sujeito a alterações sem aviso prévio.</p>
       </div>
       <div class="col"><h5>Empreendimento</h5><% if (gal.length) { %><a href="#galeria">Galeria</a><% } %><% if (e.plantas.length) { %><a href="#plantas">Plantas</a><% } %><% if (e.infra.length) { %><a href="#lazer">Infraestrutura</a><% } %><a href="#local">Localização</a></div>
-      <div class="col"><h5>Institucional</h5><a href="/">Todos os lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
+      <div class="col"><h5>Institucional</h5><a href="<%= portalBase %>/">Todos os lançamentos</a><a href="<%= wa %>?src=rodape" target="_blank" rel="noopener nofollow">Fale conosco</a></div>
       <div class="col"><h5>Contato</h5><a href="<%= wa %>?src=rodape-wa" target="_blank" rel="noopener nofollow">Falar no WhatsApp</a><% if (e.endereco) { %><a><%= e.endereco %></a><% } %></div>
     </div>
     <% if (e.aviso_legal) { %><div class="legal"><%= e.aviso_legal %></div><% } %>
@@ -493,7 +493,7 @@
     function anexar(a){
       var u=new URL(a.getAttribute('href'),location.origin);
       Object.keys(salvo).forEach(function(k){ if(!u.searchParams.has(k)) u.searchParams.set(k,salvo[k]); });
-      a.setAttribute('href',u.pathname+u.search+u.hash);
+      a.setAttribute('href',u.origin===location.origin?u.pathname+u.search+u.hash:u.href);
     }
     document.querySelectorAll('a[href^="/wa/"],a[data-vt-link]').forEach(anexar);
     window.__utm=salvo;

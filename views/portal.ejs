@@ -172,7 +172,7 @@
       <div class="pt-empty">Em breve novos lançamentos por aqui. <a href="<%= wa %>?src=vazio" target="_blank" rel="noopener nofollow">Fale com um consultor</a> e seja avisado em primeira mão.</div>
     <% } else { %>
       <div class="vt-grid" id="vitrine">
-        <% emps.forEach(function(c){ %><%- include('partials/card', { c: c }) %><% }); %>
+        <% emps.forEach(function(c){ %><%- include('partials/card', { c: c, base: '' }) %><% }); %>
       </div>
       <div class="pt-empty" id="semres" hidden>Nenhum empreendimento com esses filtros. <button type="button" data-limpar>Limpar filtros</button></div>
     <% } %>

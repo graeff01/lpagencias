@@ -7,6 +7,7 @@ const { uploadBuffer, configured: cloudinaryOn } = require('../lib/cloudinary');
 const roleta = require('../lib/roleta');
 const portal = require('../lib/portal');
 const checklist = require('../lib/checklist');
+const dominios = require('../lib/dominios');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
@@ -182,6 +183,7 @@ router.post('/salvar', async (req, res, next) => {
     if (id) emp = await db.update(id, data);
     else emp = await db.create(data);
 
+    dominios.limparCache();
     const passo = Number(req.body._passo) || 1;
     res.redirect(`/admin/editar/${emp.id}?salvo=1&passo=${passo}${virouRascunho ? '&rascunho=1' : ''}`);
   } catch (e) { next(e); }
@@ -189,7 +191,7 @@ router.post('/salvar', async (req, res, next) => {
 
 // ---- Excluir ----
 router.post('/excluir/:id', soAdmin, async (req, res, next) => {
-  try { await db.remove(req.params.id); res.redirect('/admin?del=1'); }
+  try { await db.remove(req.params.id); dominios.limparCache(); res.redirect('/admin?del=1'); }
   catch (e) { next(e); }
 });
 

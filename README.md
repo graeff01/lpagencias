@@ -49,10 +49,17 @@ O domínio do site principal é o da variável `SITE_DOMINIO`: todo acesso por
 outro endereço é redirecionado (301) para ele.
 
 **Domínio de um empreendimento**: no cadastro (etapa *Publicação*), o campo
-*Domínio próprio* liga um domínio ao empreendimento. Com esse domínio apontado
-para este serviço no Railway, quem acessa a raiz dele vai direto para
-`SITE_DOMINIO/<slug>`, com gclid e UTMs preservados. Ex.: `vangoghpetropolis.com.br`
-→ `/van-gogh`.
+*Domínio próprio* liga um domínio ao empreendimento (ex.: `www.vangoghpetropolis.com.br`).
+Com esse domínio apontado para este serviço no Railway, a raiz dele mostra a
+landing como um site independente (canonical e sitemap próprios); `/<slug>`
+nele volta para a raiz e as demais páginas vão para o domínio principal.
+No portal a landing continua acessível pelo card, em `/<slug>`.
+
+**Domínio principal** (o portal): `SITE_DOMINIO`. Se ele for o domínio de um
+empreendimento, o principal passa a ser o endereço do Railway
+(`RAILWAY_PUBLIC_DOMAIN`, que o Railway injeta sozinho). Na migração, o
+empreendimento que era a "página inicial" herda o `SITE_DOMINIO` como domínio
+próprio, então quem já ocupava a raiz continua nela.
 
 Em **Settings → Networking → Custom Domain**, aponte o seu domínio (ex: `lancamentos.auxiliadora.com.br`) conforme as instruções do Railway.
 

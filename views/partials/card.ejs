@@ -2,7 +2,7 @@
   var capaWebp = c._capa ? h.webpDe(c._capa) : null;
   var local = [c.bairro, c.cidade].filter(Boolean).join(' · ');
 %>
-<a class="vt-card" href="/<%= c.slug %>" data-vt-link data-emp="<%= c.nome %>"
+<a class="vt-card" href="<%= typeof base !== 'undefined' && base ? base : '' %>/<%= c.slug %>" data-vt-link data-emp="<%= c.nome %>"
    data-cidade="<%= c._cidadeSlug %>" data-dorms="<%= c._dorms.join(',') %>"
    data-fase="<%= h.slugify(c.status || 'Lançamento') %>" data-preco="<%= c.preco_inicial || '' %>"
    itemscope itemtype="https://schema.org/Residence">

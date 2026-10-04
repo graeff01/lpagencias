@@ -4,15 +4,13 @@ const db = require('../lib/db');
 const { asArray, fmtPreco, shade, tituloBusca, slugify, dormsLista, linhaTipologia } = require('../lib/helpers');
 const roleta = require('../lib/roleta');
 const portal = require('../lib/portal');
+const dominios = require('../lib/dominios');
 
-// Domínio definitivo do site. Definido em SITE_DOMINIO, ele vira a única
-// URL indexável: o endereço interno do Railway passa a redirecionar para cá,
-// e o canonical aponta sempre para ele. Sem isso o mesmo conteúdo responde
-// em dois endereços e o Google divide a força entre os dois.
-const DOMINIO = (process.env.SITE_DOMINIO || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
-
+// Endereço base das URLs absolutas (canonical, sitemap). Definido pelo
+// middleware de domínios abaixo: o domínio principal, ou o domínio próprio
+// do empreendimento quando a visita chega por ele.
 function baseUrl(req) {
-  return DOMINIO ? `https://${DOMINIO}` : `${req.protocol}://${req.get('host')}`;
+  return req.siteBase || `${req.protocol}://${req.get('host')}`;
 }
 
 // Prepara o objeto do empreendimento para a view (parse dos jsonb + cores derivadas)
@@ -94,30 +92,50 @@ function regioesDe(emps) {
   return [...mapa.values()].map(r => ({ ...r, total: r.ids.size }));
 }
 
-// Todo acesso por outro endereço é redirecionado em definitivo para o
-// domínio oficial. Se o endereço for o domínio próprio de um empreendimento
-// (cadastrado no painel), a raiz dele leva direto à landing: quem clicou num
-// anúncio antigo de vangoghpetropolis.com.br cai em /van-gogh, com a
-// query string (gclid, UTMs) preservada.
+// Cada domínio responde com o seu site:
+//  - domínio próprio de um empreendimento: a raiz é a landing dele;
+//    /<slug> volta para a raiz (uma URL só) e o resto (outras páginas do
+//    portal) vai para o domínio principal;
+//  - domínio principal: o portal;
+//  - qualquer outro endereço: redirecionado em definitivo para o principal,
+//    senão o mesmo conteúdo responde em dois endereços e o Google divide a
+//    força entre os dois.
 router.use(async (req, res, next) => {
-  if (!DOMINIO) return next();
-  const host = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
-  if (host === DOMINIO.toLowerCase()) return next();
-  if (host === 'localhost' || host === '127.0.0.1') return next();
-  let destino = req.originalUrl;
   try {
-    const emp = await db.getByDominio(host);
-    if (emp && emp.published && db.normalizarDominio(DOMINIO) !== emp.dominio && req.path === '/') {
+    const host = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
+    const local = host === 'localhost' || host === '127.0.0.1';
+    const principal = await dominios.principal();
+    req.portalBase = principal && !local ? `https://${principal}` : '';
+    const emp = await dominios.empDoHost(host);
+
+    if (emp) {
+      req.empDoDominio = emp;
+      req.siteBase = `https://${host}`;
       const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
-      destino = `/${emp.slug}${qs}`;
+      if (req.path === '/') return next();
+      if (req.path === `/${emp.slug}` || req.path === `/${emp.slug}/`) return res.redirect(301, '/' + qs);
+      if (/^\/(wa\/|robots\.txt$|sitemap\.xml$)/.test(req.path)) return next();
+      if (req.portalBase) return res.redirect(301, req.portalBase + req.originalUrl);
+      return next();
     }
-  } catch (e) { /* sem banco, cai no redirecionamento comum */ }
-  return res.redirect(301, `https://${DOMINIO}${destino}`);
+
+    req.siteBase = principal && !local ? `https://${principal}` : '';
+    if (!principal || local || host === principal) return next();
+    return res.redirect(301, `https://${principal}${req.originalUrl}`);
+  } catch (e) {
+    // Sem banco não dá para saber o domínio: segue e deixa a rota responder.
+    console.error('[dominios]', e.message);
+    return next();
+  }
 });
 
 // Raiz do site: o portal institucional com a vitrine de empreendimentos.
 router.get('/', async (req, res, next) => {
   try {
+    if (req.empDoDominio) {
+      const row = await db.getById(req.empDoDominio.id);
+      if (row && row.published) return await renderLanding(req, res, row);
+    }
     const emps = (await db.list({ publishedOnly: true })).map(prepCard);
     return renderPortal(req, res, emps, null);
   } catch (e) { next(e); }
@@ -155,13 +173,22 @@ router.get('/robots.txt', (req, res) => {
 router.get('/sitemap.xml', async (req, res, next) => {
   try {
     const base = baseUrl(req);
-    const rows = await db.list({ publishedOnly: true });
+    const xml = (urls) => res.type('application/xml').send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`
+    );
+    // Domínio próprio de um empreendimento: o site dele é só a raiz.
+    if (req.empDoDominio) {
+      return xml([`<url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`]);
+    }
+    const todos = await db.list({ publishedOnly: true });
+    // Quem tem domínio próprio é indexado lá (é o canonical dele), não aqui.
+    const rows = todos.filter(r => !r.dominio);
     const dia = (r) => (r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : null);
     const urls = [`<url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`];
-    const slugsEmp = new Set(rows.map(r => r.slug));
+    const slugsEmp = new Set(todos.map(r => r.slug));
     // Bairro com um empreendimento só seria uma página rasa, quase cópia da
     // landing: funciona para anúncio, mas fica fora do sitemap.
-    regioesDe(rows).filter(r => !slugsEmp.has(r.slug) && (r.tipo === 'cidade' || r.total > 1)).forEach((r) => {
+    regioesDe(todos).filter(r => !slugsEmp.has(r.slug) && (r.tipo === 'cidade' || r.total > 1)).forEach((r) => {
       urls.push(`<url><loc>${base}/${r.slug}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`);
     });
     rows.forEach((r) => {
@@ -169,9 +196,7 @@ router.get('/sitemap.xml', async (req, res, next) => {
       urls.push(`<url><loc>${base}/${r.slug}</loc>${dt ? `<lastmod>${dt}</lastmod>` : ''}`
         + `<changefreq>weekly</changefreq><priority>1.0</priority></url>`);
     });
-    res.type('application/xml').send(
-      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`
-    );
+    xml(urls);
   } catch (e) { next(e); }
 });
 
@@ -230,8 +255,15 @@ async function outrosDe(row, limite = 3) {
 async function renderLanding(req, res, row) {
   const e = prep(row);
   const base = baseUrl(req);
+  // Com domínio próprio, a URL oficial da landing é a raiz dele, mesmo
+  // quando ela é aberta pelo card do portal (/van-gogh).
+  const canonical = row.dominio ? `https://${row.dominio}/` : `${base}/${e.slug}`;
+  // Links para o portal: relativos no domínio principal, absolutos quando a
+  // landing está no domínio próprio (lá "/" é a própria landing).
+  const portalBase = req.empDoDominio ? (req.portalBase || '') : '';
   return res.render('landing', {
-    canonical: `${base}/${e.slug}`,
+    canonical,
+    portalBase,
     title: tituloBusca(e),
     e,
     // Todo botão de WhatsApp passa pela roleta, nunca pelo número direto.
