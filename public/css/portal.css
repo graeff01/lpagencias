@@ -3,8 +3,8 @@
   --orange:#F47B20; --orange-deep:#E4610F;
   --ink:#152219; --body:#42544a; --soft:#6d7f74; --line:rgba(0,0,0,.09);
   --wa:#25D366; --paper:#f4f8f5;
-  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,system-ui,sans-serif;
-  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
+  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -325,3 +325,17 @@ a.pt-gnota:hover{border-color:var(--green)}
 .pt-hero-in{padding-top:128px}
 .pt-hero.reg{min-height:0}
 @media(max-width:620px){.pt-hero-in{padding-top:104px;padding-bottom:40px}}
+
+/* =========================================================
+   Celular: efeitos leves (desfoques gigantes e mesclagem pesam na placa
+   de vídeo e deixam áreas em branco ao rolar)
+   ========================================================= */
+@media(max-width:760px){
+  .pt-hero .blob{display:none}
+  .pt-deco .glow{filter:none}
+  .pt-deco .g1{background:radial-gradient(circle,rgba(52,199,115,.34),transparent 68%)}
+  .pt-deco .g2{background:radial-gradient(circle,rgba(244,123,32,.2),transparent 68%)}
+  .pt-deco .grain{mix-blend-mode:normal;opacity:.07}
+  .pt-cinfo .ic,.pt-btn.wa,.pt-kick{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .pt-nav.scrolled{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.97)}
+}

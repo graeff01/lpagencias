@@ -3,8 +3,8 @@
   --orange:#F47B20; --orange-deep:#E4610F;
   --ink:#152219; --body:#42544a; --soft:#6d7f74; --line:rgba(0,0,0,.09);
   --wa:#25D366; --gold:#B98C34;
-  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,system-ui,sans-serif;
-  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
+  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -568,3 +568,19 @@ section{scroll-margin-top:72px}
 /* Fotos agora são <img> direto (srcset), sem <picture>: mesmo enquadramento */
 .gal .c>img{display:block}
 .plant .draw>img{position:absolute;inset:0}
+
+/* =========================================================
+   Celular: robustez e leveza
+   ========================================================= */
+@media(max-width:760px){
+  /* Conteúdo nunca fica invisível esperando animação: só desliza de leve */
+  .js .rv{opacity:1;transform:translateY(14px);transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+  .js .rv.in{transform:none}
+  /* Diferenciais mantêm o surgimento um a um */
+  .js .diff .d.rv{opacity:0;transform:translateX(-34px);transition:opacity .6s,transform .6s}
+  .js .diff .d.rv.in{opacity:1;transform:none}
+  /* "Vidro fosco" pesa na placa de vídeo do celular: vira fundo semitransparente */
+  .hero-card{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,20,13,.62)}
+  .hero .badge{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,20,13,.45)}
+  .nav.scrolled{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.97)}
+}

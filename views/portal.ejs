@@ -403,7 +403,7 @@
     });
   }
   if(vitrine){
-    if(!CALMO) vitrine.classList.add('vt-espera');
+    if(!CALMO){ vitrine.classList.add('vt-espera'); setTimeout(function(){ vitrine.classList.remove('vt-espera'); },3500); }
     new IntersectionObserver(function(es,o){ es.forEach(function(e){ if(e.isIntersecting){ vitrine.classList.remove('vt-espera'); animarEntrada(); o.disconnect(); } }); },{threshold:0,rootMargin:'0px 0px 120px 0px'}).observe(vitrine);
   }
 

@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>
+    // Animações de entrada só valem com o JS rodando. Se o script principal
+    // não confirmar em 4 s (erro, navegador embutido, celular travado),
+    // tudo aparece sem animação: nunca seção em branco.
+    document.documentElement.classList.add('js');
+    setTimeout(function(){ if(!window.__animOk) document.documentElement.classList.remove('js'); },4000);
+  </script>
   <title><%= title %></title>
   <% if (e.meta_description) { %><meta name="description" content="<%= e.meta_description %>"><% } %>
   <meta property="og:title" content="<%= e.nome %>">
@@ -352,7 +358,8 @@
     <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">Onde fica o <%= e.nome %></h2><p class="lead">Veja onde fica o empreendimento e o que há por perto.</p></div>
     <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', ')); %>
     <div class="map rv">
-      <iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
+      <iframe class="map-frame" data-src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
+      <noscript><iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" title="Mapa de localização"></iframe></noscript>
       <div class="card"><b><%= e.endereco || e.nome %></b><span><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></span></div>
     </div>
     <% if ((e.pois||[]).length) { %>
@@ -493,7 +500,7 @@
   var EMP = <%- JSON.stringify(e.nome) %>;
   var nav=document.getElementById('nav');
   addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>20);});
-  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:0,rootMargin:'0px 0px 140px 0px'});
+  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:0,rootMargin:'0px 0px 140px 0px'}); window.__animOk=true;
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   document.querySelectorAll('.faq .q').forEach(function(q){q.addEventListener('click',function(){q.classList.toggle('open');});});
   // ---- Campanha: as UTMs/gclid da chegada acompanham o visitante ----
@@ -680,6 +687,16 @@
     bolhas.forEach(function(b,i){ b.addEventListener('click',function(){ mostrar(i); iniciar(); }); });
     mostrar(0);
     new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) iniciar(); else { clearInterval(timer); timer=null; } }); },{threshold:.3}).observe(orb);
+  })();
+
+  // Mapa do Google: ~600 KB de scripts. Só carrega quando a pessoa chega
+  // perto dele (o loading="lazy" do navegador começava longe demais).
+  (function(){
+    var f=document.querySelector('.map-frame[data-src]'); if(!f) return;
+    function carregar(){ if(!f.src) f.src=f.getAttribute('data-src'); }
+    if(!('IntersectionObserver' in window)) return carregar();
+    var o=new IntersectionObserver(function(es){ if(es[0].isIntersecting){ carregar(); o.disconnect(); } },{rootMargin:'300px 0px'});
+    o.observe(f);
   })();
 
   var lf=document.getElementById('leadForm');

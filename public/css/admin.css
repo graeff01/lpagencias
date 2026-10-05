@@ -7,8 +7,8 @@
   --danger:#DA5947;
   --shadow-sm:0 2px 8px rgba(12,30,20,.07);
   --shadow-md:0 12px 30px -12px rgba(12,30,20,.22);
-  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,system-ui,sans-serif;
-  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  --font-display:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
+  --font-body:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-body);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
