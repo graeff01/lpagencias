@@ -75,7 +75,6 @@
     var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
     var resp={orcamento:null,dorm:null,regiao:[]}, txt={orcamento:'',dorm:'',regiao:''}, passo=1;
     var barra=document.getElementById('qzBarra'), voltar=document.getElementById('qzVoltar'), btnVer=document.getElementById('qzVer');
-    var CHAVE='ap_quiz_fechado', TRES_DIAS=3*24*3600*1000;
 
     function evento(nome,dados){ if(window.gtag) gtag('event',nome,dados||{}); if(window.fbq) fbq('trackCustom',nome,dados||{}); }
     function mostrar(n){
@@ -92,7 +91,6 @@
     function fechar(){
       box.classList.remove('on'); document.body.classList.remove('quiz-aberto');
       setTimeout(function(){ box.hidden=true; },CALMO?0:300);
-      try{ localStorage.setItem(CHAVE,String(Date.now())); }catch(_){}
     }
     box.addEventListener('click',function(ev){ if(ev.target.closest('[data-qz-fechar]')) fechar(); });
     addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&!box.hidden) fechar(); });
@@ -165,11 +163,9 @@
       if(window.fbq) fbq('track','Lead',{content_name:'quiz'});
     });
 
-    // Abre sozinho: sempre com ?quiz=1 (anúncio); senão, na primeira visita
-    // e não de novo por 3 dias depois de fechado.
-    var forcado=/[?&]quiz=1\b/.test(location.search), fechadoEm=0;
-    try{ fechadoEm=+localStorage.getItem(CHAVE)||0; }catch(_){}
-    if(forcado) abrir('anuncio');
-    else if(Date.now()-fechadoEm>TRES_DIAS) setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
+    // Abre em todo carregamento da página (inclusive ao atualizar): na hora
+    // com ?quiz=1 (anúncio), senão depois de 2,2 s.
+    if(/[?&]quiz=1\b/.test(location.search)) abrir('anuncio');
+    else setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
   })();
 </script>
