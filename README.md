@@ -116,7 +116,7 @@ Enquanto a configuração nunca foi salva, o painel avisa que o site está com
 
 - **Números**: `{{empreendimentos}}` e `{{cidades}}` são contados sozinhos.
 - **Depoimentos**: a seção só aparece com pelo menos um. Use apenas depoimentos reais,
-  com o texto original. O padrão traz 3 avaliações 5 estrelas do Perfil da Empresa
+  com o texto original. O padrão traz avaliações 5 estrelas do Perfil da Empresa
   no Google (unidade Canoas Jardim do Lago) e o selo com a nota geral, cujas
   estrelas preenchem proporcionalmente à nota.
 - **Card na vitrine**: selo, foto, resumo e ordem vêm da etapa *Vitrine & cores* de cada empreendimento.
