@@ -175,7 +175,10 @@ router.post('/salvar', async (req, res, next) => {
     const anterior = id ? await db.getById(id) : null;
     const ck = checklist.verificar(data);
     let virouRascunho = false;
-    if (data.published && !ck.pronto && !(anterior && anterior.published)) {
+    // "Publicar mesmo com pendências": decisão explícita de quem cadastra;
+    // o painel continua mostrando o que falta.
+    const forcar = req.body.publicar_pendente === 'on';
+    if (data.published && !ck.pronto && !forcar && !(anterior && anterior.published)) {
       data.published = false;
       virouRascunho = true;
     }

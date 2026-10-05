@@ -401,6 +401,9 @@
 
       <div class="form-foot">
         <label class="switch"><input type="checkbox" name="published" <%= (!emp || v.published) ? 'checked' : '' %>> Publicar (deixar no ar)</label>
+        <% if (ck && !ck.pronto && !(emp && emp.published)) { %>
+        <label class="switch" title="Publica mesmo faltando itens obrigatórios (ex.: registro de incorporação). Use só se a pendência for resolvida em seguida."><input type="checkbox" name="publicar_pendente"> Mesmo com pendências</label>
+        <% } %>
         <div class="wiz-nav" id="wizNav">
           <button type="button" class="btn btn-ghost btn-sm" data-mv="-1">← Anterior</button>
           <span class="wiz-pos" id="wizPos"></span>
