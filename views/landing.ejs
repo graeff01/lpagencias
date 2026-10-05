@@ -171,7 +171,7 @@
         </div>
       </div>
       <div class="hero-card">
-        <div class="hc-preco"><span class="pl"><%= e._precoFmt ? 'Apartamentos a partir de' : 'Valores e condições' %></span><span class="pv"><%= e._precoFmt || 'Sob consulta' %></span></div>
+        <div class="hc-preco"><span class="pl"><%= e._precoFmt ? h.tipoImovel(e) + ' a partir de' : 'Valores e condições' %></span><span class="pv"><%= e._precoFmt || 'Sob consulta' %></span></div>
         <div class="g4">
           <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19v-7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7M2 15h20M5 10V7.5A1.5 1.5 0 0 1 6.5 6h4A1.5 1.5 0 0 1 12 7.5V10M12 10V7.5A1.5 1.5 0 0 1 13.5 6h4A1.5 1.5 0 0 1 19 7.5V10"/></svg></span><b><%= e.dormitorios ? h.dormsTexto(e.dormitorios).replace(/ dorm\.$/, '') : '—' %></b><span>Dormitórios</span></div>
           <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7M3 3v7M21 21h-7M21 21v-7M3 3l7 7M21 21l-7-7"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span><b><%= e.area ? e.area + ' m²' : 'Consulte' %></b><span>Área privativa</span></div>
@@ -306,7 +306,7 @@
 <% if ((e.acabamentos||[]).length) { %>
 <section class="sec" id="acabamentos">
   <div class="wrap">
-    <div class="sec-head rv"><div class="kick">Seu apartamento</div><h2 class="sec-h2">O que vem no apartamento</h2><p class="lead">Itens de série previstos para as unidades.</p></div>
+    <div class="sec-head rv"><div class="kick">Seu apartamento</div><h2 class="sec-h2">O que vem <%= h.tipoImovel(e) === 'Casas' ? 'na casa' : 'no apartamento' %></h2><p class="lead">Itens de série previstos para as unidades.</p></div>
     <ul class="acab rv">
       <% e.acabamentos.forEach(function(a){ %>
         <li><span class="ck"><%- icoCheck %></span><div><b><%= a.item %></b><% if (a.det) { %><span><%= a.det %></span><% } %></div></li>

@@ -77,6 +77,9 @@
           <div class="frow three">
             <div class="field"><label>Cidade</label><input name="cidade" value="<%= val(v.cidade) %>"></div>
             <div class="field"><label>Bairro</label><input name="bairro" value="<%= val(v.bairro) %>"></div>
+            <div class="field"><label>Tipo de imóvel</label><select name="tipo_imovel">
+              <% ['Apartamentos','Casas'].forEach(function(t){ %><option <%= (v.tipo_imovel || 'Apartamentos')===t?'selected':'' %>><%= t %></option><% }); %>
+            </select></div>
             <div class="field"><label>Fase</label><select name="status">
               <option value="" <%= !v.status ? 'selected' : '' %>>Não informar</option>
               <% ['Lançamento','Pré-lançamento','Em obras','Pronto para morar'].forEach(function(s){ %><option <%= v.status===s?'selected':'' %>><%= s %></option><% }); %>

@@ -214,7 +214,15 @@ router.get('/wa/:slug', async (req, res) => {
     const voltar = doPortal ? '/#contato' : '/' + emp.slug + '#contato';
 
     const origem = String(req.query.src || 'link').slice(0, 30);
-    const { telefone } = await roleta.distribuir(req, res, emp, origem);
+    // Empreendimento recém-cadastrado, ainda sem corretor nem número reserva:
+    // o lead vai para a roleta do portal (a mensagem continua citando o
+    // empreendimento), em vez de cair no vazio.
+    let alvo = emp;
+    if (!doPortal && !roleta.digitos(emp.whatsapp)
+        && !(await db.listCorretores(emp.id, { ativosOnly: true })).length) {
+      alvo = empPortal(await portal.carregar());
+    }
+    const { telefone } = await roleta.distribuir(req, res, alvo, origem);
     if (!telefone) return res.redirect(302, voltar);
 
     return enviarParaWhats(res, telefone, mensagem(req, emp));
