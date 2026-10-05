@@ -584,3 +584,16 @@ section{scroll-margin-top:72px}
   .hero .badge{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,20,13,.45)}
   .nav.scrolled{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.97)}
 }
+
+/* "Conheça também" no celular: carrossel lateral (passa sozinho, ver JS) */
+.outros-dots{display:none}
+@media(max-width:760px){
+  #outros{overflow-x:clip}
+  #outros .outros-trilho{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    width:100vw;margin-left:calc(50% - 50vw);padding:6px 18px 26px;scroll-padding-left:18px}
+  #outros .outros-trilho::-webkit-scrollbar{display:none}
+  #outros .outros-trilho>.vt-card{flex:0 0 82%;scroll-snap-align:start}
+  .outros-dots{display:flex;justify-content:center;gap:7px;margin-top:-6px}
+  .outros-dots button{width:8px;height:8px;padding:0;border:none;border-radius:8px;background:rgba(21,34,25,.16);transition:width .35s,background .35s}
+  .outros-dots button.on{width:28px;background:var(--green)}
+}

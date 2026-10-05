@@ -449,9 +449,10 @@
 <section class="sec alt" id="outros">
   <div class="wrap">
     <div class="sec-head rv" style="text-align:center"><div class="kick">Auxiliadora Predial</div><h2 class="sec-h2">Conheça também</h2><p class="lead" style="margin:0 auto">Outros lançamentos selecionados que podem combinar com você.</p></div>
-    <div class="vt-grid rv">
+    <div class="vt-grid outros-trilho rv" id="outrosTrilho">
       <% outros.forEach(function(c){ %><%- include('partials/card', { c: c, base: portalBase }) %><% }); %>
     </div>
+    <div class="outros-dots" id="outrosDots" aria-hidden="true"></div>
     <div style="text-align:center;margin-top:34px"><a href="<%= portalBase %>/#empreendimentos" class="btn primary" data-vt-link>Ver todos os lançamentos</a></div>
   </div>
 </section>
@@ -697,6 +698,32 @@
     if(!('IntersectionObserver' in window)) return carregar();
     var o=new IntersectionObserver(function(es){ if(es[0].isIntersecting){ carregar(); o.disconnect(); } },{rootMargin:'300px 0px'});
     o.observe(f);
+  })();
+
+  // ---- "Conheça também" no celular: carrossel lateral que passa sozinho ----
+  (function(){
+    var tr=document.getElementById('outrosTrilho'), dots=document.getElementById('outrosDots');
+    if(!tr) return;
+    var cel=matchMedia('(max-width: 760px)'), cards=[].slice.call(tr.children), timer=null, pausa=0;
+    function passo(){ return cards.length>1 ? cards[1].offsetLeft-cards[0].offsetLeft : tr.clientWidth; }
+    function atual(){ return Math.round(tr.scrollLeft/Math.max(1,passo())); }
+    function ultimo(){ return Math.max(0,Math.round((tr.scrollWidth-tr.clientWidth)/Math.max(1,passo()))); }
+    function ir(i){ tr.scrollTo({left:i*passo(),behavior:CALMO?'auto':'smooth'}); }
+    function pintar(){
+      if(!cel.matches){ dots.innerHTML=''; return; }
+      var n=ultimo()+1;
+      if(dots.childElementCount!==n){ dots.innerHTML=''; for(var i=0;i<n;i++){ var b=document.createElement('button'); b.type='button'; b.dataset.i=i; dots.appendChild(b); } }
+      var a=atual(); [].forEach.call(dots.children,function(b,i){ b.classList.toggle('on',i===a); });
+    }
+    function avancar(){ if(!cel.matches||Date.now()<pausa) return; var a=atual(); ir(a>=ultimo()?0:a+1); }
+    function iniciar(){ clearInterval(timer); timer=null; if(!CALMO&&cel.matches) timer=setInterval(avancar,3500); }
+    // Mexeu com o dedo: espera um pouco antes de voltar a passar sozinho.
+    ['touchstart','pointerdown','wheel'].forEach(function(t){ tr.addEventListener(t,function(){ pausa=Date.now()+7000; },{passive:true}); });
+    dots.addEventListener('click',function(ev){ var b=ev.target.closest('button'); if(b){ pausa=Date.now()+7000; ir(+b.dataset.i); } });
+    var raf; tr.addEventListener('scroll',function(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(pintar); },{passive:true});
+    addEventListener('resize',pintar);
+    (cel.addEventListener?cel.addEventListener('change',function(){ pintar(); iniciar(); }):cel.addListener(function(){ pintar(); iniciar(); }));
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ pintar(); iniciar(); } else { clearInterval(timer); timer=null; } }); },{threshold:.3}).observe(tr);
   })();
 
   var lf=document.getElementById('leadForm');

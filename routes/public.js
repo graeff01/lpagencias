@@ -253,7 +253,7 @@ function enviarParaWhats(res, telefone, msg) {
 
 // Outros empreendimentos para o fim da landing: quem não se interessou por
 // este vê as alternativas em vez de sair do site. Mesma cidade primeiro.
-async function outrosDe(row, limite = 3) {
+async function outrosDe(row, limite = 6) {
   const todos = (await db.list({ publishedOnly: true })).filter(r => r.id !== row.id);
   const cidade = slugify(row.cidade);
   todos.sort((a, b) => (slugify(b.cidade) === cidade) - (slugify(a.cidade) === cidade));
