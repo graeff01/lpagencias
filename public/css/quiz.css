@@ -1,14 +1,14 @@
 /* "Encontre seu imóvel em 3 perguntas" (popup do portal) */
-.qz{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px}
+.qz{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;overflow:hidden}
 .qz[hidden]{display:none}
 .qz-fundo{position:absolute;inset:0;background:rgba(4,22,12,.62);opacity:0;transition:opacity .3s}
 .qz.on .qz-fundo{opacity:1}
-.qz-caixa{position:relative;width:min(520px,100%);max-height:calc(100svh - 32px);overflow:auto;background:#fff;color:var(--ink);border-radius:26px;
-  padding:30px 28px 18px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);
+.qz-caixa{position:relative;z-index:1;width:min(500px,100%);overflow:hidden;background:#fff;color:var(--ink);border-radius:24px;
+  padding:24px 22px 14px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);
   opacity:0;transform:scale(.6) translateY(30px);transition:opacity .25s,transform .55s cubic-bezier(.25,1.6,.45,1)}
 .qz.on .qz-caixa{opacity:1;transform:none}
 /* "explosão" na entrada: anel de cor que se expande atrás da caixa */
-.qz-burst{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;pointer-events:none;z-index:-1;
+.qz-burst{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;pointer-events:none;z-index:0;
   background:radial-gradient(circle,var(--orange) 0%,rgba(244,123,32,.0) 70%)}
 .qz.on .qz-burst{animation:qzBurst .9s ease-out .05s both}
 @keyframes qzBurst{0%{transform:scale(.2);opacity:.9}100%{transform:scale(9);opacity:0}}
@@ -54,14 +54,32 @@
 .qz-pe span{margin-left:auto}
 .qz-voltar{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:none;border:none;cursor:pointer;padding:4px 0}
 body.quiz-aberto{overflow:hidden}
-/* Celular: sobe de baixo, ocupando a largura */
+/* Celular: continua flutuando no centro, só mais compacto para caber sem rolagem */
 @media(max-width:620px){
-  .qz{place-items:end center;padding:0}
-  .qz-caixa{width:100%;border-radius:24px 24px 0 0;padding:26px 18px 14px;max-height:92svh;transform:translateY(60%)}
-  .qz-ops button{padding:13px 14px}
+  .qz{padding:14px}
+  .qz-caixa{padding:20px 16px 12px;border-radius:22px}
+  .qz-topo{padding:0 22px}
+  .qz-topo h2{font-size:20px;margin-top:8px}
+  .qz-prog{margin:12px auto 2px}
+  .qz-p{font-size:15px;margin:12px 0 10px}
+  .qz-ops{gap:7px}
+  .qz-ops button{padding:11px 13px;font-size:14.5px;border-radius:12px}
+  .qz-grade button{padding:13px 4px}
+  .qz-chips{gap:6px}
+  .qz-chips button{padding:8px 11px;font-size:13px}
+  .qz-ver,.qz-wa{padding:13px;margin-top:12px;font-size:15px}
+  .qz-lista{gap:7px}
+  .qz-card{padding:6px;gap:10px;border-radius:14px}
+  .qz-card img,.qz-ph{width:76px;height:62px}
+  .qz-pe{margin-top:10px;padding-top:9px}
 }
-/* Atalho no topo do portal */
-.pt-quiz-btn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font:inherit;font-size:14px;font-weight:650;color:#fff;cursor:pointer;
-  background:rgba(255,255,255,.12);border:1px dashed rgba(255,255,255,.45);border-radius:30px;padding:9px 16px;transition:background .15s}
-.pt-quiz-btn:hover{background:rgba(255,255,255,.2)}
+/* Telas baixas (celular pequeno): ainda mais enxuto */
+@media(max-height:700px){
+  .qz-kick{display:none}
+  .qz-topo h2{margin-top:0}
+  .qz-p b{margin-bottom:2px}
+  .qz-ops button{padding:9px 12px}
+  .qz-card img,.qz-ph{width:64px;height:52px}
+  .qz-pe span{display:none}
+}
 @media (prefers-reduced-motion:reduce){.qz-caixa,.qz-passo,.qz-card{animation:none!important;transition:none!important}.qz.on .qz-burst{animation:none}}
