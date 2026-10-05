@@ -73,7 +73,15 @@
     var EMPS = <%- JSON.stringify(quiz).replace(/</g, '\\u003c') %>;
     var box=document.getElementById('quiz'); if(!box||!EMPS.length) return;
     var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var resp={orcamento:null,dorm:null,regiao:[]}, txt={orcamento:'',dorm:'',regiao:''}, passo=1;
+    var resp={orcamento:null,dorm:null,regiao:[]}, txt={orcamento:'',dorm:'',regiao:''}, passo=1, concluiu=false;
+    // Regra de exibição automática (o link de anúncio ?quiz=1 abre sempre):
+    //  - uma vez por visita (sessionStorage): voltar à página inicial ou
+    //    atualizar não reabre;
+    //  - fechou sem responder: só reaparece depois de 24 h;
+    //  - respondeu: não reaparece por 30 dias.
+    var K_SESSAO='ap_quiz_visto', K_FECHOU='ap_quiz_fechou', K_FEITO='ap_quiz_feito', HORA=3600*1000;
+    function ler(st,k){ try{ return st.getItem(k); }catch(_){ return null; } }
+    function gravar(st,k,v){ try{ st.setItem(k,v); }catch(_){} }
     var barra=document.getElementById('qzBarra'), voltar=document.getElementById('qzVoltar'), btnVer=document.getElementById('qzVer');
 
     function evento(nome,dados){ if(window.gtag) gtag('event',nome,dados||{}); if(window.fbq) fbq('trackCustom',nome,dados||{}); }
@@ -84,6 +92,7 @@
       voltar.hidden=n===1;
     }
     function abrir(origem){
+      gravar(sessionStorage,K_SESSAO,'1');
       box.hidden=false; document.body.classList.add('quiz-aberto');
       requestAnimationFrame(function(){ box.classList.add('on'); });
       evento('quiz_aberto',{origem:origem});
@@ -91,6 +100,7 @@
     function fechar(){
       box.classList.remove('on'); document.body.classList.remove('quiz-aberto');
       setTimeout(function(){ box.hidden=true; },CALMO?0:300);
+      if(!concluiu) gravar(localStorage,K_FECHOU,String(Date.now()));
     }
     box.addEventListener('click',function(ev){ if(ev.target.closest('[data-qz-fechar]')) fechar(); });
     addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&!box.hidden) fechar(); });
@@ -155,7 +165,7 @@
       var q=new URLSearchParams(location.search), extra='';
       ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid'].forEach(function(k){ if(q.get(k)) extra+='&'+k+'='+encodeURIComponent(q.get(k)); });
       wa.setAttribute('href',base+'?src=quiz&msg='+encodeURIComponent(msg)+extra);
-      mostrar(4);
+      mostrar(4); concluiu=true; gravar(localStorage,K_FEITO,String(Date.now()));
       evento('quiz_concluido',{orcamento:txt.orcamento,dormitorios:txt.dorm,regiao:txt.regiao,resultados:bons.length});
     });
     document.getElementById('qzWa').addEventListener('click',function(){
@@ -163,9 +173,14 @@
       if(window.fbq) fbq('track','Lead',{content_name:'quiz'});
     });
 
-    // Abre em todo carregamento da página (inclusive ao atualizar): na hora
-    // com ?quiz=1 (anúncio), senão depois de 2,2 s.
+    function podeAbrirSozinho(){
+      if(ler(sessionStorage,K_SESSAO)) return false;
+      var feito=+ler(localStorage,K_FEITO)||0, fechou=+ler(localStorage,K_FECHOU)||0;
+      if(feito && Date.now()-feito<30*24*HORA) return false;
+      if(fechou && Date.now()-fechou<24*HORA) return false;
+      return true;
+    }
     if(/[?&]quiz=1\b/.test(location.search)) abrir('anuncio');
-    else setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
+    else if(podeAbrirSozinho()) setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
   })();
 </script>
