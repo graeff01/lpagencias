@@ -12,7 +12,7 @@ const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
-const SLUGS_RESERVADOS = new Set(['portal', 'admin', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
+const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
 const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });

@@ -1,0 +1,175 @@
+<%
+  // "Encontre seu imóvel em 3 perguntas" (portal).
+  // Espera: quiz (lista de empreendimentos, ver dadosQuiz), wa (roleta do portal).
+  // Regiões: bairros com empreendimento; sem bairro, a cidade.
+  var regioesQuiz = [], vistas = {};
+  quiz.forEach(function(e){
+    if (!e.regiao || vistas[e.regiao]) return; vistas[e.regiao] = 1;
+    regioesQuiz.push({ v: e.regiao, t: e.bairro ? e.bairro + (e.cidade ? ' · ' + e.cidade : '') : e.cidade });
+  });
+  regioesQuiz.sort(function(a,b){ return a.t.localeCompare(b.t); });
+%>
+<div class="qz" id="quiz" role="dialog" aria-modal="true" aria-labelledby="qzTitulo" hidden>
+  <div class="qz-fundo" data-qz-fechar></div>
+  <div class="qz-caixa">
+    <span class="qz-burst" aria-hidden="true"></span>
+    <button type="button" class="qz-x" data-qz-fechar aria-label="Fechar">×</button>
+
+    <div class="qz-topo">
+      <span class="qz-kick">✨ Curadoria Auxiliadora</span>
+      <h2 id="qzTitulo">Encontre seu imóvel em 3 perguntas</h2>
+      <div class="qz-prog"><i id="qzBarra"></i></div>
+    </div>
+
+    <div class="qz-passo" data-passo="1">
+      <p class="qz-p"><b>1 de 3</b> Quanto você pretende investir?</p>
+      <div class="qz-ops" data-campo="orcamento">
+        <button type="button" data-v="300000" data-t="até R$ 300 mil">💰 Até R$ 300 mil</button>
+        <button type="button" data-v="500000" data-t="de R$ 300 a 500 mil">💰 De R$ 300 a 500 mil</button>
+        <button type="button" data-v="1000000" data-t="de R$ 500 mil a 1 milhão">💎 De R$ 500 mil a 1 milhão</button>
+        <button type="button" data-v="999999999" data-t="acima de R$ 1 milhão">💎 Acima de R$ 1 milhão</button>
+        <button type="button" data-v="" data-t="ainda não sei" class="qz-neutro">🤔 Ainda não sei</button>
+      </div>
+    </div>
+
+    <div class="qz-passo" data-passo="2" hidden>
+      <p class="qz-p"><b>2 de 3</b> Quantos dormitórios?</p>
+      <div class="qz-ops qz-grade" data-campo="dorm">
+        <button type="button" data-v="1" data-t="1 dormitório">🛏️ 1</button>
+        <button type="button" data-v="2" data-t="2 dormitórios">🛏️ 2</button>
+        <button type="button" data-v="3" data-t="3 dormitórios">🛏️ 3</button>
+        <button type="button" data-v="4" data-t="4 ou mais dormitórios">🛏️ 4+</button>
+        <button type="button" data-v="" data-t="tanto faz" class="qz-neutro qz-largo">Tanto faz</button>
+      </div>
+    </div>
+
+    <div class="qz-passo" data-passo="3" hidden>
+      <p class="qz-p"><b>3 de 3</b> Em qual região? <small>Pode marcar mais de uma</small></p>
+      <div class="qz-ops qz-chips" data-campo="regiao" data-multi>
+        <% regioesQuiz.forEach(function(r){ %><button type="button" data-v="<%= r.v %>" data-t="<%= r.t %>">📍 <%= r.t %></button><% }); %>
+        <button type="button" data-v="" data-t="qualquer região" class="qz-neutro">Qualquer região</button>
+      </div>
+      <button type="button" class="qz-ver" id="qzVer" disabled>Ver meus imóveis</button>
+    </div>
+
+    <div class="qz-passo qz-res" data-passo="4" hidden>
+      <p class="qz-p" id="qzResTit"></p>
+      <div class="qz-lista" id="qzLista"></div>
+      <a class="qz-wa" id="qzWa" href="<%= wa %>?src=quiz" target="_blank" rel="noopener nofollow">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>
+        Receber essas opções no WhatsApp
+      </a>
+      <button type="button" class="qz-link" id="qzRefazer">Refazer o teste</button>
+    </div>
+
+    <div class="qz-pe">
+      <button type="button" class="qz-voltar" id="qzVoltar" hidden>← Voltar</button>
+      <span>Leva 20 segundos · sem cadastro</span>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    var EMPS = <%- JSON.stringify(quiz).replace(/</g, '\\u003c') %>;
+    var box=document.getElementById('quiz'); if(!box||!EMPS.length) return;
+    var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var resp={orcamento:null,dorm:null,regiao:[]}, txt={orcamento:'',dorm:'',regiao:''}, passo=1;
+    var barra=document.getElementById('qzBarra'), voltar=document.getElementById('qzVoltar'), btnVer=document.getElementById('qzVer');
+    var CHAVE='ap_quiz_fechado', TRES_DIAS=3*24*3600*1000;
+
+    function evento(nome,dados){ if(window.gtag) gtag('event',nome,dados||{}); if(window.fbq) fbq('trackCustom',nome,dados||{}); }
+    function mostrar(n){
+      passo=n;
+      [].forEach.call(box.querySelectorAll('.qz-passo'),function(p){ p.hidden=+p.dataset.passo!==n; });
+      barra.style.width=Math.min(100,(n-1)/3*100+ (n<4?8:0))+'%';
+      voltar.hidden=n===1;
+    }
+    function abrir(origem){
+      box.hidden=false; document.body.classList.add('quiz-aberto');
+      requestAnimationFrame(function(){ box.classList.add('on'); });
+      evento('quiz_aberto',{origem:origem});
+    }
+    function fechar(){
+      box.classList.remove('on'); document.body.classList.remove('quiz-aberto');
+      setTimeout(function(){ box.hidden=true; },CALMO?0:300);
+      try{ localStorage.setItem(CHAVE,String(Date.now())); }catch(_){}
+    }
+    box.addEventListener('click',function(ev){ if(ev.target.closest('[data-qz-fechar]')) fechar(); });
+    addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&!box.hidden) fechar(); });
+    document.querySelectorAll('[data-abrir-quiz]').forEach(function(b){ b.addEventListener('click',function(ev){ ev.preventDefault(); mostrar(passo===4?4:1); abrir('botao'); }); });
+
+    // Respostas
+    box.querySelectorAll('.qz-ops').forEach(function(g){
+      var campo=g.dataset.campo, multi=g.hasAttribute('data-multi');
+      g.addEventListener('click',function(ev){
+        var b=ev.target.closest('button'); if(!b) return;
+        if(!multi){
+          [].forEach.call(g.children,function(x){ x.classList.toggle('on',x===b); });
+          resp[campo]=b.dataset.v?+b.dataset.v:null; txt[campo]=b.dataset.t;
+          setTimeout(function(){ mostrar(passo+1); }, CALMO?0:220);
+          return;
+        }
+        // região: várias, ou "qualquer"
+        if(!b.dataset.v){ [].forEach.call(g.children,function(x){ x.classList.toggle('on',x===b); }); }
+        else { g.querySelector('.qz-neutro').classList.remove('on'); b.classList.toggle('on'); }
+        var sel=[].filter.call(g.children,function(x){ return x.classList.contains('on'); });
+        resp.regiao=sel.map(function(x){return x.dataset.v;}).filter(Boolean);
+        txt.regiao=sel.map(function(x){return x.dataset.t;}).join(', ');
+        btnVer.disabled=!sel.length;
+      });
+    });
+    voltar.addEventListener('click',function(){ mostrar(Math.max(1,passo-1)); });
+    document.getElementById('qzRefazer').addEventListener('click',function(){ box.querySelectorAll('.qz-ops button.on').forEach(function(b){b.classList.remove('on');}); resp={orcamento:null,dorm:null,regiao:[]}; btnVer.disabled=true; mostrar(1); });
+
+    // Pontuação: região e dormitórios pesam mais; preço só elimina quando o
+    // empreendimento TEM preço e ele passa do orçamento (a maioria está
+    // "sob consulta" e não pode sumir por isso).
+    function nota(e){
+      var n=0;
+      if(resp.regiao.length){ if(resp.regiao.indexOf(e.regiao)>-1) n+=3; else n-=2; }
+      if(resp.dorm){ var ok=e.dorms.indexOf(resp.dorm)>-1||(resp.dorm>=4&&e.dorms.some(function(d){return d>=4;})); n+= ok?3:(e.dorms.length?-2:0); }
+      if(resp.orcamento&&e.preco){ n+= e.preco<=resp.orcamento?2:-5; }
+      return n;
+    }
+    function atende(e){
+      if(resp.regiao.length&&resp.regiao.indexOf(e.regiao)<0) return false;
+      if(resp.dorm&&!(e.dorms.indexOf(resp.dorm)>-1||(resp.dorm>=4&&e.dorms.some(function(d){return d>=4;})))) return false;
+      if(resp.orcamento&&e.preco&&e.preco>resp.orcamento) return false;
+      return true;
+    }
+    function esc(t){ return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    btnVer.addEventListener('click',function(){
+      var lista=EMPS.map(function(e){ return {e:e,n:nota(e)}; }).sort(function(a,b){ return b.n-a.n; });
+      // "Encontramos N": só quem atende TODAS as respostas dadas.
+      var bons=lista.filter(function(x){ return atende(x.e); });
+      var mostra=(bons.length?bons:lista).slice(0,3).map(function(x){return x.e;});
+      document.getElementById('qzResTit').innerHTML = bons.length
+        ? '<b>Encontramos '+bons.length+' '+(bons.length===1?'opção':'opções')+' para você</b> As que mais combinam:'
+        : '<b>Nada exato com esses filtros</b> Mas estas chegam perto:';
+      document.getElementById('qzLista').innerHTML = mostra.map(function(e,i){
+        return '<a class="qz-card" href="'+esc(e.href)+'" style="animation-delay:'+(i*90)+'ms">'
+          +(e.capa?'<img src="'+esc(e.capa)+'" alt="" loading="lazy">':'<span class="qz-ph"></span>')
+          +'<span class="qz-info"><b>'+esc(e.nome)+'</b><small>'+esc([e.bairro,e.cidade].filter(Boolean).join(' · '))+'</small>'
+          +'<small>'+esc(e.tipologia)+'</small><em>'+esc(e.precoFmt?'a partir de '+e.precoFmt:'Valores sob consulta')+'</em></span></a>';
+      }).join('');
+      var msg='Olá! Fiz o teste "Encontre seu imóvel" no site. Orçamento: '+(txt.orcamento||'—')+'. Dormitórios: '+(txt.dorm||'—')+'. Região: '+(txt.regiao||'—')+'. Gostei de: '+mostra.map(function(e){return e.nome;}).join(', ')+'.';
+      var wa=document.getElementById('qzWa'), base=wa.getAttribute('href').split('?')[0];
+      var q=new URLSearchParams(location.search), extra='';
+      ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid'].forEach(function(k){ if(q.get(k)) extra+='&'+k+'='+encodeURIComponent(q.get(k)); });
+      wa.setAttribute('href',base+'?src=quiz&msg='+encodeURIComponent(msg)+extra);
+      mostrar(4);
+      evento('quiz_concluido',{orcamento:txt.orcamento,dormitorios:txt.dorm,regiao:txt.regiao,resultados:bons.length});
+    });
+    document.getElementById('qzWa').addEventListener('click',function(){
+      if(window.gtag){ gtag('event','contato_whatsapp',{pagina:'portal',botao:'quiz'}); if(window.ADS_CONV) gtag('event','conversion',{send_to:window.ADS_CONV}); }
+      if(window.fbq) fbq('track','Lead',{content_name:'quiz'});
+    });
+
+    // Abre sozinho: sempre com ?quiz=1 (anúncio); senão, na primeira visita
+    // e não de novo por 3 dias depois de fechado.
+    var forcado=/[?&]quiz=1\b/.test(location.search), fechadoEm=0;
+    try{ fechadoEm=+localStorage.getItem(CHAVE)||0; }catch(_){}
+    if(forcado) abrir('anuncio');
+    else if(Date.now()-fechadoEm>TRES_DIAS) setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
+  })();
+</script>

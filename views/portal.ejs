@@ -52,6 +52,7 @@
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/portal.css?v=<%= v %>">
   <link rel="stylesheet" href="/css/flutuantes.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/quiz.css?v=<%= v %>">
   <link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>">
   <style>
     :root{
@@ -127,6 +128,7 @@
       <a href="#empreendimentos" class="pt-btn pri"><%= cfg.hero_cta || 'Ver empreendimentos' %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
       <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="pt-btn wa"><%- waSvg %>Falar com um consultor</a>
     </div>
+    <% if (quiz.length) { %><button type="button" class="pt-quiz-btn" data-abrir-quiz>✨ Encontre seu imóvel em 3 perguntas</button><% } %>
   </div>
   <% if (numeros.length) { %>
   <div class="pt-wrap">
@@ -289,6 +291,7 @@
   </div>
 </footer>
 
+<%- include('partials/quiz', { quiz: quiz, wa: wa }) %>
 <%- include('partials/flutuantes', { wa: wa, msgBalao: ' Quer ajuda para escolher seu lançamento? Fale com um consultor.' }) %>
 
 <script>

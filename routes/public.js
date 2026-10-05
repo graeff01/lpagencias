@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../lib/db');
-const { asArray, fmtPreco, shade, tituloBusca, slugify, dormsLista, linhaTipologia } = require('../lib/helpers');
+const { asArray, fmtPreco, shade, tituloBusca, slugify, dormsLista, linhaTipologia, imgVar } = require('../lib/helpers');
 const roleta = require('../lib/roleta');
 const portal = require('../lib/portal');
 const dominios = require('../lib/dominios');
@@ -158,6 +158,28 @@ async function renderPortal(req, res, emps, regiao) {
     regioes: regioesDe(todos).filter(r => r.tipo === 'cidade'),
     numeros: portal.resolverNumeros(cfg.numeros, todos),
     wa: '/wa/' + PORTAL_SLUG,
+    quiz: dadosQuiz(todos),
+  });
+}
+
+// O mínimo que o "Encontre seu imóvel em 3 perguntas" precisa de cada
+// empreendimento publicado (vai embutido na página, sem ida ao servidor).
+function dadosQuiz(emps) {
+  return emps.map((e) => {
+    const v = imgVar(e._capa);
+    return {
+      nome: e.nome,
+      href: e.dominio ? `https://${e.dominio}/` : `/${e.slug}`,
+      bairro: e.bairro || '',
+      cidade: e.cidade || '',
+      regiao: slugify(e.bairro || e.cidade || ''),
+      dorms: e._dorms,
+      preco: Number(e.preco_inicial) || null,
+      precoFmt: e._precoFmt || '',
+      capa: v.sm || v.src || '',
+      tipologia: e._tipologia || '',
+      selo: e._selo || '',
+    };
   });
 }
 
@@ -280,6 +302,13 @@ async function renderLanding(req, res, row) {
     outros: await outrosDe(row),
   });
 }
+
+// Destino de anúncio: abre o portal com o teste "Encontre seu imóvel" na
+// tela, mantendo a query string (UTMs, gclid).
+router.get('/encontre', (req, res) => {
+  const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?') + 1) : '';
+  res.redirect(302, '/?quiz=1' + (qs ? '&' + qs : ''));
+});
 
 // Landing page pública do empreendimento — ou, se o endereço não for de
 // nenhum empreendimento, a página da região (/canoas, /moinhos-de-vento).

@@ -25,6 +25,8 @@
     try{ fechado=sessionStorage.getItem('ap_balao')==='x'; }catch(_){}
     function fechar(){ balao.classList.remove('on'); try{ sessionStorage.setItem('ap_balao','x'); }catch(_){} }
     document.getElementById('waBalaoX').addEventListener('click',fechar);
-    if(!fechado){ setTimeout(function(){ balao.classList.add('on'); setTimeout(fechar,11000); },5000); }
+    // Com o teste "Encontre seu imóvel" aberto, o balão espera para não disputar a atenção.
+    function mostrarBalao(){ if(document.body.classList.contains('quiz-aberto')) return setTimeout(mostrarBalao,4000); balao.classList.add('on'); setTimeout(fechar,11000); }
+    if(!fechado){ setTimeout(mostrarBalao,5000); }
   })();
 </script>
