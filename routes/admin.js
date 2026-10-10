@@ -199,7 +199,8 @@ router.post('/salvar', async (req, res, next) => {
 // pode segurar o salvar). Sem ponto confirmado no mapa, usa o endereço
 // localizado automaticamente. Quem preencheu a lista à mão não é tocado.
 function pontosAutomaticos(emp) {
-  if (!emp || asArray(emp.pois).length) return;
+  if (!emp) return;
+  if (asArray(emp.pois).length) return coordsDosPontos(emp);
   if (!emp.endereco && !emp.bairro) return;
   (async () => {
     let lat = emp.lat, lon = emp.lon, novoPonto = false;
@@ -215,6 +216,33 @@ function pontosAutomaticos(emp) {
     await db.setPois(emp.id, lista, novoPonto ? lat : null, novoPonto ? lon : null);
   })().catch(e => console.error('[pois] automático falhou:', e.message));
 }
+
+// O mapa da landing mostra cada ponto da lista no lugar dele. Pontos sem
+// coordenadas (antigos ou digitados à mão) são localizados em segundo plano;
+// os que não forem achados continuam só na legenda.
+function coordsDosPontos(emp) {
+  return (async () => {
+    let lat = emp.lat, lon = emp.lon, novoPonto = false;
+    if (lat == null || lon == null || lat === '' || lon === '') {
+      const [g] = await pois.geocodificar(emp);
+      if (!g) return;
+      lat = g.lat; lon = g.lon; novoPonto = true;
+    }
+    const nova = await pois.completarCoords(asArray(emp.pois), lat, lon);
+    if (!nova && !novoPonto) return;
+    const atual = await db.getById(emp.id);
+    if (!atual || JSON.stringify(asArray(atual.pois)) !== JSON.stringify(asArray(emp.pois))) return;   // mudou nesse meio-tempo
+    await db.setPois(emp.id, nova || asArray(emp.pois), novoPonto ? lat : null, novoPonto ? lon : null);
+  })().catch(e => console.error('[pois] coordenadas falharam:', e.message));
+}
+
+// Na subida do servidor: completa os pontos de quem já estava cadastrado.
+router.completarPontosExistentes = async function () {
+  try {
+    const todos = await db.list();
+    for (const e of todos) await coordsDosPontos(e);
+  } catch (e) { console.error('[pois] varredura inicial falhou:', e.message); }
+};
 
 // Usados pelo mapa do formulário (localizar o endereço e buscar o entorno).
 router.get('/geo', async (req, res) => {

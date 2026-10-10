@@ -33,7 +33,8 @@
       '<div><span class="lbl">Pergunta</span><input data-k="q"></div>' +
       '<div><span class="lbl">Resposta</span><textarea data-k="a" rows="2"></textarea></div></div></div>',
     pois: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">' +
-      '<div><span class="lbl">Ponto (aparece como etiqueta abaixo do mapa)</span><input data-k="label" placeholder="🛒 Supermercado X · 400 m"></div></div></div>',
+      '<div><span class="lbl">Ponto (aparece no mapa e na legenda)</span><input data-k="label" placeholder="🛒 Supermercado X · 400 m"></div></div>' +
+      '<input type="hidden" data-k="categoria"><input type="hidden" data-k="metros"><input type="hidden" data-k="lat"><input type="hidden" data-k="lon"></div>',
     construtora_stats: '<div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid" style="grid-template-columns:1fr 2fr">' +
       '<div><span class="lbl">Número</span><input data-k="num" placeholder="80+"></div>' +
       '<div><span class="lbl">Legenda</span><input data-k="label" placeholder="obras entregues"></div></div></div>',
@@ -108,6 +109,17 @@
       if (thumb) thumb.style.backgroundImage = "url('" + url + "')";
     });
     inp.value = '';
+  });
+
+  // Ponto renomeado vira outro lugar: as coordenadas antigas saem e ele é
+  // localizado de novo pelo nome ao salvar.
+  document.addEventListener('change', function (ev) {
+    var inp = ev.target;
+    if (!inp.matches || !inp.matches('.rep[data-rep="pois"] input[data-k="label"]')) return;
+    function nome(t) { return String(t || '').replace(/^[^A-Za-zÀ-ÿ0-9]+/, '').replace(/\s*·.*$/, '').trim().toLowerCase(); }
+    if (nome(inp.value) === nome(inp.getAttribute('data-orig') || inp.defaultValue)) return;
+    var item = inp.closest('.item');
+    ['lat', 'lon', 'categoria', 'metros'].forEach(function (k) { var f = item.querySelector('[data-k="' + k + '"]'); if (f) f.value = ''; });
   });
 
   // Thumb do item repetível acompanha a URL colada à mão
@@ -281,7 +293,9 @@
         rep.innerHTML = '';
         j.pois.forEach(function (p) {
           var tmp = document.createElement('div'); tmp.innerHTML = T.pois; var item = tmp.firstChild;
-          item.querySelector('[data-k="label"]').value = p.label; rep.appendChild(item);
+          ['label', 'categoria', 'metros', 'lat', 'lon'].forEach(function (k) { item.querySelector('[data-k="' + k + '"]').value = p[k] == null ? '' : p[k]; });
+          item.querySelector('[data-k="label"]').setAttribute('data-orig', p.label);
+          rep.appendChild(item);
         });
         status(j.pois.length + ' pontos encontrados. Revise os nomes e salve.', 'ok');
       }).catch(function () { status('Busca indisponível agora.', 'erro'); });
@@ -319,7 +333,8 @@
           if (f.type === 'checkbox') { obj[k] = f.checked; }
           else { obj[k] = f.value.trim(); if (obj[k]) hasContent = true; }
         });
-        if (hasContent) out.push(obj);
+        // ponto sem nome não vale, mesmo que guarde coordenadas
+        if (hasContent && !(name === 'pois' && !obj.label)) out.push(obj);
       });
       document.getElementById('hidden-' + name).value = JSON.stringify(out);
     });

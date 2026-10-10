@@ -356,17 +356,34 @@
 <section class="sec" id="local">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Localização</div><h2 class="sec-h2">Onde fica o <%= e.nome %></h2><p class="lead">Veja onde fica o empreendimento e o que há por perto.</p></div>
-    <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', ')); %>
+    <% var mapQ = encodeURIComponent([e.endereco, e.bairro, e.cidade, 'RS'].filter(Boolean).join(', '));
+       // Com o alfinete confirmado, o mapa é desenhado aqui (Leaflet) só com o
+       // empreendimento e os pontos da legenda; sem ele, fica o mapa do Google.
+       var temCoord = function(o){ return o && isFinite(parseFloat(o.lat)) && isFinite(parseFloat(o.lon)); };
+       var mapaProprio = temCoord(e);
+       var pontos = (e.pois||[]).filter(function(p){ return p && p.label; }).map(function(p){
+         var m = String(p.label).match(/^([^\p{L}\p{N}\s]+)\s*(.*)$/u);
+         var ic = m ? m[1] : '📍', resto = m ? m[2] : String(p.label);
+         var partes = resto.split(/\s*·\s*/);
+         return { label: p.label, ic: ic, nome: partes[0], dist: partes.slice(1).join(' · '),
+                  lat: temCoord(p) ? +parseFloat(p.lat).toFixed(6) : null, lon: temCoord(p) ? +parseFloat(p.lon).toFixed(6) : null };
+       }); %>
     <div class="map rv">
+      <% if (mapaProprio) { %>
+      <div class="map-leaf" id="mapaLeaf" role="region" aria-label="Mapa do <%= e.nome %> e pontos próximos"></div>
+      <noscript><iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" title="Mapa de localização"></iframe></noscript>
+      <% } else { %>
       <iframe class="map-frame" data-src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
       <noscript><iframe class="map-frame" src="https://www.google.com/maps?q=<%= mapQ %>&z=16&hl=pt-BR&output=embed" title="Mapa de localização"></iframe></noscript>
-      <div class="card"><b><%= e.endereco || e.nome %></b><span><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></span></div>
+      <% } %>
+      <div class="card"><b><%= e.endereco || e.nome %></b><span><%= [e.bairro, e.cidade].filter(Boolean).join(' · ') %></span>
+        <a class="rota" href="https://www.google.com/maps/search/?api=1&query=<%= mapaProprio ? (parseFloat(e.lat) + ',' + parseFloat(e.lon)) : mapQ %>" target="_blank" rel="noopener">Como chegar</a></div>
     </div>
-    <% if ((e.pois||[]).length) { %>
+    <% if (pontos.length) { %>
     <div class="poi-list rv">
-      <% e.pois.forEach(function(p){ %><span class="poi-chip"><%= p.label %></span><% }); %>
+      <% pontos.forEach(function(p, i){ %><% if (mapaProprio && p.lat != null) { %><button type="button" class="poi-chip" data-poi="<%= i %>"><%= p.label %></button><% } else { %><span class="poi-chip"><%= p.label %></span><% } %><% }); %>
     </div>
-    <% if (e.pois.some(function(p){ return /·\s*[\d,]+\s*(m|km)\b/.test(p.label || ''); })) { %><p class="poi-nota">Distâncias aproximadas, em linha reta a partir do empreendimento.</p><% } %>
+    <% if (pontos.some(function(p){ return /·\s*[\d,]+\s*(m|km)\b/.test(p.label || ''); })) { %><p class="poi-nota">Distâncias aproximadas, em linha reta a partir do empreendimento.</p><% } %>
     <% } %>
   </div>
 </section>
@@ -497,6 +514,7 @@
   var WA_URL = "<%= wa %>";
   var ADS_CONV = <%- JSON.stringify(e.ads_conversao || "") %>;
   var FOTOS = <%- JSON.stringify((e.gallery||[]).map(function(g){ return { url: g.url, cap: g.tag || '' }; })) %>;
+  var MAPA = <%- JSON.stringify(mapaProprio ? { lat: +parseFloat(e.lat).toFixed(6), lon: +parseFloat(e.lon).toFixed(6), nome: e.nome, pontos: pontos } : null).replace(/</g, '\\u003c') %>;
   var PLANTAS = <%- JSON.stringify((e.plantas||[]).map(function(p){ return { url: p.imagem || '', cap: [p.titulo, p.area].filter(Boolean).join(' · ') }; })) %>;
   var EMP = <%- JSON.stringify(e.nome) %>;
   var nav=document.getElementById('nav');
@@ -699,6 +717,86 @@
     if(!('IntersectionObserver' in window)) return carregar();
     var o=new IntersectionObserver(function(es){ if(es[0].isIntersecting){ carregar(); o.disconnect(); } },{rootMargin:'300px 0px'});
     o.observe(f);
+  })();
+
+  // Mapa próprio: só o empreendimento e os pontos da legenda, cada um com o
+  // ícone dele, sobre um mapa claro sem comércios (OpenFreeMap, sem chave).
+  // A biblioteca só carrega quando a pessoa chega perto da seção.
+  (function(){
+    var el=document.getElementById('mapaLeaf'); if(!el||!MAPA) return;
+    var chips=[].slice.call(document.querySelectorAll('.poi-chip[data-poi]'));
+    var card=el.parentNode.querySelector('.card');
+    var LIB='https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min';
+    function margem(){ var b=card?card.offsetHeight+44:60; return {top:70,left:50,right:50,bottom:Math.min(b,el.clientHeight*.55)}; }
+    // Sem WebGL (aparelho antigo) ou sem a biblioteca: volta ao mapa do Google.
+    function google(){
+      el.innerHTML='<iframe class="map-frame" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>';
+      el.firstChild.src='https://www.google.com/maps?q='+MAPA.lat+','+MAPA.lon+'&z=16&hl=pt-BR&output=embed';
+    }
+    function webgl(){ try{ var c=document.createElement('canvas'); return !!(c.getContext('webgl2')||c.getContext('webgl')); }catch(e){ return false; } }
+    function montar(){
+      if(!window.maplibregl||!webgl()) return google();
+      try{ montarMapa(); }catch(e){ el.innerHTML=''; google(); }
+    }
+    function montarMapa(){
+      var ml=window.maplibregl, base=[MAPA.lon,MAPA.lat];
+      var mapa=new ml.Map({container:el,style:'https://tiles.openfreemap.org/styles/positron',center:base,zoom:15,
+        cooperativeGestures:true,attributionControl:{compact:true},
+        locale:{'CooperativeGesturesHandler.WindowsHelpText':'Use Ctrl + rolagem para aproximar o mapa',
+                'CooperativeGesturesHandler.MacHelpText':'Use ⌘ + rolagem para aproximar o mapa',
+                'CooperativeGesturesHandler.MobileHelpText':'Use dois dedos para mover o mapa',
+                'NavigationControl.ZoomIn':'Aproximar','NavigationControl.ZoomOut':'Afastar'}});
+      mapa.addControl(new ml.NavigationControl({showCompass:false}),'top-right');
+      var emp=document.createElement('div'); emp.className='mk-emp-box';
+      var nome=document.createElement('span'); nome.className='mk-emp-nome'; nome.textContent=MAPA.nome; emp.appendChild(nome);
+      emp.insertAdjacentHTML('beforeend','<div class="mk-emp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></div>');
+      new ml.Marker({element:emp,anchor:'bottom'}).setLngLat(base).addTo(mapa);
+      emp.style.zIndex='3';   // o empreendimento fica sempre por cima dos pontos
+      var marcas=[], limites=new ml.LngLatBounds(base,base);
+      var dica=new ml.Popup({closeButton:false,closeOnClick:false,offset:24,className:'mk-tip'});
+      MAPA.pontos.forEach(function(p,i){
+        if(p.lat==null) return;
+        var d=document.createElement('button'); d.type='button'; d.className='mk-poi'; d.textContent=p.ic; d.setAttribute('aria-label',p.nome);
+        d.addEventListener('mouseenter',function(){ ativar(i,false); });
+        d.addEventListener('click',function(ev){ ev.stopPropagation(); ativar(i,false); });
+        marcas[i]={el:d,ll:[p.lon,p.lat],p:p,m:new ml.Marker({element:d}).setLngLat([p.lon,p.lat]).addTo(mapa)};
+        limites.extend([p.lon,p.lat]);
+      });
+      var linhaPronta=false;
+      function linha(ll){
+        var dado={type:'Feature',geometry:{type:'LineString',coordinates:ll?[base,ll]:[]}};
+        if(linhaPronta){ mapa.getSource('rota').setData(dado); return; }
+        if(!mapa.isStyleLoaded()) return mapa.once('load',function(){ linha(ll); });
+        mapa.addSource('rota',{type:'geojson',data:dado});
+        mapa.addLayer({id:'rota',type:'line',source:'rota',layout:{'line-cap':'round'},
+          paint:{'line-color':getComputedStyle(el).getPropertyValue('--green').trim()||'#0E9E4A','line-width':2.5,'line-dasharray':[1.5,2.5]}});
+        linhaPronta=true;
+      }
+      function ativar(i,mover){
+        var a=marcas[i]; if(!a) return;
+        marcas.forEach(function(x,j){ if(x) x.el.classList.toggle('on',j===i); });
+        chips.forEach(function(c){ c.classList.toggle('on',+c.getAttribute('data-poi')===i); });
+        var t=document.createElement('div'), b=document.createElement('b'); b.textContent=a.p.nome; t.appendChild(b);
+        if(a.p.dist){ var s=document.createElement('span'); s.textContent=a.p.dist; t.appendChild(s); }
+        dica.setLngLat(a.ll).setDOMContent(t).addTo(mapa);
+        linha(a.ll);
+        if(mover&&!mapa.getBounds().contains(a.ll)) mapa.fitBounds(new ml.LngLatBounds(base,base).extend(a.ll),{padding:margem(),maxZoom:16});
+      }
+      chips.forEach(function(c){
+        var i=+c.getAttribute('data-poi');
+        c.addEventListener('click',function(){ ativar(i,true); });
+        c.addEventListener('mouseenter',function(){ ativar(i,false); });
+      });
+      mapa.fitBounds(limites,{padding:margem(),maxZoom:16,duration:0});
+    }
+    function carregar(){
+      if(window.maplibregl) return montar();
+      var l=document.createElement('link'); l.rel='stylesheet'; l.href=LIB+'.css'; document.head.appendChild(l);
+      var s=document.createElement('script'); s.src=LIB+'.js'; s.onload=montar; s.onerror=google; document.head.appendChild(s);
+    }
+    if(!('IntersectionObserver' in window)) return carregar();
+    var o=new IntersectionObserver(function(es){ if(es[0].isIntersecting){ carregar(); o.disconnect(); } },{rootMargin:'400px 0px'});
+    o.observe(el);
   })();
 
   // ---- "Conheça também" no celular: carrossel lateral que passa sozinho ----

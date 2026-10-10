@@ -291,8 +291,8 @@
           <div class="rep" data-rep="pois" style="margin-top:12px">
             <% pois.forEach(function(p){ %>
               <div class="item"><button type="button" class="rm" data-rm>×</button><div class="grid">
-                <div><span class="lbl">Ponto (aparece como etiqueta abaixo do mapa)</span><input data-k="label" value="<%= val(p.label) %>" placeholder="🛒 Supermercado X · 400 m"></div>
-              </div></div>
+                <div><span class="lbl">Ponto (aparece no mapa e na legenda)</span><input data-k="label" value="<%= val(p.label) %>" placeholder="🛒 Supermercado X · 400 m"></div>
+              </div><% ['categoria','metros','lat','lon'].forEach(function(k){ %><input type="hidden" data-k="<%= k %>" value="<%= val(p[k]) %>"><% }); %></div>
             <% }); %>
           </div>
           <button type="button" class="add-btn" data-add="pois" style="margin-top:10px">+ Adicionar ponto</button>

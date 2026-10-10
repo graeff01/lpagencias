@@ -59,6 +59,7 @@ const PORT = process.env.PORT || 3000;
 
 db.migrate()
   .then(() => {
+    setTimeout(() => adminRoutes.completarPontosExistentes(), 5000);
     app.listen(PORT, () => {
       console.log(`\n  Auxiliadora Landings rodando em http://localhost:${PORT}`);
       console.log(`  Painel:  http://localhost:${PORT}/admin`);

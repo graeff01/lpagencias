@@ -151,6 +151,25 @@ section{scroll-margin-top:72px}
 .map .pin{position:absolute;top:42%;left:50%;transform:translate(-50%,-100%);animation:bob 2.4s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
 .map .pin svg{width:46px;height:46px;filter:drop-shadow(0 10px 12px rgba(10,63,33,.4))}
+/* Mapa próprio (MapLibre): contexto de empilhamento isolado para as camadas
+   do mapa não passarem por cima do topo fixo. */
+.map .map-leaf{position:absolute;inset:0;z-index:0;isolation:isolate;background:#f2f3f0}
+.map .map-leaf .maplibregl-ctrl-group{border-radius:10px;box-shadow:0 8px 20px -10px rgba(10,63,33,.4)}
+.mk-emp-box{display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.mk-emp-nome{background:var(--green);color:#fff;font-size:13px;font-weight:700;padding:6px 11px;border-radius:9px;white-space:nowrap;box-shadow:0 8px 18px -8px rgba(10,63,33,.6)}
+.mk-emp{width:42px;height:42px;margin-bottom:8px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);background:var(--green);border:3px solid #fff;
+  box-shadow:0 10px 20px -6px rgba(10,63,33,.55);display:grid;place-items:center;color:#fff}
+.mk-emp svg{width:20px;height:20px;transform:rotate(45deg)}
+.mk-poi{width:38px;height:38px;padding:0;border-radius:50%;background:#fff;border:2px solid color-mix(in srgb,var(--green) 35%,#fff);
+  display:grid;place-items:center;font-size:19px;line-height:1;cursor:pointer;box-shadow:0 6px 14px -6px rgba(10,63,33,.5);transition:transform .18s,border-color .18s,box-shadow .18s}
+.mk-poi:hover,.mk-poi.on{transform:scale(1.18);border-color:var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 22%,transparent),0 8px 16px -6px rgba(10,63,33,.5);z-index:2}
+.mk-tip .maplibregl-popup-content{border-radius:10px;padding:7px 12px;font-family:var(--font-body,inherit);font-size:12.5px;color:var(--ink);box-shadow:0 10px 24px -10px rgba(10,63,33,.45);text-align:center}
+.mk-tip b{display:block;font-weight:680}
+.mk-tip span{display:block;font-size:11.5px;color:var(--body)}
+.map .card .rota{display:block;margin-top:9px;font-size:13px;font-weight:660;color:var(--green)}
+.map .card .rota:hover{text-decoration:underline}
+button.poi-chip{font-family:inherit;cursor:pointer;transition:border-color .18s,background .18s,transform .18s}
+button.poi-chip:hover,button.poi-chip.on{border-color:var(--green);background:color-mix(in srgb,var(--green) 7%,#fff);transform:translateY(-1px)}
 .map .card{position:absolute;bottom:22px;left:22px;z-index:2;background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 20px 50px -14px rgba(10,63,33,.4);max-width:300px}
 .map .card b{font-size:15px;font-weight:680;color:var(--ink);display:block;margin-bottom:3px}
 .map .card span{font-size:13px;color:var(--body)}
@@ -601,4 +620,15 @@ section{scroll-margin-top:72px}
   .outros-dots{display:flex;justify-content:center;gap:7px;margin-top:-6px}
   .outros-dots button{width:8px;height:8px;padding:0;border:none;border-radius:8px;background:rgba(21,34,25,.16);transition:width .35s,background .35s}
   .outros-dots button.on{width:28px;background:var(--green)}
+}
+
+/* Celular com mapa próprio: mapa mais alto e cartão do endereço enxuto, para
+   os pontos não ficarem escondidos atrás dele. */
+@media(max-width:760px){
+  .map:has(.map-leaf){height:440px}
+  .map:has(.map-leaf) .card{padding:11px 14px;border-radius:13px}
+  .map:has(.map-leaf) .card b{font-size:13.5px;margin-bottom:1px}
+  .map:has(.map-leaf) .card span{font-size:12px}
+  .map:has(.map-leaf) .card .rota{margin-top:5px;font-size:12.5px}
+  .mk-emp-nome{font-size:12px;padding:5px 9px}
 }
