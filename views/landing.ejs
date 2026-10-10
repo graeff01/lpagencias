@@ -556,8 +556,9 @@
         if(v&&v.url){ var pre=new Image(); pre.src=v.url; }
       });
     }
-    function abrir(itens,i,origem){
+    function abrir(itens,i,origem,planta){
       lista=itens.filter(function(x){return x&&x.url;});
+      box.classList.toggle('planta', !!planta);
       if(!lista.length) return;
       idx=Math.max(0,Math.min(i||0,lista.length-1));
       voltarPara=origem||null;
@@ -580,7 +581,7 @@
       el.addEventListener('click',function(){
         var todas=PLANTAS.filter(function(x){return x.url;});
         var alvo=PLANTAS[parseInt(el.getAttribute('data-lbp'),10)||0];
-        abrir(todas, Math.max(0,todas.indexOf(alvo)), el);
+        abrir(todas, Math.max(0,todas.indexOf(alvo)), el, true);
       });
     });
 

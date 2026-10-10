@@ -322,10 +322,15 @@ section{scroll-margin-top:72px}
    classe tem prioridade sobre o [hidden] padrao do navegador, e sem isto o
    visualizador nasce aberto cobrindo a pagina inteira. */
 .lbx[hidden]{display:none!important}
-.lbx{position:fixed;inset:0;z-index:120;background:rgba(4,16,10,.94);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:64px 12px 76px;animation:lbxIn .2s ease-out}
+/* Linha e coluna com minmax(0,...) para o palco ter altura e largura fixas:
+   com 1fr/auto a grade cresce ate o tamanho natural da foto e o overflow do
+   palco corta a imagem em telas largas. */
+.lbx{position:fixed;inset:0;z-index:120;background:rgba(4,16,10,.94);display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr);align-items:center;gap:8px;padding:64px 12px 76px;animation:lbxIn .2s ease-out}
 @keyframes lbxIn{from{opacity:0}to{opacity:1}}
-.lbx-stage{width:100%;height:100%;display:grid;place-items:center;overflow:hidden}
-.lbx-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);animation:lbxImg .22s ease-out}
+.lbx-stage{width:100%;height:100%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lbx-stage img{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;box-shadow:0 30px 80px -30px rgba(0,0,0,.9);animation:lbxImg .22s ease-out}
+/* Planta costuma vir em PNG transparente: sobre o fundo escuro fica ilegivel. */
+.lbx.planta .lbx-stage img{background:#fff;padding:16px;box-sizing:border-box}
 @keyframes lbxImg{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
 .lbx-x,.lbx-nav{border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .18s;flex:none}
 .lbx-x{position:absolute;top:16px;right:16px;width:44px;height:44px;z-index:2}
