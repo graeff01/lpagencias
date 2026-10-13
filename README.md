@@ -216,18 +216,28 @@ gestor vê.
 
 ### Recepção (encaminhar leads de qualquer canal)
 A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
-`/recepcao`: uma lista com todos os corretores da agência e uma busca. Ela cola
-a mensagem do lead, marca o canal (opcional) e toca no nome: o WhatsApp abre na
-conversa com o corretor e a mensagem já vem pronta, é só enviar.
+`/recepcao`, em três passos:
+
+1. **Cola a mensagem** do lead (ou toca em *Colar do WhatsApp*). O sistema
+   separa sozinho nome, telefone, e-mail, negócio, imóvel, origem e mensagem.
+   Entende o formato do Leads Delivery/portais ("Novo cadastro recebido do ZAP
+   para o imóvel 817210…") e, em texto livre, acha ao menos o telefone.
+2. **Confere** os campos. Nome e telefone são obrigatórios. Se o cliente já foi
+   encaminhado antes, aparece um aviso com o corretor e a data (não bloqueia).
+3. **Toca no corretor.** O WhatsApp abre com o lead organizado, com o link do
+   cliente pronto para o corretor chamar.
 
 - **Configurar:** em `/admin/equipes`, crie um acesso do tipo *Recepção*. Em
   `/admin/recepcao` cadastre os corretores (nome e WhatsApp) ou use *Importar
   das roletas*. *Ocultar* tira o corretor da lista sem apagar os envios dele.
-- **Métricas:** `/admin/recepcao` mostra os envios por corretor e por canal no
-  período. No painel do gestor, a coluna *Recepção* soma os envios para cada
-  corretor da equipe (o corretor é reconhecido pelo WhatsApp).
-- O site registra só quem enviou, para quem, o canal e a hora. O texto do lead
-  vai do WhatsApp da recepção direto para o do corretor e não fica guardado.
+- **Métricas e auditoria:** `/admin/recepcao` mostra os envios por corretor e
+  por canal e a lista de leads, com exportação em CSV. O painel do gestor mostra
+  os leads encaminhados aos corretores da equipe, com os dados do cliente.
+- **Dados pessoais (LGPD):** os leads da recepção ficam guardados com nome,
+  telefone e e-mail do cliente. Só o administrador e o gestor da equipe do
+  corretor veem esses dados.
+- O leitor da mensagem fica em `public/js/lead-parser.js` (roda no navegador e
+  no servidor). Um formato novo de mensagem se ensina por ali.
 
 ### Tabelas
 - `corretores` — nome, telefone, peso, ativo, contador da fila.
@@ -235,7 +245,7 @@ conversa com o corretor e a mensagem já vem pronta, é só enviar.
 - `gestores` — usuário e senha (hash scrypt) de cada gestor.
 - `equipe_corretores` — telefone do corretor → gestor.
 - `agencia_corretores` — lista de corretores da recepção.
-- `encaminhamentos` — cada lead encaminhado pela recepção (sem o conteúdo).
+- `encaminhamentos` — cada lead encaminhado pela recepção, com os dados do cliente.
 
 ### Proteções contra erro
 - **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o

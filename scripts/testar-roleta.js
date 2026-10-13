@@ -137,6 +137,34 @@ function ok(cond, msg) {
   const rec = await db.createGestor({ nome: 'Larissa', usuario: 'larissa', senha_hash: equipes.hashSenha('x'.repeat(8)), papel: 'recepcao' });
   ok(rec.papel === 'recepcao', 'acesso de recepção é gravado com o papel certo');
 
+  console.log('\n10) Recepção: lê a mensagem do Leads Delivery e guarda o lead');
+  const P = require('../public/js/lead-parser');
+  const zap = 'Olá!\n\nNovo cadastro recebido do *ZAP* para o imóvel 817210\n\n*Informações do cadastro*\nNome: T.Ghedini\n'
+    + 'E-mail: thailherghedini@gmail.com\nTelefone: 5551989082077\nNegócio: Vendas\nMensagem: Olá, quero comprar a casa. Aguardo.'
+    + 'A seguir, dados para contato com FULANO:E-mail: x@y.com\n\nCorretor responsável: Z - AP - Jardim Do Lago\n\n'
+    + 'Cadastro gerador: Canoas Jardim do Lago equipe C\n\n📲 *Mensagem automática do Leads Delivery*.';
+  const lz = P.ler(zap);
+  ok(lz.nome === 'T.Ghedini' && lz.telefone === '5551989082077' && lz.email === 'thailherghedini@gmail.com',
+     'separa nome, telefone e e-mail');
+  ok(lz.imovel === '817210' && lz.origem === 'ZAP Imóveis' && lz.negocio === 'Venda', 'separa imóvel, origem (ZAP) e negócio');
+  ok(lz.mensagem === 'Olá, quero comprar a casa. Aguardo.', 'mensagem sem o rodapé repetido do portal');
+  ok(P.canalDaOrigem(lz.origem) === 'Portais', 'ZAP vira canal Portais');
+  const livre = P.ler('oi, sou a Maria, vi no instagram, meu cel (51) 99876-5432');
+  ok(livre.telefone === '5551998765432' && livre.origem === 'Instagram', 'texto livre: acha telefone e Instagram');
+  ok(P.ler('E-mail: -\nMensagem: -').email === '', 'campo com "-" fica vazio');
+  const msgC = P.mensagemCorretor({ ...lz, canal: 'Portais' });
+  ok(msgC.includes('*Nome:* T.Ghedini') && msgC.includes('wa.me/5551989082077'), 'mensagem do corretor traz nome e link do cliente');
+
+  const env = await db.registrarEncaminhamento({ usuario_id: 99, corretor_fone: '51997770001', corretor_nome: 'Ana',
+    lead_nome: lz.nome, lead_telefone: lz.telefone, imovel: lz.imovel, origem: lz.origem, mensagem: lz.mensagem });
+  ok(env.lead_nome === 'T.Ghedini' && env.imovel === '817210', 'envio guarda os dados do lead');
+  const ult = await db.ultimoEnvioDoLead('(51) 98908-2077');
+  ok(ult && ult.corretor_nome === 'Ana', 'consulta acha para quem o cliente já foi enviado');
+  const pg5 = await equipes.painel(g1, 'hoje');
+  ok(pg5.daRecepcao.some(r => r.lead_nome === 'T.Ghedini'), 'gestor da equipe vê o lead com nome do cliente');
+  const pg6 = await equipes.painel(g2, 'hoje');
+  ok(!pg6.daRecepcao.length, 'gestor de outra equipe não vê');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });
