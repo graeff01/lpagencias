@@ -23,52 +23,76 @@
   <div class="wrap rc-wrap">
     <div class="page-head">
       <div>
-        <div class="eyebrow">Encaminhar lead</div>
-        <h1>Para qual corretor?</h1>
-        <p>Cole a mensagem do lead, escolha o canal e toque no nome do corretor: o WhatsApp abre com tudo pronto, é só enviar. <b id="rc-hoje"><%= deHoje %></b> envio(s) hoje.</p>
+        <div class="eyebrow">Encaminhar lead · <b id="rc-hoje"><%= deHoje %></b> hoje</div>
+        <h1>Novo lead</h1>
+        <p>Cole a mensagem que chegou, confira os dados e toque no corretor. O WhatsApp abre com o lead organizado, é só enviar.</p>
       </div>
     </div>
 
     <div class="panel rc-lead">
+      <h2 class="panel-h"><span class="rc-n">1</span> Cole a mensagem do lead</h2>
       <div class="frm">
-        <div class="fg">
-          <label for="rc-msg">Mensagem do lead <span class="sub" style="display:inline;font-weight:500">(opcional)</span></label>
-          <textarea id="rc-msg" rows="4" placeholder="Cole aqui o nome, o telefone e o que o cliente pediu"></textarea>
-        </div>
-        <label style="display:block;font-size:12.5px;font-weight:640;margin-bottom:6px">Canal <span class="sub" style="display:inline;font-weight:500">(opcional)</span></label>
-        <div class="chips" id="rc-canais">
-          <% canais.forEach(function(c){ %><button type="button" class="chip" data-canal="<%= c %>"><%= c %></button><% }); %>
+        <textarea id="rc-cola" rows="4" placeholder="Copie a mensagem inteira no WhatsApp e cole aqui"></textarea>
+        <div class="rc-acoes">
+          <button type="button" class="btn btn-green btn-sm" id="rc-colar" hidden>Colar do WhatsApp</button>
+          <span class="rc-lido" id="rc-lido"></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="rc-limpar" style="margin-left:auto">Limpar</button>
         </div>
       </div>
     </div>
 
-    <div class="rc-busca">
-      <input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off">
+    <div class="panel rc-lead">
+      <h2 class="panel-h"><span class="rc-n">2</span> Confira os dados</h2>
+      <form class="frm rc-campos" id="rc-form" autocomplete="off" onsubmit="return false">
+        <div class="fg"><label>Nome do cliente <i class="rc-req">*</i></label><input name="nome" placeholder="Ex.: Thailher Ghedini"></div>
+        <div class="fg"><label>Telefone <i class="rc-req">*</i></label><input name="telefone" inputmode="tel" placeholder="(51) 99999-0000"><span class="rc-aviso" id="rc-dono" hidden></span></div>
+        <div class="fg"><label>E-mail</label><input name="email" inputmode="email"></div>
+        <div class="fg2">
+          <div class="fg"><label>Negócio</label>
+            <select name="negocio" class="sel rc-sel"><option value="">—</option><option>Venda</option><option>Locação</option></select>
+          </div>
+          <div class="fg"><label>Imóvel / código</label><input name="imovel" placeholder="Ex.: 817210"></div>
+        </div>
+        <div class="fg"><label>Origem</label><input name="origem" placeholder="Ex.: ZAP Imóveis, indicação do Pedro"></div>
+        <div class="fg">
+          <label>Canal</label>
+          <div class="chips" id="rc-canais">
+            <% canais.forEach(function(c){ %><button type="button" class="chip" data-canal="<%= c %>"><%= c %></button><% }); %>
+          </div>
+        </div>
+        <div class="fg" style="margin-bottom:0"><label>Mensagem do cliente</label><textarea name="mensagem" rows="3"></textarea></div>
+      </form>
     </div>
 
-    <div class="rc-lista" id="rc-lista">
-      <% if (!corretores.length) { %>
-        <div class="warn-box" style="grid-column:1/-1">Nenhum corretor cadastrado ainda. O administrador cadastra em <b>Painel → Recepção</b>.</div>
-      <% } %>
-      <% corretores.forEach(function(c){ %>
-        <a class="rc-item" href="https://wa.me/<%= c.telefone %>" target="_blank" rel="noopener"
-           data-id="<%= c.id %>" data-nome="<%= c.nome %>" data-fone="<%= c.telefone %>">
-          <span class="rc-av"><%= iniciais(c.nome) %></span>
-          <span class="rc-nm"><%= c.nome %></span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-      <% }); %>
+    <div class="panel rc-lead" style="overflow:visible">
+      <h2 class="panel-h"><span class="rc-n">3</span> Toque no corretor</h2>
+      <div class="frm" style="padding-bottom:6px">
+        <div class="rc-busca"><input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off"></div>
+      </div>
+      <div class="rc-lista" id="rc-lista">
+        <% if (!corretores.length) { %>
+          <div class="warn-box" style="grid-column:1/-1">Nenhum corretor cadastrado ainda. O administrador cadastra em <b>Painel → Recepção</b>.</div>
+        <% } %>
+        <% corretores.forEach(function(c){ %>
+          <a class="rc-item" href="https://wa.me/<%= c.telefone %>" target="_blank" rel="noopener"
+             data-id="<%= c.id %>" data-nome="<%= c.nome %>" data-fone="<%= c.telefone %>">
+            <span class="rc-av"><%= iniciais(c.nome) %></span>
+            <span class="rc-nm"><%= c.nome %></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        <% }); %>
+      </div>
     </div>
 
     <div class="panel" style="margin-top:22px">
       <h2 class="panel-h">Seus últimos envios</h2>
       <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Quando</th><th>Corretor</th><th>Canal</th></tr></thead>
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Corretor</th></tr></thead>
         <tbody id="rc-recentes">
           <% if (!recentes.length) { %><tr class="rc-vazio"><td colspan="3" class="empty">Nenhum envio ainda.</td></tr><% } %>
           <% recentes.forEach(function(r){ %>
-            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.corretor_nome %></td><td class="sub"><%= r.canal || '—' %></td></tr>
+            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.lead_nome || '—' %><span class="sub mono"><%= r.lead_telefone ? r.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '' %></span></td><td><%= r.corretor_nome %></td></tr>
           <% }); %>
         </tbody>
       </table>
@@ -78,18 +102,69 @@
 
   <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 
+  <script src="/js/lead-parser.js?v=<%= v %>"></script>
   <script>
     (function () {
-      var msg = document.getElementById('rc-msg');
+      var P = window.LeadParser;
+      var cola = document.getElementById('rc-cola');
+      var form = document.getElementById('rc-form'), el = form.elements;
+      var lido = document.getElementById('rc-lido');
+      var dono = document.getElementById('rc-dono');
       var canal = '';
+
+      function marcarCanal(c) {
+        canal = c || '';
+        document.querySelectorAll('#rc-canais .chip').forEach(function (x) { x.classList.toggle('on', x.dataset.canal === canal); });
+      }
       document.getElementById('rc-canais').addEventListener('click', function (e) {
         var b = e.target.closest('[data-canal]');
-        if (!b) return;
-        var on = !b.classList.contains('on');
-        this.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
-        if (on) b.classList.add('on');
-        canal = on ? b.dataset.canal : '';
+        if (b) marcarCanal(b.dataset.canal === canal ? '' : b.dataset.canal);
       });
+
+      // Colou a mensagem: o sistema separa os campos sozinho.
+      function preencher() {
+        var d = P.ler(cola.value);
+        ['nome', 'email', 'negocio', 'imovel', 'origem', 'mensagem'].forEach(function (k) { el[k].value = d[k] || ''; });
+        el.telefone.value = d.telefone ? P.formatarFone(d.telefone) : '';
+        marcarCanal(P.canalDaOrigem(d.origem));
+        var achou = ['nome', 'telefone', 'email', 'imovel'].filter(function (k) { return d[k]; }).length;
+        lido.textContent = cola.value.trim() ? (achou ? '✓ Dados separados. Confira abaixo.' : 'Não reconheci os campos: preencha abaixo.') : '';
+        verificarDono();
+      }
+      cola.addEventListener('input', preencher);
+
+      // Botão de colar em um toque, onde o navegador permite.
+      var btnColar = document.getElementById('rc-colar');
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        btnColar.hidden = false;
+        btnColar.addEventListener('click', function () {
+          navigator.clipboard.readText().then(function (t) { cola.value = t; preencher(); })
+            .catch(function () { cola.focus(); avisar('Toque e segure na caixa e escolha Colar.'); });
+        });
+      }
+
+      // Aviso (não bloqueia) se este cliente já foi encaminhado antes.
+      var tDono;
+      function verificarDono() {
+        clearTimeout(tDono);
+        dono.hidden = true;
+        var f = P.normalizarFone(el.telefone.value);
+        if (!f) return;
+        tDono = setTimeout(function () {
+          fetch('/recepcao/lead?tel=' + f, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j.ok || !j.ultimo) return;
+            var q = new Date(j.ultimo.quando).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            dono.textContent = 'Este cliente já foi enviado para ' + j.ultimo.corretor + ' em ' + q + '.';
+            dono.hidden = false;
+          }).catch(function () {});
+        }, 350);
+      }
+      el.telefone.addEventListener('input', verificarDono);
+
+      function limpar() {
+        cola.value = ''; form.reset(); marcarCanal(''); lido.textContent = ''; dono.hidden = true;
+      }
+      document.getElementById('rc-limpar').addEventListener('click', limpar);
 
       document.getElementById('rc-busca').addEventListener('input', function () {
         var t = this.value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -105,19 +180,28 @@
         clearTimeout(tt); tt = setTimeout(function () { toast.classList.remove('on'); }, 3500);
       }
 
-      // O link é montado na hora do clique, com a mensagem do momento, e o
-      // envio é registrado em paralelo: se o registro falhar, o WhatsApp abre igual.
+      // O link é montado na hora do clique, e o envio é registrado em
+      // paralelo: se o registro falhar, o WhatsApp abre igual.
       document.getElementById('rc-lista').addEventListener('click', function (e) {
         var a = e.target.closest('.rc-item');
         if (!a) return;
-        var texto = msg.value.trim();
-        var corpo = texto ? '*Lead encaminhado pela recepção*' + (canal ? ' (' + canal + ')' : '') + '\n\n' + texto : '';
-        a.href = 'https://wa.me/' + a.dataset.fone + (corpo ? '?text=' + encodeURIComponent(corpo) : '');
+        var d = {
+          nome: el.nome.value.trim(), telefone: P.normalizarFone(el.telefone.value), email: el.email.value.trim(),
+          negocio: el.negocio.value, imovel: el.imovel.value.trim(), origem: el.origem.value.trim(),
+          mensagem: el.mensagem.value.trim(), canal: canal,
+        };
+        if (!d.nome || !d.telefone) {
+          e.preventDefault();
+          avisar(!d.nome ? 'Falta o nome do cliente.' : 'Falta um telefone válido do cliente.');
+          (d.nome ? el.telefone : el.nome).focus();
+          return;
+        }
+        a.href = 'https://wa.me/' + a.dataset.fone + '?text=' + encodeURIComponent(P.mensagemCorretor(d));
 
+        var corpo = Object.assign({ corretor_id: a.dataset.id }, d);
         fetch('/recepcao/enviar', {
           method: 'POST', keepalive: true, credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ corretor_id: a.dataset.id, canal: canal }),
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
         }).then(function (r) { if (!r.ok) avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); })
           .catch(function () {});
 
@@ -125,16 +209,15 @@
         var vazio = tb.querySelector('.rc-vazio'); if (vazio) vazio.remove();
         var tr = document.createElement('tr');
         var agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        [agora, a.dataset.nome, canal || '—'].forEach(function (v, i) {
-          var td = document.createElement('td'); td.textContent = v; if (i !== 1) td.className = 'sub'; tr.appendChild(td);
+        [agora, d.nome, a.dataset.nome].forEach(function (v, i) {
+          var td = document.createElement('td'); td.textContent = v; if (!i) td.className = 'sub'; tr.appendChild(td);
         });
         tb.insertBefore(tr, tb.firstChild);
         var h = document.getElementById('rc-hoje'); h.textContent = Number(h.textContent) + 1;
 
-        avisar('Abrindo o WhatsApp de ' + a.dataset.nome + '…');
-        msg.value = '';
-        canal = '';
-        document.querySelectorAll('#rc-canais .chip').forEach(function (x) { x.classList.remove('on'); });
+        avisar('Lead de ' + d.nome + ' enviado para ' + a.dataset.nome + '.');
+        limpar();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     })();
   </script>

@@ -454,8 +454,9 @@ router.get('/equipes/:id', async (req, res, next) => {
 router.get('/recepcao', async (req, res, next) => {
   try {
     const per = equipes.periodo(req.query.periodo);
-    const [corretores, envios, usuarios] = await Promise.all([
+    const [corretores, envios, usuarios, leads] = await Promise.all([
       db.listAgencia(), db.encaminhamentosPorFone(per.desde, per.ate), db.listGestores(),
+      db.leadsRecepcao(per.desde, per.ate, null, 300),
     ]);
     const porFone = {};
     const porCanal = {};
@@ -473,10 +474,31 @@ router.get('/recepcao', async (req, res, next) => {
     const total = envios.reduce((a, r) => a + r.n, 0);
     const canais = Object.entries(porCanal).map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
     const recepcionistas = usuarios.filter(u => u.papel === 'recepcao');
+    const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
+    leads.forEach((l) => { l.por = quem[l.usuario_id] || '—'; });
     res.render('admin/recepcao', {
       title: 'Recepção · Painel', linhas, canais, total, per, periodos: equipes.PERIODOS,
-      recepcionistas, q: req.query,
+      recepcionistas, leads, q: req.query,
     });
+  } catch (e) { next(e); }
+});
+
+// Auditoria: todos os leads encaminhados no período, com os dados do cliente.
+router.get('/recepcao/csv', async (req, res, next) => {
+  try {
+    const per = equipes.periodo(req.query.periodo);
+    const [linhas, usuarios] = await Promise.all([db.leadsRecepcao(per.desde, per.ate, null, 50000), db.listGestores()]);
+    const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const head = ['data_hora', 'enviado_por', 'corretor', 'corretor_whatsapp', 'cliente', 'cliente_telefone', 'cliente_email', 'negocio', 'imovel', 'origem', 'canal', 'mensagem'];
+    const csv = [head.join(';')].concat(linhas.map(l => [
+      new Date(l.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      quem[l.usuario_id] || '', l.corretor_nome, l.corretor_fone, l.lead_nome, l.lead_telefone, l.lead_email,
+      l.negocio, l.imovel, l.origem, l.canal, l.mensagem,
+    ].map(esc).join(';'))).join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="leads-recepcao-${per.chave}.csv"`);
+    res.send('\ufeff' + csv);
   } catch (e) { next(e); }
 });
 

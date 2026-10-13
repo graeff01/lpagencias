@@ -69,7 +69,7 @@
             <tr class="<%= l.ativo ? '' : 'off' %>">
               <td>
                 <b><%= l.nome %></b>
-                <% if (!l.naRoleta) { %><span class="tag pause">fora da roleta</span><% } else if (!l.ativo) { %><span class="tag pause">pausado</span><% } %>
+                <% if (!l.ativo) { %><span class="tag pause"><%= l.naRoleta ? 'pausado' : 'inativo' %></span><% } else if (!l.naRoleta) { %><span class="tag">só recepção</span><% } %>
                 <span class="sub mono"><%= l.telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></span>
               </td>
               <td class="num big"><%= l.leads %></td>
@@ -95,13 +95,34 @@
         <b>Recepção</b> são os leads de qualquer canal que a recepção encaminhou ao corretor pelo WhatsApp.
         <b>“Não retornou”</b> conta os leads que voltaram à página depois de 24h e foram repassados a outro corretor.
         É um sinal de que o atendimento pode ter falhado, não uma prova. Vale olhar a tendência ao longo das semanas.
-        O nome e o telefone do cliente não passam pelo site: eles ficam só no WhatsApp do corretor.
+        Nos leads das páginas o site não recebe nome nem telefone do cliente (eles ficam no WhatsApp do corretor); nos da recepção, sim.
       </p></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Leads encaminhados pela recepção · <%= rotulo.toLowerCase() %></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th></tr></thead>
+        <tbody>
+          <% if (!daRecepcao.length) { %><tr><td colspan="5" class="empty">Nenhum lead encaminhado pela recepção no período.</td></tr><% } %>
+          <% daRecepcao.forEach(function(r){ %>
+            <tr>
+              <td class="sub"><%= fmt(r.created_at) %></td>
+              <td><b><%= r.lead_nome || '—' %></b><span class="sub mono"><% if (r.lead_telefone) { %><a href="https://wa.me/<%= r.lead_telefone %>" target="_blank" rel="noopener"><%= r.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></a><% } %></span><% if (r.lead_email) { %><span class="sub"><%= r.lead_email %></span><% } %></td>
+              <td class="sub"><%= [r.negocio, r.imovel ? 'imóvel ' + r.imovel : ''].filter(Boolean).join(' · ') || '—' %><% if (r.mensagem) { %><span class="rc-msg" title="<%= r.mensagem %>"><%= r.mensagem %></span><% } %></td>
+              <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
+              <td><%= r.corretor %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
     </div>
 
     <div class="split">
       <div class="panel">
-        <h2 class="panel-h">Últimos leads da equipe</h2>
+        <h2 class="panel-h">Últimos leads das páginas (site)</h2>
         <div class="tbl-wrap">
         <table class="tbl">
           <thead><tr><th>Quando</th><th>Corretor</th><th>Empreendimento</th><th>Campanha</th></tr></thead>

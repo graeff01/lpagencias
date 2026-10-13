@@ -48,6 +48,8 @@
       <% }); %>
     </nav>
 
+    <div style="margin:-6px 0 18px"><a class="btn btn-ghost btn-sm" href="/admin/recepcao/csv?periodo=<%= per.chave %>">Exportar leads do período (CSV)</a></div>
+
     <div class="kpis">
       <div class="kpi"><span>Envios · <%= rotulo.toLowerCase() %></span><b><%= total %></b><i>leads encaminhados pela recepção</i></div>
       <div class="kpi"><span>Corretores na lista</span><b><%= linhas.filter(function(l){ return l.ativo; }).length %></b><i><%= linhas.length %> cadastrado(s)</i></div>
@@ -113,6 +115,30 @@
           </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-top:0">
+    <div class="panel">
+      <h2 class="panel-h">Leads encaminhados · <%= rotulo.toLowerCase() %></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th><th>Enviado por</th></tr></thead>
+        <tbody>
+          <% if (!leads.length) { %><tr><td colspan="6" class="empty">Nenhum lead encaminhado no período.</td></tr><% } %>
+          <% leads.forEach(function(r){ %>
+            <tr>
+              <td class="sub"><%= fmt(r.created_at) %></td>
+              <td><b><%= r.lead_nome || '—' %></b><span class="sub mono"><%= r.lead_telefone ? tel(r.lead_telefone) : '' %></span><% if (r.lead_email) { %><span class="sub"><%= r.lead_email %></span><% } %></td>
+              <td class="sub"><%= [r.negocio, r.imovel ? 'imóvel ' + r.imovel : ''].filter(Boolean).join(' · ') || '—' %><% if (r.mensagem) { %><span class="rc-msg" title="<%= r.mensagem %>"><%= r.mensagem %></span><% } %></td>
+              <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
+              <td><%= r.corretor_nome %></td>
+              <td class="sub"><%= r.por %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
       </div>
     </div>
   </div>
