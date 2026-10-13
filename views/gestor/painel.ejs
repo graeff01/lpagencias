@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <%
+    var base = comoAdmin ? '/admin/equipes/' + gestor.id : '/gestor';
+    var rotulo = periodos.find(function(p){ return p[0] === per.chave; })[1];
+    var fmt = function(d){ return d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+    var media = total.corretores ? (total.leads / total.corretores) : 0;
+    var maxEmp = porEmp.reduce(function(m, e){ return Math.max(m, e.leads); }, 0);
+  %>
+  <header class="topbar">
+    <a class="brand" href="<%= comoAdmin ? '/admin' : '/gestor' %>"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel do gestor</small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <% if (comoAdmin) { %>
+        <a class="btn btn-ghost btn-sm" href="/admin/equipes">Equipes</a>
+        <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+      <% } else { %>
+        <form method="POST" action="/gestor/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+      <% } %>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <% if (comoAdmin) { %>
+      <div class="warn-box">Você está vendo o painel exatamente como <b><%= gestor.nome %></b> vê (usuário <b><%= gestor.usuario %></b>, acesso em <b>/gestor</b>).</div>
+    <% } %>
+
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Equipe <%= gestor.nome %></div>
+        <h1>Leads por corretor</h1>
+        <p>Quantas pessoas clicaram em “entrar em contato” e caíram no WhatsApp de cada corretor da equipe, somando todos os empreendimentos.</p>
+      </div>
+    </div>
+
+    <nav class="chips" style="margin-bottom:18px" aria-label="Período">
+      <% periodos.forEach(function(p){ %>
+        <a class="chip <%= p[0] === per.chave ? 'on' : '' %>" href="<%= base %>?periodo=<%= p[0] %>"><%= p[1] %></a>
+      <% }); %>
+    </nav>
+
+    <% if (!linhas.length) { %>
+      <div class="warn-box">Nenhum corretor foi ligado a esta equipe ainda. O administrador faz isso em <b>Painel → Equipes</b>.</div>
+    <% } %>
+
+    <div class="kpis">
+      <div class="kpi"><span>Leads · <%= rotulo.toLowerCase() %></span><b><%= total.leads %></b><i>pessoas distintas que chamaram a equipe</i></div>
+      <div class="kpi"><span>Média por corretor</span><b><%= media.toFixed(1).replace('.', ',') %></b><i><%= total.corretores %> corretor(es) na equipe</i></div>
+      <div class="kpi"><span>Resgatados</span><b><%= total.resgatados %></b><i>leads que vieram de outro corretor</i></div>
+      <div class="kpi"><span>Não retornou</span><b><%= total.nao_retornados %></b><i>voltaram após 24h e trocaram de corretor</i></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Distribuição · <%= rotulo.toLowerCase() %></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Corretor</th><th>Leads</th><th>Participação</th><th>Resgatou</th><th>Não retornou</th><th>Último lead</th><th>Por empreendimento</th></tr></thead>
+        <tbody>
+          <% if (!linhas.length) { %><tr><td colspan="7" class="empty">Sem corretores na equipe.</td></tr><% } %>
+          <% linhas.forEach(function(l){ var pct = total.leads ? (l.leads * 100 / total.leads) : 0; %>
+            <tr class="<%= l.ativo ? '' : 'off' %>">
+              <td>
+                <b><%= l.nome %></b>
+                <% if (!l.naRoleta) { %><span class="tag pause">fora da roleta</span><% } else if (!l.ativo) { %><span class="tag pause">pausado</span><% } %>
+                <span class="sub mono"><%= l.telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></span>
+              </td>
+              <td class="num big"><%= l.leads %></td>
+              <td>
+                <div class="bar"><span style="width:<%= Math.min(100, pct).toFixed(1) %>%"></span></div>
+                <span class="sub"><%= pct.toFixed(1).replace('.', ',') %>%</span>
+              </td>
+              <td class="num"><%= l.resgatados %></td>
+              <td class="num" <% if (l.nao_retornados) { %>style="color:var(--danger)"<% } %>><%= l.nao_retornados %></td>
+              <td class="sub"><%= fmt(l.ultimo) %></td>
+              <td class="sub">
+                <% if (!l.porEmp.length) { %>—<% } %>
+                <% l.porEmp.forEach(function(e){ %><span style="display:block;white-space:nowrap"><%= e.nome %>: <b><%= e.leads %></b></span><% }); %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot"><p class="hint">
+        <b>Leads</b> conta pessoas, não cliques: quem aperta vários botões da mesma página conta uma vez só.
+        <b>“Não retornou”</b> conta os leads que voltaram à página depois de 24h e foram repassados a outro corretor.
+        É um sinal de que o atendimento pode ter falhado, não uma prova. Vale olhar a tendência ao longo das semanas.
+        O nome e o telefone do cliente não passam pelo site: eles ficam só no WhatsApp do corretor.
+      </p></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2 class="panel-h">Últimos leads da equipe</h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Quando</th><th>Corretor</th><th>Empreendimento</th><th>Campanha</th></tr></thead>
+          <tbody>
+            <% if (!recentes.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+            <% recentes.forEach(function(r){ %>
+              <tr>
+                <td class="sub"><%= fmt(r.created_at) %></td>
+                <td><%= r.corretor %><% if (r.resgate) { %><span class="tag">resgate</span><% } %></td>
+                <td class="sub"><%= r.emp %></td>
+                <td class="sub"><%= [r.utm_source, r.utm_campaign].filter(Boolean).join(' · ') || '—' %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-h">Por empreendimento</h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <tbody>
+            <% if (!porEmp.length) { %><tr><td class="empty">Nenhum lead no período.</td></tr><% } %>
+            <% porEmp.forEach(function(e){ %>
+              <tr>
+                <td>
+                  <b><%= e.nome %></b>
+                  <div class="bar" style="margin-top:6px"><span style="width:<%= maxEmp ? (e.leads * 100 / maxEmp).toFixed(1) : 0 %>%"></span></div>
+                </td>
+                <td class="num big" style="text-align:right"><%= e.leads %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

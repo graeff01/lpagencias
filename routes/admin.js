@@ -12,7 +12,7 @@ const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
-const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
+const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
 const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -21,38 +21,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // (dados pessoais), não exclui nada e não mexe na configuração do portal.
 const CADASTRO_PASSWORD = process.env.CADASTRO_PASSWORD || '';
 
-// ---- Proteção contra tentativa em massa no login ----
-// O painel guarda telefone e e-mail dos corretores: senha única sem limite de
-// tentativas seria força bruta livre. 5 erros = 15 min de bloqueio por IP.
-const MAX_TENTATIVAS = 5;
-const BLOQUEIO_MS = 15 * 60 * 1000;
-const tentativas = new Map();
-
-function ipDe(req) {
-  return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
-    || (req.socket && req.socket.remoteAddress) || 'desconhecido';
-}
-
-function bloqueado(ip) {
-  const t = tentativas.get(ip);
-  if (!t) return 0;
-  if (t.ate && t.ate > Date.now()) return Math.ceil((t.ate - Date.now()) / 60000);
-  if (t.ate && t.ate <= Date.now()) tentativas.delete(ip);
-  return 0;
-}
-
-function registrarFalha(ip) {
-  const t = tentativas.get(ip) || { n: 0, ate: 0 };
-  t.n += 1;
-  if (t.n >= MAX_TENTATIVAS) { t.ate = Date.now() + BLOQUEIO_MS; t.n = 0; }
-  tentativas.set(ip, t);
-}
-
-// Limpeza periódica para o Map não crescer sem limite.
-setInterval(() => {
-  const agora = Date.now();
-  for (const [ip, t] of tentativas) if (!t.ate || t.ate < agora) tentativas.delete(ip);
-}, 30 * 60 * 1000).unref();
+const { ipDe, bloqueado, registrarFalha, limpar: limparTentativas } = require('../lib/tentativas');
+const equipes = require('../lib/equipes');
 
 // ---- Middleware de autenticação ----
 function requireAuth(req, res, next) {
@@ -79,7 +49,7 @@ router.post('/login', (req, res) => {
   const papel = senha === ADMIN_PASSWORD ? 'admin'
     : (CADASTRO_PASSWORD && senha === CADASTRO_PASSWORD ? 'cadastro' : null);
   if (papel) {
-    tentativas.delete(ip);
+    limparTentativas(ip);
     return req.session.regenerate((err) => {   // evita fixação de sessão
       if (err) return res.status(500).render('admin/login', { title: 'Entrar · Painel', error: 'Erro ao entrar. Tente de novo.' });
       req.session.admin = true;   // logado no painel (vê rascunhos)
@@ -265,7 +235,7 @@ router.post('/excluir/:id', soAdmin, async (req, res, next) => {
 // =====================================================================
 
 // Corretores e leads são dados pessoais: só o administrador vê.
-router.use(['/corretores', '/leads', '/portal'], soAdmin);
+router.use(['/corretores', '/leads', '/portal', '/equipes'], soAdmin);
 
 // O portal não é uma linha da tabela de empreendimentos: tem id 0 e o
 // WhatsApp reserva vem da configuração do portal.
@@ -385,6 +355,90 @@ router.get('/leads/:id/csv', async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="leads-${emp.slug || 'portal'}.csv"`);
     res.send('﻿' + csv); // BOM para o Excel abrir com acento certo
+  } catch (e) { next(e); }
+});
+
+// =====================================================================
+//  EQUIPES  —  gestores e quais corretores são de cada um
+// =====================================================================
+router.get('/equipes', async (req, res, next) => {
+  try {
+    const [gestores, unicos, membros, nomesEmp] = await Promise.all([
+      db.listGestores(), db.corretoresUnicos(), db.listEquipes(), equipes.nomesDosEmps(),
+    ]);
+    const dono = Object.fromEntries(membros.map(m => [m.telefone, m.gestor_id]));
+    // Quem está numa equipe mas saiu de todas as roletas continua na lista,
+    // para o gestor não perder o histórico dele sem querer.
+    const fones = new Set(unicos.map(u => u.telefone));
+    for (const m of membros) {
+      if (!fones.has(m.telefone)) unicos.push({ telefone: m.telefone, nomes: [m.nome || m.telefone], emps: [], ativo: false });
+    }
+    unicos.forEach((u) => {
+      u.gestor_id = dono[u.telefone] || null;
+      u.empNomes = u.emps.map(id => nomesEmp[id] || '?');
+    });
+    unicos.sort((a, b) => a.nomes[0].localeCompare(b.nomes[0], 'pt-BR'));
+    gestores.forEach((g) => { g.membros = membros.filter(m => m.gestor_id === g.id).length; });
+    res.render('admin/equipes', { title: 'Equipes · Painel', gestores, corretores: unicos, q: req.query });
+  } catch (e) { next(e); }
+});
+
+router.post('/equipes/gestor', async (req, res, next) => {
+  try {
+    const b = req.body;
+    const id = b.id ? Number(b.id) : null;
+    const nome = String(b.nome || '').trim();
+    const usuario = equipes.usuarioValido(b.usuario);
+    const senha = String(b.senha || '');
+    if (!nome || !usuario) return res.redirect('/admin/equipes?erro=campos');
+    if ((!id || senha) && senha.length < 8) return res.redirect('/admin/equipes?erro=senha');
+    const outro = await db.getGestorPorUsuario(usuario);
+    if (outro && outro.id !== id) return res.redirect('/admin/equipes?erro=usuario');
+    const senha_hash = senha ? equipes.hashSenha(senha) : null;
+    if (id) await db.updateGestor(id, { nome, usuario, senha_hash });
+    else await db.createGestor({ nome, usuario, senha_hash });
+    res.redirect('/admin/equipes?ok=gestor');
+  } catch (e) { next(e); }
+});
+
+router.post('/equipes/gestor/:id/toggle', async (req, res, next) => {
+  try {
+    const g = await db.getGestor(req.params.id);
+    if (g) await db.updateGestor(g.id, { ativo: !g.ativo });
+    res.redirect('/admin/equipes?ok=gestor');
+  } catch (e) { next(e); }
+});
+
+router.post('/equipes/gestor/:id/excluir', async (req, res, next) => {
+  try {
+    await db.removeGestor(req.params.id);
+    res.redirect('/admin/equipes?del=1');
+  } catch (e) { next(e); }
+});
+
+// Um select por corretor (name="eq_<telefone>"), salvos de uma vez.
+router.post('/equipes/membros', async (req, res, next) => {
+  try {
+    const validos = new Set((await db.listGestores()).map(g => g.id));
+    const mapa = {};
+    for (const [k, v] of Object.entries(req.body)) {
+      if (!k.startsWith('eq_')) continue;
+      const tel = k.slice(3);
+      const gid = Number(v) || null;
+      mapa[tel] = { gestor_id: gid && validos.has(gid) ? gid : null, nome: String(req.body['nm_' + tel] || '').trim() };
+    }
+    await db.salvarEquipes(mapa);
+    res.redirect('/admin/equipes?ok=equipes');
+  } catch (e) { next(e); }
+});
+
+// O administrador vê exatamente o que o gestor vê.
+router.get('/equipes/:id', async (req, res, next) => {
+  try {
+    const g = await db.getGestor(req.params.id);
+    if (!g) return next();
+    const dados = await equipes.painel(g, req.query.periodo);
+    res.render('gestor/painel', { title: `Equipe ${g.nome} · Painel`, ...dados, comoAdmin: true });
   } catch (e) { next(e); }
 });
 

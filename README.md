@@ -193,9 +193,32 @@ com 10 corretores e 100 leads cada um recebe exatamente 10.
   origem, motivo da decisão e UTMs de cada clique — é a prova de que o rodízio
   foi justo.
 
+### Painel dos gestores (equipes)
+Cada gestor entra em **`/gestor`** com usuário e senha próprios e vê só os
+corretores da equipe dele: leads por corretor, participação, “não retornou”,
+quebra por empreendimento e os últimos leads. Períodos: hoje, 7 dias, 30 dias,
+este mês, mês passado e tudo (limites no horário de Brasília). Não dá acesso
+ao painel de empreendimentos.
+
+**Configurar:** `/admin/equipes` (aba *Equipes*) → cadastre o gestor (nome,
+usuário, senha de 8+ caracteres) → na lista de corretores, escolha a equipe de
+cada um → *Salvar equipes*. O botão **Ver painel** mostra exatamente o que o
+gestor vê.
+
+- O corretor é reconhecido pelo **WhatsApp**: quem está na roleta de vários
+  empreendimentos aparece uma vez e os leads de todos somam para a equipe.
+- Cada clique guarda o telefone de quem recebeu, então excluir o corretor de
+  uma roleta não apaga o histórico da equipe. Cliques antigos são completados
+  na subida do servidor.
+- Bloquear ou excluir o gestor corta o acesso na hora, mesmo com ele logado.
+- O nome e o telefone do cliente não passam pelo site: o painel conta pessoas
+  que clicaram, e o contato fica no WhatsApp do corretor.
+
 ### Tabelas
 - `corretores` — nome, telefone, peso, ativo, contador da fila.
-- `cliques_whatsapp` — log de auditoria de cada clique.
+- `cliques_whatsapp` — log de auditoria de cada clique (com o telefone de quem recebeu).
+- `gestores` — usuário e senha (hash scrypt) de cada gestor.
+- `equipe_corretores` — telefone do corretor → gestor.
 
 ### Proteções contra erro
 - **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o

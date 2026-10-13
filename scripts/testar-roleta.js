@@ -94,6 +94,38 @@ function ok(cond, msg) {
   ok(roleta.isBot('Googlebot/2.1'), 'detecta Googlebot');
   ok(!roleta.isBot('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/605.1'), 'não confunde iPhone real com robô');
 
+  console.log('\n8) Painel do gestor: soma o corretor em todos os empreendimentos, só da equipe dele');
+  const equipes = require('../lib/equipes');
+  const ea = await db.create({ slug: 'teste-eq-a', nome: 'Eq A' });
+  const eb = await db.create({ slug: 'teste-eq-b', nome: 'Eq B' });
+  // Ana está nas duas roletas (mesmo WhatsApp, máscaras diferentes); Bia só na A.
+  const anaA = await db.createCorretor(ea.id, { nome: 'Ana', telefone: '(51) 99777-0001' });
+  await db.createCorretor(ea.id, { nome: 'Bia', telefone: '51997770002' });
+  await db.createCorretor(eb.id, { nome: 'Ana Souza', telefone: '5551997770001' });
+  const g1 = await db.createGestor({ nome: 'G1', usuario: 'g1', senha_hash: equipes.hashSenha('senha-forte-1') });
+  const g2 = await db.createGestor({ nome: 'G2', usuario: 'g2', senha_hash: equipes.hashSenha('senha-forte-2') });
+  await db.salvarEquipes({ '51997770001': { gestor_id: g1.id, nome: 'Ana' }, '51997770002': { gestor_id: g2.id, nome: 'Bia' } });
+
+  const visita = (ip) => ({ headers: { 'user-agent': 'Mozilla/5.0 (iPhone) Safari/605' }, socket: { remoteAddress: ip }, query: {} });
+  const resp = () => ({ cookie() {} });
+  for (let i = 0; i < 6; i++) await roleta.distribuir(visita('10.0.0.' + i), resp(), ea, 'hero');
+  for (let i = 0; i < 3; i++) await roleta.distribuir(visita('10.0.1.' + i), resp(), eb, 'hero');
+
+  const pg1 = await equipes.painel(g1, 'tudo');
+  ok(pg1.linhas.length === 1 && pg1.linhas[0].nome === 'Ana', 'G1 vê só a Ana');
+  ok(pg1.total.leads === 6, `Ana somou 3 leads na A + 3 na B = ${pg1.total.leads}`);
+  ok(pg1.linhas[0].porEmp.length === 2, 'quebra por empreendimento mostra as duas roletas');
+  const pg2 = await equipes.painel(g2, '30');
+  ok(pg2.total.leads === 3 && pg2.linhas[0].nome === "Bia", `G2 vê só a Bia, com ${pg2.total.leads} leads`);
+
+  await db.removeCorretor(anaA.id);
+  const p1b = await equipes.painel(g1, 'tudo');
+  ok(p1b.total.leads === 6, 'excluir o corretor de uma roleta não apaga o histórico da equipe');
+
+  const ontemNoMesPassado = equipes.periodo('mes-anterior');
+  ok(ontemNoMesPassado.ate <= equipes.periodo('mes').desde, 'mês passado termina onde este mês começa');
+  ok(equipes.confereSenha('senha-forte-1', g1.senha_hash) && !equipes.confereSenha('errada', g1.senha_hash), 'senha confere só a certa');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });
