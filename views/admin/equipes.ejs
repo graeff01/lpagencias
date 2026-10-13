@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes" class="on">Equipes</a></nav>
+    <div class="sp"></div>
+    <div class="top-links">
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Gestores</div>
+        <h1>Equipes</h1>
+        <p>Cada gestor entra em <b>/gestor</b> com usuário e senha próprios e vê só os leads dos corretores da equipe dele.</p>
+      </div>
+    </div>
+
+    <% var erroBox = 'background:#fdf0ee;border-color:#f3c9c1;color:#b5432f'; %>
+    <% if (q.ok === 'gestor') { %><div class="flash">Gestor salvo.</div><% } %>
+    <% if (q.ok === 'equipes') { %><div class="flash">Equipes salvas.</div><% } %>
+    <% if (q.del) { %><div class="flash" style="<%= erroBox %>">Gestor excluído. Os corretores dele ficaram sem equipe.</div><% } %>
+    <% if (q.erro === 'campos') { %><div class="flash" style="<%= erroBox %>">Informe o nome e um usuário de 3 a 40 caracteres (letras sem acento, números, ponto, hífen).</div><% } %>
+    <% if (q.erro === 'senha') { %><div class="flash" style="<%= erroBox %>">A senha precisa de pelo menos 8 caracteres.</div><% } %>
+    <% if (q.erro === 'usuario') { %><div class="flash" style="<%= erroBox %>">Esse usuário já está em uso por outro gestor.</div><% } %>
+
+    <div class="split">
+      <div class="panel">
+        <h2 class="panel-h">Gestores</h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Gestor</th><th>Corretores</th><th>Último acesso</th><th></th></tr></thead>
+          <tbody>
+            <% if (!gestores.length) { %><tr><td colspan="4" class="empty">Cadastre o primeiro gestor no formulário ao lado.</td></tr><% } %>
+            <% gestores.forEach(function(g){ %>
+              <tr class="<%= g.ativo ? '' : 'off' %>">
+                <td><b><%= g.nome %></b><% if (!g.ativo) { %><span class="tag pause">bloqueado</span><% } %><span class="sub mono"><%= g.usuario %></span></td>
+                <td class="num"><%= g.membros %></td>
+                <td class="sub"><%= g.ultimo_acesso ? new Date(g.ultimo_acesso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'nunca entrou' %></td>
+                <td class="row-acts">
+                  <a class="btn btn-green btn-sm" href="/admin/equipes/<%= g.id %>">Ver painel</a>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick='editarGestor(<%- JSON.stringify({ id: g.id, nome: g.nome, usuario: g.usuario }) %>)'>Editar</button>
+                  <form method="POST" action="/admin/equipes/gestor/<%= g.id %>/toggle">
+                    <button class="btn btn-ghost btn-sm" type="submit"><%= g.ativo ? 'Bloquear' : 'Liberar' %></button>
+                  </form>
+                  <form method="POST" action="/admin/equipes/gestor/<%= g.id %>/excluir" onsubmit="return confirm('Excluir <%= g.nome %>? Os corretores da equipe ficam sem gestor.')">
+                    <button class="btn btn-danger btn-sm" type="submit" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-h" id="gestor-titulo">Novo gestor</h2>
+        <form class="frm" method="POST" action="/admin/equipes/gestor" id="gestor-form">
+          <input type="hidden" name="id" value="">
+          <div class="fg"><label>Nome</label><input name="nome" required placeholder="Ex.: Fabrício Bilhalva"></div>
+          <div class="fg"><label>Usuário</label><input name="usuario" required autocapitalize="none" placeholder="Ex.: fabricio"><span class="hint">É o que o gestor digita para entrar.</span></div>
+          <div class="fg"><label>Senha</label><input name="senha" type="text" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres"><span class="hint" id="senha-hint">Passe a senha ao gestor por um canal privado.</span></div>
+          <div class="frm-acts">
+            <button class="btn btn-green" type="submit">Salvar gestor</button>
+            <button class="btn btn-ghost" type="button" onclick="novoGestor()">Limpar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <form class="panel" method="POST" action="/admin/equipes/membros">
+      <h2 class="panel-h">Corretores e equipes</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Corretor</th><th>Na roleta de</th><th>Equipe</th></tr></thead>
+        <tbody>
+          <% if (!corretores.length) { %><tr><td colspan="3" class="empty">Nenhum corretor cadastrado nas roletas ainda.</td></tr><% } %>
+          <% corretores.forEach(function(c){ %>
+            <tr class="<%= c.emps.length ? '' : 'off' %>">
+              <td>
+                <b><%= c.nomes[0] %></b><% if (c.nomes.length > 1) { %><span class="sub">também cadastrado como <%= c.nomes.slice(1).join(', ') %></span><% } %>
+                <span class="sub mono"><%= c.telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></span>
+                <input type="hidden" name="nm_<%= c.telefone %>" value="<%= c.nomes[0] %>">
+              </td>
+              <td class="sub"><%= c.empNomes.length ? c.empNomes.join(', ') : 'fora de todas as roletas' %></td>
+              <td>
+                <select name="eq_<%= c.telefone %>" class="sel">
+                  <option value="">— sem equipe —</option>
+                  <% gestores.forEach(function(g){ %><option value="<%= g.id %>" <%= c.gestor_id === g.id ? 'selected' : '' %>><%= g.nome %></option><% }); %>
+                </select>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot">
+        <p class="hint">O corretor é reconhecido pelo WhatsApp: quem está em vários empreendimentos aparece uma vez só, e os leads de todos eles somam para a equipe. Os leads anteriores também contam, desde que tenham vindo da roleta.</p>
+        <button class="btn btn-green" type="submit" <%= gestores.length ? '' : 'disabled' %>>Salvar equipes</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    var f = document.getElementById('gestor-form');
+    var el = f.elements;
+    function editarGestor(g) {
+      el.id.value = g.id; el.nome.value = g.nome; el.usuario.value = g.usuario; el.senha.value = '';
+      document.getElementById('gestor-titulo').textContent = 'Editar ' + g.nome;
+      document.getElementById('senha-hint').textContent = 'Deixe em branco para manter a senha atual.';
+      f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.nome.focus();
+    }
+    function novoGestor() {
+      f.reset(); el.id.value = '';
+      document.getElementById('gestor-titulo').textContent = 'Novo gestor';
+      document.getElementById('senha-hint').textContent = 'Passe a senha ao gestor por um canal privado.';
+    }
+  </script>
+</body>
+</html>
