@@ -12,7 +12,7 @@ const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
-const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
+const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'recepcao', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
 const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -235,7 +235,7 @@ router.post('/excluir/:id', soAdmin, async (req, res, next) => {
 // =====================================================================
 
 // Corretores e leads são dados pessoais: só o administrador vê.
-router.use(['/corretores', '/leads', '/portal', '/equipes'], soAdmin);
+router.use(['/corretores', '/leads', '/portal', '/equipes', '/recepcao'], soAdmin);
 
 // O portal não é uma linha da tabela de empreendimentos: tem id 0 e o
 // WhatsApp reserva vem da configuração do portal.
@@ -363,10 +363,15 @@ router.get('/leads/:id/csv', async (req, res, next) => {
 // =====================================================================
 router.get('/equipes', async (req, res, next) => {
   try {
-    const [gestores, unicos, membros, nomesEmp] = await Promise.all([
-      db.listGestores(), db.corretoresUnicos(), db.listEquipes(), equipes.nomesDosEmps(),
+    const [usuarios, unicos, membros, nomesEmp, agencia] = await Promise.all([
+      db.listGestores(), db.corretoresUnicos(), db.listEquipes(), equipes.nomesDosEmps(), db.listAgencia(),
     ]);
+    const gestores = usuarios.filter(u => (u.papel || 'gestor') === 'gestor');
     const dono = Object.fromEntries(membros.map(m => [m.telefone, m.gestor_id]));
+    // Corretores da agência (lista da recepção) que não estão em roleta nenhuma.
+    for (const a of agencia) {
+      if (!unicos.some(u => u.telefone === a.telefone)) unicos.push({ telefone: a.telefone, nomes: [a.nome], emps: [], ativo: a.ativo, soAgencia: true });
+    }
     // Quem está numa equipe mas saiu de todas as roletas continua na lista,
     // para o gestor não perder o histórico dele sem querer.
     const fones = new Set(unicos.map(u => u.telefone));
@@ -378,8 +383,8 @@ router.get('/equipes', async (req, res, next) => {
       u.empNomes = u.emps.map(id => nomesEmp[id] || '?');
     });
     unicos.sort((a, b) => a.nomes[0].localeCompare(b.nomes[0], 'pt-BR'));
-    gestores.forEach((g) => { g.membros = membros.filter(m => m.gestor_id === g.id).length; });
-    res.render('admin/equipes', { title: 'Equipes · Painel', gestores, corretores: unicos, q: req.query });
+    usuarios.forEach((g) => { g.membros = membros.filter(m => m.gestor_id === g.id).length; });
+    res.render('admin/equipes', { title: 'Equipes · Painel', usuarios, gestores, corretores: unicos, q: req.query });
   } catch (e) { next(e); }
 });
 
@@ -395,8 +400,9 @@ router.post('/equipes/gestor', async (req, res, next) => {
     const outro = await db.getGestorPorUsuario(usuario);
     if (outro && outro.id !== id) return res.redirect('/admin/equipes?erro=usuario');
     const senha_hash = senha ? equipes.hashSenha(senha) : null;
-    if (id) await db.updateGestor(id, { nome, usuario, senha_hash });
-    else await db.createGestor({ nome, usuario, senha_hash });
+    const papel = b.papel === 'recepcao' ? 'recepcao' : 'gestor';
+    if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel });
+    else await db.createGestor({ nome, usuario, senha_hash, papel });
     res.redirect('/admin/equipes?ok=gestor');
   } catch (e) { next(e); }
 });
@@ -419,7 +425,7 @@ router.post('/equipes/gestor/:id/excluir', async (req, res, next) => {
 // Um select por corretor (name="eq_<telefone>"), salvos de uma vez.
 router.post('/equipes/membros', async (req, res, next) => {
   try {
-    const validos = new Set((await db.listGestores()).map(g => g.id));
+    const validos = new Set((await db.listGestores()).filter(g => (g.papel || 'gestor') === 'gestor').map(g => g.id));
     const mapa = {};
     for (const [k, v] of Object.entries(req.body)) {
       if (!k.startsWith('eq_')) continue;
@@ -436,9 +442,84 @@ router.post('/equipes/membros', async (req, res, next) => {
 router.get('/equipes/:id', async (req, res, next) => {
   try {
     const g = await db.getGestor(req.params.id);
-    if (!g) return next();
+    if (!g || g.papel === 'recepcao') return next();
     const dados = await equipes.painel(g, req.query.periodo);
     res.render('gestor/painel', { title: `Equipe ${g.nome} · Painel`, ...dados, comoAdmin: true });
+  } catch (e) { next(e); }
+});
+
+// =====================================================================
+//  RECEPÇÃO  —  corretores da agência e relatório de encaminhamentos
+// =====================================================================
+router.get('/recepcao', async (req, res, next) => {
+  try {
+    const per = equipes.periodo(req.query.periodo);
+    const [corretores, envios, usuarios] = await Promise.all([
+      db.listAgencia(), db.encaminhamentosPorFone(per.desde, per.ate), db.listGestores(),
+    ]);
+    const porFone = {};
+    const porCanal = {};
+    for (const r of envios) {
+      porFone[r.fone] = porFone[r.fone] || { n: 0, ultimo: null };
+      porFone[r.fone].n += r.n;
+      const d = r.ultimo ? new Date(r.ultimo) : null;
+      if (d && (!porFone[r.fone].ultimo || d > porFone[r.fone].ultimo)) porFone[r.fone].ultimo = d;
+      const c = r.canal || 'Não informado';
+      porCanal[c] = (porCanal[c] || 0) + r.n;
+    }
+    const linhas = corretores.map(c => ({ ...c, envios: (porFone[c.telefone] || {}).n || 0, ultimo: (porFone[c.telefone] || {}).ultimo || null }))
+      .sort((a, b) => b.envios - a.envios || a.nome.localeCompare(b.nome, 'pt-BR'));
+    // Envios para quem saiu da lista continuam no total.
+    const total = envios.reduce((a, r) => a + r.n, 0);
+    const canais = Object.entries(porCanal).map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
+    const recepcionistas = usuarios.filter(u => u.papel === 'recepcao');
+    res.render('admin/recepcao', {
+      title: 'Recepção · Painel', linhas, canais, total, per, periodos: equipes.PERIODOS,
+      recepcionistas, q: req.query,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post('/recepcao/corretor', async (req, res, next) => {
+  try {
+    const b = req.body;
+    const id = b.id ? Number(b.id) : null;
+    const nome = String(b.nome || '').trim();
+    if (!nome) return res.redirect('/admin/recepcao?erro=campos');
+    const numero = roleta.validarWhats(b.telefone);
+    if (!numero) return res.redirect('/admin/recepcao?erro=telefone');
+    const outro = await db.getAgenciaPorFone(numero);
+    if (outro && outro.id !== id) return res.redirect('/admin/recepcao?erro=duplicado');
+    await db.salvarAgencia(id, { nome, telefone: numero, ativo: b.ativo === 'on' });
+    res.redirect('/admin/recepcao?ok=1');
+  } catch (e) { next(e); }
+});
+
+router.post('/recepcao/corretor/:id/toggle', async (req, res, next) => {
+  try {
+    const c = await db.getAgencia(req.params.id);
+    if (c) await db.salvarAgencia(c.id, { ...c, ativo: !c.ativo });
+    res.redirect('/admin/recepcao?ok=1');
+  } catch (e) { next(e); }
+});
+
+router.post('/recepcao/corretor/:id/excluir', async (req, res, next) => {
+  try {
+    await db.removeAgencia(req.params.id);
+    res.redirect('/admin/recepcao?del=1');
+  } catch (e) { next(e); }
+});
+
+// Traz para a lista da recepção quem já está em alguma roleta (pelo WhatsApp).
+router.post('/recepcao/importar', async (req, res, next) => {
+  try {
+    let n = 0;
+    for (const u of await db.corretoresUnicos()) {
+      if (!roleta.validarWhats(u.telefone) || await db.getAgenciaPorFone(u.telefone)) continue;
+      await db.salvarAgencia(null, { nome: u.nomes[0], telefone: u.telefone, ativo: true });
+      n++;
+    }
+    res.redirect('/admin/recepcao?importados=' + n);
   } catch (e) { next(e); }
 });
 

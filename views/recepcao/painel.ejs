@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <%
+    var fmt = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+    var iniciais = function(n){ return String(n).trim().split(/\s+/).slice(0, 2).map(function(p){ return p[0]; }).join('').toUpperCase(); };
+  %>
+  <header class="topbar">
+    <a class="brand" href="/recepcao"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Recepção · <%= usuario.nome %></small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <form method="POST" action="/recepcao/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap rc-wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Encaminhar lead</div>
+        <h1>Para qual corretor?</h1>
+        <p>Cole a mensagem do lead, escolha o canal e toque no nome do corretor: o WhatsApp abre com tudo pronto, é só enviar. <b id="rc-hoje"><%= deHoje %></b> envio(s) hoje.</p>
+      </div>
+    </div>
+
+    <div class="panel rc-lead">
+      <div class="frm">
+        <div class="fg">
+          <label for="rc-msg">Mensagem do lead <span class="sub" style="display:inline;font-weight:500">(opcional)</span></label>
+          <textarea id="rc-msg" rows="4" placeholder="Cole aqui o nome, o telefone e o que o cliente pediu"></textarea>
+        </div>
+        <label style="display:block;font-size:12.5px;font-weight:640;margin-bottom:6px">Canal <span class="sub" style="display:inline;font-weight:500">(opcional)</span></label>
+        <div class="chips" id="rc-canais">
+          <% canais.forEach(function(c){ %><button type="button" class="chip" data-canal="<%= c %>"><%= c %></button><% }); %>
+        </div>
+      </div>
+    </div>
+
+    <div class="rc-busca">
+      <input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off">
+    </div>
+
+    <div class="rc-lista" id="rc-lista">
+      <% if (!corretores.length) { %>
+        <div class="warn-box" style="grid-column:1/-1">Nenhum corretor cadastrado ainda. O administrador cadastra em <b>Painel → Recepção</b>.</div>
+      <% } %>
+      <% corretores.forEach(function(c){ %>
+        <a class="rc-item" href="https://wa.me/<%= c.telefone %>" target="_blank" rel="noopener"
+           data-id="<%= c.id %>" data-nome="<%= c.nome %>" data-fone="<%= c.telefone %>">
+          <span class="rc-av"><%= iniciais(c.nome) %></span>
+          <span class="rc-nm"><%= c.nome %></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      <% }); %>
+    </div>
+
+    <div class="panel" style="margin-top:22px">
+      <h2 class="panel-h">Seus últimos envios</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Corretor</th><th>Canal</th></tr></thead>
+        <tbody id="rc-recentes">
+          <% if (!recentes.length) { %><tr class="rc-vazio"><td colspan="3" class="empty">Nenhum envio ainda.</td></tr><% } %>
+          <% recentes.forEach(function(r){ %>
+            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.corretor_nome %></td><td class="sub"><%= r.canal || '—' %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      var msg = document.getElementById('rc-msg');
+      var canal = '';
+      document.getElementById('rc-canais').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-canal]');
+        if (!b) return;
+        var on = !b.classList.contains('on');
+        this.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('on'); });
+        if (on) b.classList.add('on');
+        canal = on ? b.dataset.canal : '';
+      });
+
+      document.getElementById('rc-busca').addEventListener('input', function () {
+        var t = this.value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+        document.querySelectorAll('.rc-item').forEach(function (a) {
+          var n = a.dataset.nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+          a.hidden = t && n.indexOf(t) < 0;
+        });
+      });
+
+      var toast = document.getElementById('rc-toast'), tt;
+      function avisar(txt) {
+        toast.textContent = txt; toast.classList.add('on');
+        clearTimeout(tt); tt = setTimeout(function () { toast.classList.remove('on'); }, 3500);
+      }
+
+      // O link é montado na hora do clique, com a mensagem do momento, e o
+      // envio é registrado em paralelo: se o registro falhar, o WhatsApp abre igual.
+      document.getElementById('rc-lista').addEventListener('click', function (e) {
+        var a = e.target.closest('.rc-item');
+        if (!a) return;
+        var texto = msg.value.trim();
+        var corpo = texto ? '*Lead encaminhado pela recepção*' + (canal ? ' (' + canal + ')' : '') + '\n\n' + texto : '';
+        a.href = 'https://wa.me/' + a.dataset.fone + (corpo ? '?text=' + encodeURIComponent(corpo) : '');
+
+        fetch('/recepcao/enviar', {
+          method: 'POST', keepalive: true, credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ corretor_id: a.dataset.id, canal: canal }),
+        }).then(function (r) { if (!r.ok) avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); })
+          .catch(function () {});
+
+        var tb = document.getElementById('rc-recentes');
+        var vazio = tb.querySelector('.rc-vazio'); if (vazio) vazio.remove();
+        var tr = document.createElement('tr');
+        var agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        [agora, a.dataset.nome, canal || '—'].forEach(function (v, i) {
+          var td = document.createElement('td'); td.textContent = v; if (i !== 1) td.className = 'sub'; tr.appendChild(td);
+        });
+        tb.insertBefore(tr, tb.firstChild);
+        var h = document.getElementById('rc-hoje'); h.textContent = Number(h.textContent) + 1;
+
+        avisar('Abrindo o WhatsApp de ' + a.dataset.nome + '…');
+        msg.value = '';
+        canal = '';
+        document.querySelectorAll('#rc-canais .chip').forEach(function (x) { x.classList.remove('on'); });
+      });
+    })();
+  </script>
+</body>
+</html>

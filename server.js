@@ -8,6 +8,7 @@ const helpers = require('./lib/helpers');
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const gestorRoutes = require('./routes/gestor');
+const recepcaoRoutes = require('./routes/recepcao');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 // ---- Rotas ----
 app.use('/admin', adminRoutes);
 app.use('/gestor', gestorRoutes);
+app.use('/recepcao', recepcaoRoutes);
 app.use('/', publicRoutes);
 
 // 404

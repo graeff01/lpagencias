@@ -7,11 +7,14 @@ const equipes = require('../lib/equipes');
 const { ipDe, bloqueado, registrarFalha, limpar } = require('../lib/tentativas');
 
 function telaLogin(res, status, error, usuario) {
-  return res.status(status).render('gestor/login', { title: 'Entrar · Gestores', error, usuario: usuario || '' });
+  return res.status(status).render('gestor/login', { title: 'Entrar · Equipe', error, usuario: usuario || '' });
 }
 
+// Gestores e recepção usam o mesmo login; cada perfil cai na sua tela.
+const destino = (g) => (g.papel === 'recepcao' ? '/recepcao' : '/gestor');
+
 router.get('/login', (req, res) => {
-  if (req.session && req.session.gestorId) return res.redirect('/gestor');
+  if (req.session && req.session.gestorId) return res.redirect(req.session.papelEquipe === 'recepcao' ? '/recepcao' : '/gestor');
   telaLogin(res, 200, null);
 });
 
@@ -30,8 +33,9 @@ router.post('/login', async (req, res, next) => {
     req.session.regenerate((err) => {   // evita fixação de sessão
       if (err) return telaLogin(res, 500, 'Erro ao entrar. Tente de novo.', req.body.usuario);
       req.session.gestorId = g.id;
+      req.session.papelEquipe = g.papel || 'gestor';
       db.marcarAcessoGestor(g.id).catch(() => {});
-      res.redirect('/gestor');
+      res.redirect(destino(g));
     });
   } catch (e) { next(e); }
 });
@@ -40,19 +44,25 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/gestor/login'));
 });
 
-// Gestor desativado ou excluído perde o acesso na hora, mesmo logado.
-router.use(async (req, res, next) => {
-  try {
-    const id = req.session && req.session.gestorId;
-    const g = id ? await db.getGestor(id) : null;
-    if (!g || !g.ativo) {
-      if (id) delete req.session.gestorId;
-      return res.redirect('/gestor/login');
-    }
-    req.gestor = g;
-    next();
-  } catch (e) { next(e); }
-});
+// Usuário desativado ou excluído perde o acesso na hora, mesmo logado.
+// papel: só esse perfil passa (a recepção não vê o painel de leads e vice-versa).
+function exigeEquipe(papel) {
+  return async (req, res, next) => {
+    try {
+      const id = req.session && req.session.gestorId;
+      const g = id ? await db.getGestor(id) : null;
+      if (!g || !g.ativo) {
+        if (id) delete req.session.gestorId;
+        return res.redirect('/gestor/login');
+      }
+      if ((g.papel || 'gestor') !== papel) return res.redirect(destino(g));
+      req.gestor = g;
+      next();
+    } catch (e) { next(e); }
+  };
+}
+
+router.use(exigeEquipe('gestor'));
 
 router.get('/', async (req, res, next) => {
   try {
@@ -63,3 +73,4 @@ router.get('/', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.exigeEquipe = exigeEquipe;

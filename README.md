@@ -214,11 +214,28 @@ gestor vê.
 - O nome e o telefone do cliente não passam pelo site: o painel conta pessoas
   que clicaram, e o contato fica no WhatsApp do corretor.
 
+### Recepção (encaminhar leads de qualquer canal)
+A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
+`/recepcao`: uma lista com todos os corretores da agência e uma busca. Ela cola
+a mensagem do lead, marca o canal (opcional) e toca no nome: o WhatsApp abre na
+conversa com o corretor e a mensagem já vem pronta, é só enviar.
+
+- **Configurar:** em `/admin/equipes`, crie um acesso do tipo *Recepção*. Em
+  `/admin/recepcao` cadastre os corretores (nome e WhatsApp) ou use *Importar
+  das roletas*. *Ocultar* tira o corretor da lista sem apagar os envios dele.
+- **Métricas:** `/admin/recepcao` mostra os envios por corretor e por canal no
+  período. No painel do gestor, a coluna *Recepção* soma os envios para cada
+  corretor da equipe (o corretor é reconhecido pelo WhatsApp).
+- O site registra só quem enviou, para quem, o canal e a hora. O texto do lead
+  vai do WhatsApp da recepção direto para o do corretor e não fica guardado.
+
 ### Tabelas
 - `corretores` — nome, telefone, peso, ativo, contador da fila.
 - `cliques_whatsapp` — log de auditoria de cada clique (com o telefone de quem recebeu).
 - `gestores` — usuário e senha (hash scrypt) de cada gestor.
 - `equipe_corretores` — telefone do corretor → gestor.
+- `agencia_corretores` — lista de corretores da recepção.
+- `encaminhamentos` — cada lead encaminhado pela recepção (sem o conteúdo).
 
 ### Proteções contra erro
 - **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o
