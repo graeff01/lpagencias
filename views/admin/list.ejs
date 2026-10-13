@@ -29,6 +29,9 @@
       </div>
     </div>
 
+    <% if (!ehAdmin) { %>
+      <div class="warn-box">Você entrou com a <b>senha de cadastro</b>: dá para criar e editar empreendimentos. Corretores, leads, equipes e recepção ficam com a <b>senha de administrador</b>.</div>
+    <% } %>
     <% if (ehAdmin && portalExemplo) { %>
       <div class="warn-box"><b>A página principal está com textos de exemplo.</b> Revise números e persona em <a href="/admin/portal" style="font-weight:700;text-decoration:underline">Portal</a> antes de anunciar.</div>
     <% } %>
