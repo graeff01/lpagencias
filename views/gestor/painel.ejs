@@ -54,7 +54,7 @@
     <div class="kpis">
       <div class="kpi"><span>Leads · <%= rotulo.toLowerCase() %></span><b><%= total.leads %></b><i>pessoas distintas que chamaram a equipe</i></div>
       <div class="kpi"><span>Média por corretor</span><b><%= media.toFixed(1).replace('.', ',') %></b><i><%= total.corretores %> corretor(es) na equipe</i></div>
-      <div class="kpi"><span>Resgatados</span><b><%= total.resgatados %></b><i>leads que vieram de outro corretor</i></div>
+      <div class="kpi"><span>Pela recepção</span><b><%= total.recepcao %></b><i>leads que a recepção encaminhou</i></div>
       <div class="kpi"><span>Não retornou</span><b><%= total.nao_retornados %></b><i>voltaram após 24h e trocaram de corretor</i></div>
     </div>
 
@@ -62,9 +62,9 @@
       <h2 class="panel-h">Distribuição · <%= rotulo.toLowerCase() %></h2>
       <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Corretor</th><th>Leads</th><th>Participação</th><th>Resgatou</th><th>Não retornou</th><th>Último lead</th><th>Por empreendimento</th></tr></thead>
+        <thead><tr><th>Corretor</th><th>Leads</th><th>Participação</th><th>Recepção</th><th>Resgatou</th><th>Não retornou</th><th>Último lead</th><th>Por empreendimento</th></tr></thead>
         <tbody>
-          <% if (!linhas.length) { %><tr><td colspan="7" class="empty">Sem corretores na equipe.</td></tr><% } %>
+          <% if (!linhas.length) { %><tr><td colspan="8" class="empty">Sem corretores na equipe.</td></tr><% } %>
           <% linhas.forEach(function(l){ var pct = total.leads ? (l.leads * 100 / total.leads) : 0; %>
             <tr class="<%= l.ativo ? '' : 'off' %>">
               <td>
@@ -77,6 +77,7 @@
                 <div class="bar"><span style="width:<%= Math.min(100, pct).toFixed(1) %>%"></span></div>
                 <span class="sub"><%= pct.toFixed(1).replace('.', ',') %>%</span>
               </td>
+              <td class="num"><%= l.recepcao %></td>
               <td class="num"><%= l.resgatados %></td>
               <td class="num" <% if (l.nao_retornados) { %>style="color:var(--danger)"<% } %>><%= l.nao_retornados %></td>
               <td class="sub"><%= fmt(l.ultimo) %></td>
@@ -91,6 +92,7 @@
       </div>
       <div class="panel-foot"><p class="hint">
         <b>Leads</b> conta pessoas, não cliques: quem aperta vários botões da mesma página conta uma vez só.
+        <b>Recepção</b> são os leads de qualquer canal que a recepção encaminhou ao corretor pelo WhatsApp.
         <b>“Não retornou”</b> conta os leads que voltaram à página depois de 24h e foram repassados a outro corretor.
         É um sinal de que o atendimento pode ter falhado, não uma prova. Vale olhar a tendência ao longo das semanas.
         O nome e o telefone do cliente não passam pelo site: eles ficam só no WhatsApp do corretor.

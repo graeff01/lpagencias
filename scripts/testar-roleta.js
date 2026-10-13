@@ -126,6 +126,17 @@ function ok(cond, msg) {
   ok(ontemNoMesPassado.ate <= equipes.periodo('mes').desde, 'mês passado termina onde este mês começa');
   ok(equipes.confereSenha('senha-forte-1', g1.senha_hash) && !equipes.confereSenha('errada', g1.senha_hash), 'senha confere só a certa');
 
+  console.log('\n9) Recepção: envios contam para o corretor e aparecem no painel do gestor');
+  const mari = await db.salvarAgencia(null, { nome: 'Ana', telefone: '(51) 99777-0001' });
+  await db.registrarEncaminhamento({ usuario_id: 99, corretor_fone: mari.telefone, corretor_nome: 'Ana', canal: 'Instagram' });
+  await db.registrarEncaminhamento({ usuario_id: 99, corretor_fone: mari.telefone, corretor_nome: 'Ana', canal: null });
+  const pg3 = await equipes.painel(g1, 'hoje');
+  ok(pg3.total.recepcao === 2 && pg3.linhas[0].recepcao === 2, `Ana aparece com ${pg3.total.recepcao} envios da recepção na equipe do G1`);
+  const pg4 = await equipes.painel(g2, 'hoje');
+  ok(pg4.total.recepcao === 0, 'G2 não vê envios de corretor de outra equipe');
+  const rec = await db.createGestor({ nome: 'Larissa', usuario: 'larissa', senha_hash: equipes.hashSenha('x'.repeat(8)), papel: 'recepcao' });
+  ok(rec.papel === 'recepcao', 'acesso de recepção é gravado com o papel certo');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });
