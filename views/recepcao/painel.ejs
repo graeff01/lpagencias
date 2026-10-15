@@ -10,7 +10,7 @@
 <body>
   <%
     var fmt = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
-    var iniciais = function(n){ return String(n).trim().split(/\s+/).slice(0, 2).map(function(p){ return p[0]; }).join('').toUpperCase(); };
+    var iniciais = function(n){ return String(n).replace(/[^A-Za-zÀ-ÿ\s]/g, '').trim().split(/\s+/).slice(0, 2).map(function(p){ return p[0]; }).join('').toUpperCase(); };
   %>
   <header class="topbar">
     <a class="brand" href="/recepcao"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Recepção · <%= usuario.nome %></small></span></a>
