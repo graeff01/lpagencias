@@ -155,6 +155,16 @@ function ok(cond, msg) {
   const msgC = P.mensagemCorretor({ ...lz, canal: 'Portais' });
   ok(msgC.includes('*Nome:* T.Ghedini') && msgC.includes('wa.me/5551989082077'), 'mensagem do corretor traz nome e link do cliente');
 
+  const email = 'Dados do Lead\nNome: Wlademir Campos\nTelefone:\n(51) 98616-7293\nE-mail:\nwlad_5444@yahoo.com.br\n'
+    + 'Interesse: Não informado\nMensagem: Fiz uma simulação. <br />Financiamento de R$ 132.000,00<br /><br>Banco: ITAÚ | Taxa: 12% <br />\n'
+    + 'Data do interesse: Não informado\nCorretor Responsável\nNome: Fábio Goulart\nAgência: Canoas\nContato: fabio@auxiliadorapredial.com.br';
+  const le = P.ler(email);
+  ok(le.nome === 'Wlademir Campos' && le.telefone === '5551986167293', 'e-mail: valor na linha de baixo do rótulo (telefone)');
+  ok(le.email === 'wlad_5444@yahoo.com.br', 'e-mail: mantém o "_" do endereço');
+  ok(le.negocio === '', 'e-mail: "Não informado" fica vazio');
+  ok(le.mensagem === 'Fiz uma simulação.\nFinanciamento de R$ 132.000,00\nBanco: ITAÚ | Taxa: 12%', 'e-mail: <br> vira quebra e a mensagem para no "Data do interesse"');
+  ok(le.corretor === 'Fábio Goulart', 'e-mail: separa o corretor responsável do nome do cliente');
+
   const env = await db.registrarEncaminhamento({ usuario_id: 99, corretor_fone: '51997770001', corretor_nome: 'Ana',
     lead_nome: lz.nome, lead_telefone: lz.telefone, imovel: lz.imovel, origem: lz.origem, mensagem: lz.mensagem });
   ok(env.lead_nome === 'T.Ghedini' && env.imovel === '817210', 'envio guarda os dados do lead');

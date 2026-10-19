@@ -316,3 +316,10 @@ a.chip:hover{border-color:var(--line-strong)}
 .rc-lead .rc-lista{padding:0 18px 18px;box-sizing:border-box}
 .rc-item{min-width:0;box-sizing:border-box}
 .rc-msg{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:320px;margin-top:3px;font-size:12px;color:var(--muted)}
+.rc-modo{margin-left:auto;display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.rc-modo button{font-size:12px;font-weight:600;color:var(--muted);padding:5px 10px;border-radius:7px}
+.rc-modo button.on{background:var(--elev);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.rc-sugerido{font-size:13px;font-weight:600;color:#0d7a3f;background:#e7f7ee;border:1px solid #b6e6c9;border-radius:10px;padding:9px 12px;margin-bottom:10px}
+.rc-sugerido[hidden]{display:none}
+.rc-item.rc-resp{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,158,74,.18)}
+@media(max-width:520px){.rc-modo button{padding:5px 7px;font-size:11px}}

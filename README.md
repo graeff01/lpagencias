@@ -221,11 +221,16 @@ A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
 1. **Cola a mensagem** do lead (ou toca em *Colar do WhatsApp*). O sistema
    separa sozinho nome, telefone, e-mail, negócio, imóvel, origem e mensagem.
    Entende o formato do Leads Delivery/portais ("Novo cadastro recebido do ZAP
-   para o imóvel 817210…") e, em texto livre, acha ao menos o telefone.
+   para o imóvel 817210…"), o dos e-mails de portal (valor na linha de baixo,
+   `<br>` na mensagem, bloco "Corretor Responsável") e, em texto livre, acha ao
+   menos o telefone. Se a mensagem indica um corretor responsável que está na
+   lista, ele aparece destacado.
 2. **Confere** os campos. Nome e telefone são obrigatórios. Se o cliente já foi
    encaminhado antes, aparece um aviso com o corretor e a data (não bloqueia).
 3. **Toca no corretor.** O WhatsApp abre com o lead organizado, com o link do
-   cliente pronto para o corretor chamar.
+   cliente pronto para o corretor chamar. No computador abre o **WhatsApp Web**,
+   sempre na mesma aba; no celular, o aplicativo. Dá para trocar no seletor
+   *WhatsApp Web / Aplicativo* (a escolha fica salva no navegador).
 
 - **Configurar:** em `/admin/equipes`, crie um acesso do tipo *Recepção*. Em
   `/admin/recepcao` cadastre os corretores (nome e WhatsApp) ou use *Importar

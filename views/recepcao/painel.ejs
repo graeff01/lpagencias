@@ -65,8 +65,13 @@
     </div>
 
     <div class="panel rc-lead" style="overflow:visible">
-      <h2 class="panel-h"><span class="rc-n">3</span> Toque no corretor</h2>
+      <h2 class="panel-h"><span class="rc-n">3</span> Toque no corretor
+        <span class="rc-modo" id="rc-modo" title="Onde o WhatsApp abre">
+          <button type="button" data-modo="web">WhatsApp Web</button><button type="button" data-modo="app">Aplicativo</button>
+        </span>
+      </h2>
       <div class="frm" style="padding-bottom:6px">
+        <div class="rc-sugerido" id="rc-sugerido" hidden></div>
         <div class="rc-busca"><input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off"></div>
       </div>
       <div class="rc-lista" id="rc-lista">
@@ -112,6 +117,51 @@
       var dono = document.getElementById('rc-dono');
       var canal = '';
 
+      // Onde o WhatsApp abre. No computador, o WhatsApp Web sempre na mesma
+      // aba (a janela "rc-whatsapp" é reaproveitada a cada envio); no
+      // celular, o aplicativo. A escolha fica salva neste navegador.
+      var celular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      var modo = celular ? 'app' : 'web';
+      try { modo = localStorage.getItem('rc-whats') || modo; } catch (e) {}
+      function marcarModo(m) {
+        modo = m;
+        try { localStorage.setItem('rc-whats', m); } catch (e) {}
+        document.querySelectorAll('#rc-modo button').forEach(function (b) { b.classList.toggle('on', b.dataset.modo === m); });
+      }
+      marcarModo(modo);
+      document.getElementById('rc-modo').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-modo]');
+        if (b) marcarModo(b.dataset.modo);
+      });
+      function linkWhats(fone, texto) {
+        return modo === 'web'
+          ? 'https://web.whatsapp.com/send?phone=' + fone + '&text=' + encodeURIComponent(texto)
+          : 'https://wa.me/' + fone + '?text=' + encodeURIComponent(texto);
+      }
+
+      // "Corretor responsável" escrito na mensagem (e-mails do portal):
+      // destaca na lista quem tem esse nome. Só sugere; quem decide é ela.
+      var sugerido = document.getElementById('rc-sugerido');
+      function normNome(n) { return String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(function (p) { return p.length > 2; }); }
+      function destacarResponsavel(nome) {
+        var alvo = normNome(nome), achado = null;
+        document.querySelectorAll('.rc-item').forEach(function (a) {
+          var n = normNome(a.dataset.nome);
+          var bate = alvo.length && n.length && n[0] === alvo[0] && (alvo.length < 2 || n.indexOf(alvo[alvo.length - 1]) >= 0 || n.length === 1);
+          a.classList.toggle('rc-resp', !!bate && !achado);
+          if (bate && !achado) achado = a;
+        });
+        if (achado) {
+          sugerido.textContent = 'A mensagem indica como corretor responsável: ' + achado.dataset.nome + ' (destacado abaixo).';
+          sugerido.hidden = false;
+        } else if (alvo.length && /[a-z]/i.test(nome) && !/ - /.test(nome)) {
+          sugerido.textContent = 'A mensagem indica como corretor responsável: ' + nome + ' (não está na lista).';
+          sugerido.hidden = false;
+        } else {
+          sugerido.hidden = true;
+        }
+      }
+
       function marcarCanal(c) {
         canal = c || '';
         document.querySelectorAll('#rc-canais .chip').forEach(function (x) { x.classList.toggle('on', x.dataset.canal === canal); });
@@ -127,6 +177,7 @@
         ['nome', 'email', 'negocio', 'imovel', 'origem', 'mensagem'].forEach(function (k) { el[k].value = d[k] || ''; });
         el.telefone.value = d.telefone ? P.formatarFone(d.telefone) : '';
         marcarCanal(P.canalDaOrigem(d.origem));
+        destacarResponsavel(d.corretor);
         var achou = ['nome', 'telefone', 'email', 'imovel'].filter(function (k) { return d[k]; }).length;
         lido.textContent = cola.value.trim() ? (achou ? '✓ Dados separados. Confira abaixo.' : 'Não reconheci os campos: preencha abaixo.') : '';
         verificarDono();
@@ -163,6 +214,7 @@
 
       function limpar() {
         cola.value = ''; form.reset(); marcarCanal(''); lido.textContent = ''; dono.hidden = true;
+        destacarResponsavel('');
       }
       document.getElementById('rc-limpar').addEventListener('click', limpar);
 
@@ -196,7 +248,10 @@
           (d.nome ? el.telefone : el.nome).focus();
           return;
         }
-        a.href = 'https://wa.me/' + a.dataset.fone + '?text=' + encodeURIComponent(P.mensagemCorretor(d));
+        a.href = linkWhats(a.dataset.fone, P.mensagemCorretor(d));
+        // Aba nomeada: o mesmo WhatsApp Web é reaproveitado a cada envio.
+        a.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+        a.rel = modo === 'web' ? '' : 'noopener';
 
         var corpo = Object.assign({ corretor_id: a.dataset.id }, d);
         fetch('/recepcao/enviar', {

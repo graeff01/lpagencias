@@ -14,6 +14,11 @@
     gerador: ['cadastro gerador', 'equipe'],
   };
 
+  // Linhas que encerram a mensagem e o bloco atual (sem acento, minúsculas).
+  var FIM_DE_BLOCO = ['corretor responsavel', 'dados do lead', 'informacoes do cadastro', 'dados do cliente'];
+  // Rótulos que não são do lead e também encerram a mensagem.
+  var PARA = ['data do interesse', 'data', 'agencia', 'contato', 'cadastro gerador', 'equipe', 'origem do lead'];
+
   var PORTAIS = [
     [/\bzap\b/i, 'ZAP Imóveis'], [/viva\s*real/i, 'VivaReal'], [/\bolx\b/i, 'OLX'],
     [/imovel\s*web/i, 'Imovelweb'], [/chaves\s*na\s*m[aã]o/i, 'Chaves na Mão'],
@@ -24,9 +29,17 @@
     return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
+  // Tira a formatação do WhatsApp (*negrito*, _itálico_, ~riscado~) sem
+  // estragar o "_" de dentro de e-mails como joao_silva@...
+  function semFormatacao(v) {
+    return String(v || '').replace(/[*~]/g, '')
+      .replace(/(^|[\s(])_(?=\S)/g, '$1').replace(/(\S)_(?=$|[\s).,!?:])/g, '$1');
+  }
+
+  // "-", "Não informado" e afins são campo vazio, não um valor.
   function limpo(v) {
-    var s = String(v || '').replace(/[*_~]/g, '').trim();
-    return s === '-' || s === '—' ? '' : s;
+    var s = semFormatacao(v).trim();
+    return /^(-|—|n[aã]o informad[oa]|n\/?a|null|undefined)$/i.test(s) ? '' : s;
   }
 
   // Só dígitos com DDI 55, ou '' se não parecer um celular/fixo brasileiro.
@@ -51,27 +64,50 @@
     var t = String(texto || '').replace(/\r/g, '');
     if (!t.trim()) return out;
 
-    var atual = null;
+    // E-mails chegam com <br> no meio do texto: vira quebra de linha.
+    t = t.replace(/(\s*<br\s*\/?>\s*)+/gi, '\n').replace(/<\/?[a-z][^>]*>/gi, '').replace(/&nbsp;/g, ' ');
+
+    // atual: campo que está sendo lido (a mensagem pode ter várias linhas).
+    // pendente: rótulo sem valor na mesma linha ("Telefone:" e o número embaixo).
+    // secao: dentro do bloco "Corretor Responsável", "Nome:" é do corretor.
+    var atual = null, pendente = null, secao = null;
     t.split('\n').forEach(function (linha) {
-      var l = linha.replace(/[*_~]/g, '').trim();
+      var l = semFormatacao(linha).trim();
+      if (!l) { if (atual === 'mensagem') atual = null; return; }
       if (/mensagem autom[aá]tica/i.test(l)) { atual = null; return; }
-      var m = l.match(/^([A-Za-zÀ-ÿ .-]{2,25}):\s*(.*)$/);
-      var campo = m && campoDoRotulo(m[1]);
-      if (campo) {
-        atual = campo;
-        if (!out[campo]) out[campo] = limpo(m[2]);
+      var semAc = semAcento(l).toLowerCase().replace(/:$/, '');
+      if (FIM_DE_BLOCO.indexOf(semAc) >= 0) {
+        atual = null; pendente = null;
+        secao = semAc === 'corretor responsavel' ? 'corretor' : null;
         return;
       }
-      // Mensagem com mais de uma linha continua até o próximo rótulo.
-      if (atual === 'mensagem' && l) out.mensagem += (out.mensagem ? '\n' : '') + l;
-      else if (!l) atual = atual === 'mensagem' ? null : atual;
+      var m = l.match(/^([A-Za-zÀ-ÿ .-]{2,25}):\s*(.*)$/);
+      var rotulo = m ? semAcento(m[1]).toLowerCase().trim() : '';
+      var campo = m && campoDoRotulo(m[1]);
+      if (secao === 'corretor' && campo === 'nome') campo = 'corretor';
+      if (campo) {
+        atual = campo;
+        var v = limpo(m[2]);
+        if (!out[campo]) out[campo] = v;
+        pendente = !m[2].trim() && campo !== 'mensagem' ? campo : null;
+        return;
+      }
+      if (m && PARA.indexOf(rotulo) >= 0) { atual = null; pendente = null; return; }
+      if (pendente) {
+        if (!out[pendente]) out[pendente] = limpo(l);
+        pendente = null;
+        return;
+      }
+      // Mensagem com mais de uma linha continua até uma linha em branco ou
+      // um rótulo de fim ("Data do interesse:", "Corretor Responsável").
+      if (atual === 'mensagem') out.mensagem += (out.mensagem ? '\n' : '') + l;
     });
 
     // "Novo cadastro recebido do ZAP para o imóvel 817210"
     var rec = t.match(/recebido\s+d[oa]s?\s+(.+?)\s+para\s+o\s+im[oó]vel\s+([\w.-]+)/i);
     if (rec) {
       if (!out.imovel) out.imovel = rec[2];
-      out.origem = rec[1].replace(/[*_]/g, '').trim();
+      out.origem = semFormatacao(rec[1]).trim();
     }
     if (!out.imovel) {
       var cod = t.match(/im[oó]vel\s*(?:c[oó]d(?:igo)?\.?)?\s*[:#]?\s*(\d{3,})/i);
