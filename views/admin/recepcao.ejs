@@ -67,12 +67,12 @@
             <% if (!linhas.length) { %><tr><td colspan="5" class="empty">Cadastre os corretores ao lado ou importe os que já estão nas roletas.</td></tr><% } %>
             <% linhas.forEach(function(l){ %>
               <tr class="<%= l.ativo ? '' : 'off' %>">
-                <td><b><%= l.nome %></b><% if (!l.ativo) { %><span class="tag pause">oculto</span><% } %><span class="sub mono"><%= tel(l.telefone) %></span></td>
+                <td><b><%= l.nome %></b><% if (l.destaque) { %><span class="tag" style="background:#fff2e2;color:#a4620f">gerente</span><% } %><% if (!l.ativo) { %><span class="tag pause">oculto</span><% } %><span class="sub mono"><%= tel(l.telefone) %></span></td>
                 <td class="num big"><%= l.envios %></td>
                 <td><div class="bar"><span style="width:<%= maxEnv ? (l.envios * 100 / maxEnv).toFixed(1) : 0 %>%"></span></div></td>
                 <td class="sub"><%= fmt(l.ultimo) %></td>
                 <td class="row-acts">
-                  <button class="btn btn-ghost btn-sm" type="button" onclick='editar(<%- JSON.stringify({ id: l.id, nome: l.nome, telefone: tel(l.telefone), ativo: l.ativo }) %>)'>Editar</button>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick='editar(<%- JSON.stringify({ id: l.id, nome: l.nome, telefone: tel(l.telefone), ativo: l.ativo, destaque: !!l.destaque }) %>)'>Editar</button>
                   <form method="POST" action="/admin/recepcao/corretor/<%= l.id %>/toggle"><button class="btn btn-ghost btn-sm" type="submit"><%= l.ativo ? 'Ocultar' : 'Mostrar' %></button></form>
                   <form method="POST" action="/admin/recepcao/corretor/<%= l.id %>/excluir" onsubmit="return confirm('Remover <%= l.nome %> da lista da recepção?')">
                     <button class="btn btn-danger btn-sm" type="submit" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -93,6 +93,7 @@
             <div class="fg"><label>Nome</label><input name="nome" required placeholder="Ex.: Marilane"></div>
             <div class="fg"><label>WhatsApp</label><input name="telefone" required placeholder="(51) 99999-0000" inputmode="tel"></div>
             <label class="chk"><input type="checkbox" name="ativo" checked> Aparece para a recepção</label>
+            <label class="chk" style="margin-top:-8px"><input type="checkbox" name="destaque"> Gerente: aparece em destaque, no topo da lista</label>
             <div class="frm-acts">
               <button class="btn btn-green" type="submit">Salvar corretor</button>
               <button class="btn btn-ghost" type="button" onclick="limpar()">Limpar</button>
@@ -146,7 +147,7 @@
   <script>
     var f = document.getElementById('c-form'), el = f.elements;
     function editar(c) {
-      el.id.value = c.id; el.nome.value = c.nome; el.telefone.value = c.telefone; el.ativo.checked = c.ativo;
+      el.id.value = c.id; el.nome.value = c.nome; el.telefone.value = c.telefone; el.ativo.checked = c.ativo; el.destaque.checked = c.destaque;
       document.getElementById('c-titulo').textContent = 'Editar ' + c.nome;
       f.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.nome.focus();
     }

@@ -232,6 +232,10 @@ A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
    sempre na mesma aba; no celular, o aplicativo. Dá para trocar no seletor
    *WhatsApp Web / Aplicativo* (a escolha fica salva no navegador).
 
+- **Gerentes em destaque:** quem estiver marcado como *Gerente* no cadastro da
+  recepção aparece num grupo próprio, no topo da lista (para campanhas cujos
+  leads vão direto ao gerente). Alberto Ceballos e Fabrício Bilhalva entram
+  assim na primeira subida; depois disso, a marcação é feita pelo painel.
 - **Configurar:** em `/admin/equipes`, crie um acesso do tipo *Recepção*. Em
   `/admin/recepcao` cadastre os corretores (nome e WhatsApp) ou use *Importar
   das roletas*. *Ocultar* tira o corretor da lista sem apagar os envios dele.

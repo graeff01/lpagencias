@@ -78,9 +78,12 @@
         <% if (!corretores.length) { %>
           <div class="warn-box" style="grid-column:1/-1">Nenhum corretor cadastrado ainda. O administrador cadastra em <b>Painel → Recepção</b>.</div>
         <% } %>
-        <% corretores.forEach(function(c){ %>
-          <a class="rc-item" href="https://wa.me/<%= c.telefone %>" target="_blank" rel="noopener"
-             data-id="<%= c.id %>" data-nome="<%= c.nome %>" data-fone="<%= c.telefone %>">
+        <% var temGerente = corretores.some(function(c){ return c.destaque; }); %>
+        <% corretores.forEach(function(c, i){ %>
+          <% if (temGerente && i === 0) { %><div class="rc-grupo" data-grupo="g">Gerentes</div><% } %>
+          <% if (temGerente && !c.destaque && (i === 0 || corretores[i-1].destaque)) { %><div class="rc-grupo" data-grupo="c">Corretores</div><% } %>
+          <a class="rc-item<%= c.destaque ? ' rc-gerente' : '' %>" href="https://wa.me/<%= c.telefone %>" target="_blank" rel="noopener"
+             data-id="<%= c.id %>" data-nome="<%= c.nome %>" data-fone="<%= c.telefone %>" data-grupo="<%= c.destaque ? 'g' : 'c' %>">
             <span class="rc-av"><%= iniciais(c.nome) %></span>
             <span class="rc-nm"><%= c.nome %></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -223,6 +226,10 @@
         document.querySelectorAll('.rc-item').forEach(function (a) {
           var n = a.dataset.nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
           a.hidden = t && n.indexOf(t) < 0;
+        });
+        // Título do grupo some quando a busca não deixa ninguém nele.
+        document.querySelectorAll('.rc-grupo').forEach(function (g) {
+          g.hidden = !document.querySelector('.rc-item[data-grupo="' + g.dataset.grupo + '"]:not([hidden])');
         });
       });
 

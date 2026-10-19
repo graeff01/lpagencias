@@ -512,7 +512,7 @@ router.post('/recepcao/corretor', async (req, res, next) => {
     if (!numero) return res.redirect('/admin/recepcao?erro=telefone');
     const outro = await db.getAgenciaPorFone(numero);
     if (outro && outro.id !== id) return res.redirect('/admin/recepcao?erro=duplicado');
-    await db.salvarAgencia(id, { nome, telefone: numero, ativo: b.ativo === 'on' });
+    await db.salvarAgencia(id, { nome, telefone: numero, ativo: b.ativo === 'on', destaque: b.destaque === 'on' });
     res.redirect('/admin/recepcao?ok=1');
   } catch (e) { next(e); }
 });
