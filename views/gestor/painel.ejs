@@ -116,6 +116,7 @@
               <td><%= r.corretor %></td>
               <td class="sub">
                 <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ confirmou</span><span class="sub">em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span>
+                <% } else if (r.substituido_por) { %><span style="color:var(--danger);font-weight:650">não confirmou</span><span class="sub">reencaminhado a outro corretor</span>
                 <% } else if (r.token) { var esp = (Date.now() - new Date(r.created_at)) / 60000; %><span style="<%= esp > 60 ? 'color:var(--danger);font-weight:650' : '' %>">sem confirmar</span><span class="sub">há <%= duracao(esp) %></span>
                 <% } else { %>—<% } %>
               </td>
@@ -131,13 +132,14 @@
         <h2 class="panel-h">Últimos leads das páginas (site)</h2>
         <div class="tbl-wrap">
         <table class="tbl">
-          <thead><tr><th>Quando</th><th>Corretor</th><th>Empreendimento</th><th>Campanha</th></tr></thead>
+          <thead><tr><th>Quando</th><th>Cliente</th><th>Corretor</th><th>Empreendimento</th><th>Campanha</th></tr></thead>
           <tbody>
-            <% if (!recentes.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+            <% if (!recentes.length) { %><tr><td colspan="5" class="empty">Nenhum lead no período.</td></tr><% } %>
             <% recentes.forEach(function(r){ %>
               <tr>
                 <td class="sub"><%= fmt(r.created_at) %></td>
-                <td><%= r.corretor %><% if (r.resgate) { %><span class="tag">resgate</span><% } %></td>
+                <td><% if (r.lead_telefone) { %><b><%= r.lead_nome %></b><span class="sub mono"><a href="https://wa.me/<%= r.lead_telefone %>" target="_blank" rel="noopener"><%= r.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></a></span><% if (r.interesse) { %><span class="sub"><%= r.interesse %></span><% } %><% } else { %><span class="sub">sem formulário</span><% } %></td>
+                <td><%= r.corretor %><% if (r.resgate) { %><span class="tag">resgate</span><% } %><% if (r.protocolo) { %><span class="sub mono"><%= r.protocolo %></span><% } %></td>
                 <td class="sub"><%= r.emp %></td>
                 <td class="sub"><%= [r.utm_source, r.utm_campaign].filter(Boolean).join(' · ') || '—' %></td>
               </tr>

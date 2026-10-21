@@ -491,14 +491,19 @@
     ev.preventDefault();
     var d=new FormData(lf), slug=d.get('emp')||'';
     var sel=lf.querySelector('select[name=emp]'), nomeEmp=slug?sel.options[sel.selectedIndex].text:'';
-    var msg='Olá! Meu nome é '+(d.get('nome')||'')+'.';
+    var G=window.__leadGate, lead={ nome:String(d.get('nome')||'').trim(), tel:String(d.get('tel')||'').trim(), int:slug?'Conhecer o '+nomeEmp:'Ajuda para escolher um imóvel' };
+    var msg='Olá! Meu nome é '+lead.nome+'.';
     msg+=slug?' Tenho interesse no '+nomeEmp+'.':' Quero ajuda para escolher um lançamento.';
     if(d.get('msg')) msg+=' '+d.get('msg');
-    if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
+    if(lead.tel) msg+=' Meu telefone: '+lead.tel+'.';
     if(window.gtag){ gtag('event','envio_formulario',{pagina:'portal',empreendimento:nomeEmp||'indefinido'}); if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV}); }
     if(window.fbq) fbq('track','Lead',{content_name:nomeEmp||'portal'});
+    var destino=comUtm('/wa/'+(slug||'<%= wa.split('/').pop() %>')+'?src=formulario-portal'+(d.get('msg')?'&msg='+encodeURIComponent(d.get('msg')):''));
+    // Formulário padrão: nome e WhatsApp estruturados (auditoria + mensagem padrão).
+    if(G && G.valido(lead.tel) && lead.nome.length>1){ G.guardar(lead); window.open(G.comDados(destino,lead),'_blank'); return; }
     window.open(comUtm('/wa/'+(slug||'<%= wa.split('/').pop() %>')+'?src=formulario-portal&msg='+encodeURIComponent(msg)),'_blank');
   });
 </script>
+<% if (leadGate) { %><%- include('partials/lead-gate', { titulo: 'Fale com um consultor', interesses: ['Ajuda para escolher um imóvel', 'Valores e condições de pagamento', 'Agendar uma visita', 'Investimento'] }) %><% } %>
 </body>
 </html>

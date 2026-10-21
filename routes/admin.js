@@ -342,10 +342,11 @@ router.get('/leads/:id/csv', async (req, res, next) => {
     if (!emp) return next();
     const linhas = await db.cliquesRecentes(emp.id, 10000);
     const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const head = ['data_hora', 'corretor', 'novo_lead', 'resgate', 'corretor_anterior', 'origem', 'motivo', 'bot', 'visitante', 'utm_source', 'utm_medium', 'utm_campaign', 'referer'];
+    const head = ['data_hora', 'corretor', 'cliente', 'cliente_telefone', 'interesse', 'protocolo', 'novo_lead', 'resgate', 'corretor_anterior', 'origem', 'motivo', 'bot', 'visitante', 'utm_source', 'utm_medium', 'utm_campaign', 'referer'];
     const csv = [head.join(';')].concat(linhas.map(l => [
       l.created_at ? new Date(l.created_at).toISOString() : '',
       l.corretor_nome || '(sem corretor)',
+      l.lead_nome || '', l.lead_telefone || '', l.interesse || '', l.protocolo || '',
       l.novo_lead ? 'sim' : 'nao',
       l.resgate ? 'sim' : 'nao',
       l.corretor_anterior || '',
@@ -480,13 +481,47 @@ router.get('/recepcao', async (req, res, next) => {
     const recepcionistas = usuarios.filter(u => u.papel === 'recepcao');
     const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
     leads.forEach((l) => { l.por = quem[l.usuario_id] || '—'; });
-    const [caixaStatus, pendentes] = await Promise.all([caixa.status(), db.contarEntradasPendentes()]);
+    const [caixaStatus, pendentes, entradas, formulariosLp] = await Promise.all([
+      caixa.status(), db.contarEntradasPendentes(), db.entradasPeriodo(per.desde, per.ate), db.formulariosLpPeriodo(per.desde, per.ate),
+    ]);
     const conf = equipes.confirmacoes(leads);
+    const fech = equipes.fechamento(entradas, leads, usuarios, formulariosLp);
+    const caixaAlerta = await caixa.alerta(caixaStatus);
     res.render('admin/recepcao', {
       title: 'Recepção · Painel', linhas, canais, total, per, periodos: equipes.PERIODOS,
       recepcionistas, leads, campanhas, emps, q: req.query, caixaStatus, pendentes, conf,
       duracao: equipes.duracao, baseUrl: baseUrl(req),
+      lpFormulario: (await db.getConfig('lp_formulario')) !== '0', fech, caixaAlerta,
     });
+  } catch (e) { next(e); }
+});
+
+// ---- Auditoria: linha do tempo de cada lead ----
+router.use('/auditoria', soAdmin);
+
+router.get('/auditoria', async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const leads = await db.buscarLeadsAuditoria(q, 60);
+    res.render('admin/auditoria', { title: 'Auditoria · Painel', leads, q, tel: null, eventos: [], usuarios: {}, emps: {} });
+  } catch (e) { next(e); }
+});
+
+router.get('/auditoria/lead', async (req, res, next) => {
+  try {
+    const tel = String(req.query.tel || '').replace(/\D/g, '');
+    const eventos = await db.eventosDoLead({ telefone: tel, entrada_id: req.query.entrada, encaminhamento_id: req.query.envio });
+    const usuarios = Object.fromEntries((await db.listGestores()).map(u => [u.id, u.nome]));
+    const emps = await equipes.nomesDosEmps();
+    res.render('admin/auditoria', { title: 'Histórico do lead · Painel', leads: [], q: '', tel, eventos, usuarios, emps });
+  } catch (e) { next(e); }
+});
+
+// Formulário padrão antes do WhatsApp nas landings: liga/desliga.
+router.post('/recepcao/lp-formulario', async (req, res, next) => {
+  try {
+    await db.setConfig('lp_formulario', req.body.ligar === '1' ? '1' : '0');
+    res.redirect('/admin/recepcao?ok=1');
   } catch (e) { next(e); }
 });
 

@@ -244,10 +244,19 @@ router.get('/wa/:slug', async (req, res) => {
         && !(await db.listCorretores(emp.id, { ativosOnly: true })).length) {
       alvo = empPortal(await portal.carregar());
     }
-    const { telefone } = await roleta.distribuir(req, res, alvo, origem);
-    if (!telefone) return res.redirect(302, voltar);
+    const lead = leadDoFormulario(req);
+    const r = await roleta.distribuir(req, res, alvo, origem, lead);
+    if (!r.telefone) return res.redirect(302, voltar);
 
-    return enviarParaWhats(res, telefone, mensagem(req, emp));
+    if (lead.telefone && !r.bot) {
+      db.registrarEvento({
+        tipo: 'lp_formulario', lead_nome: lead.nome, lead_telefone: lead.telefone, clique_id: r.cliqueId,
+        empreendimento_id: alvo.id, corretor_nome: r.corretor && r.corretor.nome, corretor_fone: r.corretor && r.corretor.telefone,
+        detalhe: [doPortal ? 'portal' : (alvo.id !== emp.id ? emp.nome + ' (pela roleta do portal)' : null), lead.interesse, 'botão ' + origem, req.query.utm_source, req.query.utm_campaign,
+          'protocolo ' + lead.protocolo, r.motivo === 'mesmo-visitante' ? 'mesmo corretor de antes' : null].filter(Boolean).join(' · '),
+      }).catch(() => {});
+    }
+    return enviarParaWhats(res, r.telefone, mensagem(req, emp, lead));
   } catch (err) {
     // Regra de ouro: um lead NUNCA pode virar tela de erro. Se a roleta falhar
     // (banco fora do ar, etc.), ele vai para o número reserva sem atribuição —
@@ -260,8 +269,34 @@ router.get('/wa/:slug', async (req, res) => {
   }
 });
 
-function mensagem(req, emp) {
+// Dados do formulário da landing (nome, WhatsApp, interesse). Só valem com
+// nome e um WhatsApp válido; senão o clique segue como antes, sem formulário.
+function leadDoFormulario(req) {
+  const nome = String(req.query.nome || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const telefone = roleta.validarWhats(req.query.tel || '');
+  if (nome.length < 2 || !telefone) return {};
+  const interesse = String(req.query.int || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  // Protocolo curto: o corretor e a auditoria falam do mesmo atendimento.
+  const protocolo = 'LP-' + require('crypto').randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+  return { nome, telefone, interesse, protocolo };
+}
+
+function foneBonito(d) { return String(d || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); }
+
+function mensagem(req, emp, lead) {
   const msg = String(req.query.msg || '').slice(0, 700);
+  // Padrão do formulário: o corretor já recebe tudo organizado e com protocolo.
+  if (lead && lead.telefone) {
+    const portal = emp && emp.id === PORTAL_ID;
+    const l = ['Olá! Vim pelo site da Auxiliadora Predial.', ''];
+    l.push('*Nome:* ' + lead.nome);
+    l.push('*WhatsApp:* ' + foneBonito(lead.telefone));
+    if (!portal && emp) l.push('*Empreendimento:* ' + emp.nome);
+    if (lead.interesse) l.push('*Interesse:* ' + lead.interesse);
+    if (msg) l.push('*Mensagem:* ' + msg);
+    l.push('*Protocolo:* ' + lead.protocolo);
+    return l.join('\n');
+  }
   if (msg) return msg;
   if (emp && emp.id === PORTAL_ID) return 'Olá! Vim pelo site de lançamentos da Auxiliadora Predial e quero ajuda para encontrar um imóvel.';
   return `Olá! Tenho interesse no empreendimento ${emp ? emp.nome : 'anunciado'}. Pode me passar mais informações?`;

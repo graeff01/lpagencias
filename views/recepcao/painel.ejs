@@ -30,10 +30,19 @@
       </div>
     </div>
 
+    <% if (caixaAlerta && caixaAlerta.grave) { %>
+      <div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f"><b style="margin-right:4px">Atenção:</b> <%= caixaAlerta.texto %> Avise o administrador e, enquanto isso, confira os e-mails de lead direto na caixa.</div>
+    <% } %>
     <div class="panel rc-fila-entrada" id="rc-entrada">
       <h2 class="panel-h">A encaminhar <span class="rc-cont" id="rc-cont"><%= fila.length %></span>
         <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">leads que chegaram por e-mail</span></h2>
       <div id="rc-entrada-lista"></div>
+    </div>
+
+    <div class="panel rc-fila-entrada rc-pend" id="rc-pend" <%= pendencias.length ? '' : 'hidden' %>>
+      <h2 class="panel-h">Sem confirmação do corretor <span class="rc-cont rc-cont-v" id="rc-pend-cont"><%= pendencias.length %></span>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">enviados há mais de <%= minCobrar %> min e ainda sem o “Recebi”</span></h2>
+      <div id="rc-pend-lista"></div>
     </div>
 
     <div class="rc-atual" id="rc-atual" hidden></div>
@@ -130,6 +139,7 @@
 
   <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 
+  <script>window.RC_PEND = <%- JSON.stringify(pendencias).replace(/</g, '\\u003c') %>;</script>
   <script>window.RC_FILA = <%- JSON.stringify(fila).replace(/</g, '\\u003c') %>;</script>
   <script>window.RC_CAMPANHAS = <%- JSON.stringify(campanhas).replace(/</g, '\\u003c') %>;</script>
   <script src="/js/lead-parser.js?v=<%= v %>"></script>
@@ -270,7 +280,62 @@
             + '<button type="button" class="btn btn-ghost btn-sm" data-descartar="' + f.id + '">Descartar</button></div></div>';
         }).join('');
       }
-      function soltarEntrada() { entradaAtual = null; atualBox.hidden = true; renderFila(); }
+      function soltarEntrada() { entradaAtual = null; reencaminharDe = null; atualBox.hidden = true; renderFila(); if (typeof renderPend === 'function') renderPend(); }
+
+      // ---- Sem confirmação: lembrar o corretor ou reencaminhar ----
+      var pend = window.RC_PEND || [];
+      var reencaminharDe = null;
+      var pendBox = document.getElementById('rc-pend'), pendLista = document.getElementById('rc-pend-lista');
+      function renderPend() {
+        pendBox.hidden = !pend.length;
+        document.getElementById('rc-pend-cont').textContent = pend.length;
+        pendLista.innerHTML = pend.map(function (p) {
+          var min = (Date.now() - new Date(p.quando).getTime()) / 60000;
+          return '<div class="rc-ent' + (reencaminharDe === p.id ? ' on' : '') + '">'
+            + '<div class="rc-ent-q' + (min > 120 ? ' atraso' : '') + '">' + ha(p.quando) + '</div>'
+            + '<div class="rc-ent-d"><b>' + esc(p.lead.nome || '(sem nome)') + '</b> → ' + esc(p.corretor)
+            + '<small>' + (p.cobrancas ? 'lembrado ' + p.cobrancas + 'x' + (p.ultimaCobranca ? ' · último ' + ha(p.ultimaCobranca) : '') : 'ainda não foi lembrado') + '</small></div>'
+            + '<div class="rc-ent-a"><a class="btn btn-ghost btn-sm" href="#" data-lembrar="' + p.id + '">Lembrar corretor</a>'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-reenc="' + p.id + '">Reencaminhar</button></div></div>';
+        }).join('');
+      }
+      pendLista.addEventListener('click', function (e) {
+        var l = e.target.closest('[data-lembrar]'), r = e.target.closest('[data-reenc]');
+        if (l) {
+          var p = pend.filter(function (x) { return x.id === Number(l.dataset.lembrar); })[0];
+          if (!p) return;
+          var txt = '⏰ *Lembrete da recepção*\n\nVocê recebeu o lead de *' + (p.lead.nome || 'cliente') + '*'
+            + (p.lead.telefone ? ' (' + P.formatarFone(p.lead.telefone) + ')' : '') + ' em ' + horaCurta(p.quando) + ' e ainda não confirmou.'
+            + (p.lead.telefone ? '\nCliente: wa.me/' + p.lead.telefone : '')
+            + '\n\n✅ *Se já falou com o cliente, confirme:* ' + location.origin + '/ok/' + p.token;
+          l.href = linkWhats(p.corretorFone, txt);
+          l.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+          fetch('/recepcao/envio/' + p.id + '/cobrar', { method: 'POST', credentials: 'same-origin' }).catch(function () {});
+          p.cobrancas += 1; p.ultimaCobranca = new Date().toISOString();
+          setTimeout(renderPend, 50);
+          return;
+        }
+        if (r) {
+          var q = pend.filter(function (x) { return x.id === Number(r.dataset.reenc); })[0];
+          if (!q) return;
+          limpar();
+          var d = q.lead || {};
+          el.nome.value = d.nome || ''; el.telefone.value = d.telefone ? P.formatarFone(d.telefone) : '';
+          el.email.value = d.email || ''; el.negocio.value = d.negocio || ''; el.imovel.value = d.imovel || '';
+          el.origem.value = d.origem || ''; el.mensagem.value = d.mensagem || ''; marcarCanal(d.canal || '');
+          reencaminharDe = q.id;
+          atualBox.innerHTML = 'Reencaminhando o lead de <b>' + esc(d.nome || 'cliente') + '</b>: <b>' + esc(q.corretor) + '</b> não confirmou. Escolha outro corretor. <button type="button" id="rc-atual-x">cancelar</button>';
+          atualBox.hidden = false;
+          document.getElementById('rc-atual-x').onclick = function () { limpar(); };
+          renderPend();
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+      function atualizarPend() {
+        fetch('/recepcao/pendencias', { credentials: 'same-origin' }).then(function (r) { return r.json(); })
+          .then(function (j) { if (j.ok) { pend = j.pendencias; renderPend(); } }).catch(function () {});
+      }
+      setInterval(atualizarPend, 60000);
       function usarEntrada(id) {
         var f = fila.filter(function (x) { return x.id === id; })[0];
         if (!f) return;
@@ -279,6 +344,7 @@
         if (d.nome && !el.nome.value) el.nome.value = d.nome;
         if (d.telefone && !el.telefone.value) el.telefone.value = P.formatarFone(d.telefone);
         entradaAtual = id;
+        fetch('/recepcao/fila/' + id + '/abrir', { method: 'POST', credentials: 'same-origin' }).catch(function () {});
         atualBox.innerHTML = 'Encaminhando o lead da fila: <b>' + esc(d.nome || '(sem nome)') + '</b>, recebido ' + ha(f.recebido) + '. Confira os dados e escolha o corretor. <button type="button" id="rc-atual-x">cancelar</button>';
         atualBox.hidden = false;
         document.getElementById('rc-atual-x').onclick = function () { limpar(); };
@@ -308,6 +374,7 @@
       }
       setInterval(atualizarFila, 30000);
       renderFila();
+      setTimeout(renderPend, 0);
       document.getElementById('rc-limpar').addEventListener('click', limpar);
 
       document.getElementById('rc-busca').addEventListener('input', function () {
@@ -403,7 +470,8 @@
         a.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
         a.rel = modo === 'web' ? '' : 'noopener';
 
-        var corpo = Object.assign({ corretor_id: a.dataset.id, token: tk, entrada_id: entradaAtual }, d);
+        var corpo = Object.assign({ corretor_id: a.dataset.id, token: tk, entrada_id: entradaAtual, reencaminhar_de: reencaminharDe }, d);
+        if (reencaminharDe) { var rid = reencaminharDe; pend = pend.filter(function (x) { return x.id !== rid; }); }
         if (entradaAtual) { var idSaiu = entradaAtual; fila = fila.filter(function (f) { return f.id !== idSaiu; }); }
         var camp = a.dataset.camp;
         fetch(camp ? '/recepcao/campanha/' + camp + '/enviar' : '/recepcao/enviar', {

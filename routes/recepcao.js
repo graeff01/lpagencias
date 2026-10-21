@@ -8,6 +8,7 @@ const db = require('../lib/db');
 const equipes = require('../lib/equipes');
 const parser = require('../public/js/lead-parser');
 const { exigeEquipe } = require('./gestor');
+const caixa = require('../lib/caixa-leads');
 
 router.get('/login', (req, res) => res.redirect('/gestor/login'));
 router.post('/logout', (req, res) => {
@@ -18,18 +19,20 @@ router.use(exigeEquipe('recepcao'));
 
 router.get('/', async (req, res, next) => {
   try {
-    const [corretores, recentes, campanhas, fila] = await Promise.all([
+    const [corretores, recentes, campanhas, fila, pendencias] = await Promise.all([
       db.listAgencia({ ativosOnly: true }),
       db.encaminhamentosRecentes(req.gestor.id, 30),
       estadoCampanhas(),
       filaPendentes(),
+      pendenciasConfirmacao(),
     ]);
     const hoje = equipes.periodo('hoje');
     const deHoje = recentes.filter(r => new Date(r.created_at) >= hoje.desde).length;
     res.set('Cache-Control', 'no-store');
     res.render('recepcao/painel', {
       title: 'Recepção · Encaminhar leads', usuario: req.gestor, corretores, recentes, deHoje,
-      canais: equipes.CANAIS, campanhas, fila,
+      canais: equipes.CANAIS, campanhas, fila, pendencias, minCobrar: MIN_COBRAR,
+      caixaAlerta: await caixa.alerta().catch(() => null),
     });
   } catch (e) { next(e); }
 });
@@ -56,6 +59,24 @@ async function baixarDaFila(entradaId, envio, usuarioId) {
   } catch (e) { console.error('[recepcao] falha ao baixar da fila:', e.message); }
 }
 
+// Auditoria do envio: um evento "encaminhado" (ou "reencaminhado") por envio.
+async function eventoEnvio(env, req, campanha) {
+  if (!env) return;
+  const b = req.body;
+  const detalhe = [
+    b.reencaminhar_de ? null : (b.entrada_id ? 'da fila de e-mail' : 'colado pela recepção'),
+    campanha ? 'campanha ' + campanha : null,
+    env.canal, env.origem,
+  ].filter(Boolean).join(' · ');
+  await db.registrarEvento({
+    tipo: b.reencaminhar_de ? 'reencaminhado' : 'encaminhado',
+    lead_nome: env.lead_nome, lead_telefone: env.lead_telefone, entrada_id: env.entrada_id,
+    encaminhamento_id: env.id, empreendimento_id: env.empreendimento_id,
+    corretor_nome: env.corretor_nome, corretor_fone: env.corretor_fone, usuario_id: req.gestor.id,
+    detalhe: b.reencaminhar_de ? ['no lugar do envio #' + Number(b.reencaminhar_de) + ' (sem confirmação)', detalhe].filter(Boolean).join(' · ') : detalhe,
+  });
+}
+
 router.get('/fila', async (req, res) => {
   try {
     res.set('Cache-Control', 'no-store');
@@ -63,11 +84,63 @@ router.get('/fila', async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false }); }
 });
 
+// ---- Sem confirmação: cobrar o corretor ou reencaminhar ----
+const MIN_COBRAR = Math.max(5, Number(process.env.RECEPCAO_COBRAR_MIN) || 30);
+
+async function pendenciasConfirmacao() {
+  return (await db.enviosSemConfirmacao(MIN_COBRAR, 48)).map(e => ({
+    id: e.id, quando: e.created_at, corretor: e.corretor_nome, corretorFone: e.corretor_fone,
+    token: e.token, cobrancas: e.cobrancas || 0, ultimaCobranca: e.ultima_cobranca,
+    lead: { nome: e.lead_nome, telefone: e.lead_telefone, email: e.lead_email, negocio: e.negocio,
+      imovel: e.imovel, origem: e.origem, mensagem: e.mensagem, canal: e.canal },
+    campanha: e.empreendimento_id,
+  }));
+}
+
+router.get('/pendencias', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, pendencias: await pendenciasConfirmacao(), minutos: MIN_COBRAR });
+  } catch (e) { res.status(500).json({ ok: false }); }
+});
+
+// A recepção abriu o WhatsApp do corretor com um lembrete (o link "Recebi" vai junto).
+router.post('/envio/:id/cobrar', async (req, res) => {
+  try {
+    const e = await db.registrarCobranca(req.params.id);
+    if (e) {
+      await db.registrarEvento({
+        tipo: 'cobranca', encaminhamento_id: e.id, lead_nome: e.lead_nome, lead_telefone: e.lead_telefone,
+        corretor_nome: e.corretor_nome, corretor_fone: e.corretor_fone, usuario_id: req.gestor.id,
+        detalhe: e.cobrancas + 'ª cobrança',
+      });
+    }
+    res.json({ ok: !!e });
+  } catch (err) { res.status(500).json({ ok: false }); }
+});
+
+// A recepção abriu um lead da fila para encaminhar (mede a espera até ela pegar).
+router.post('/fila/:id/abrir', async (req, res) => {
+  try {
+    const e = await db.getEntrada(req.params.id);
+    if (e && e.status === 'pendente') {
+      await db.registrarEvento({ tipo: 'fila_aberta', entrada_id: e.id, lead_nome: e.dados.nome, lead_telefone: e.dados.telefone, usuario_id: req.gestor.id });
+    }
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false }); }
+});
+
 // Spam, teste, lead repetido: sai da fila com o motivo (fica no histórico).
 router.post('/fila/:id/descartar', async (req, res) => {
   try {
     const motivo = String(req.body.motivo || '').trim().slice(0, 200) || 'sem motivo';
     const e = await db.tratarEntrada(req.params.id, { status: 'descartado', tratado_por: req.gestor.id, motivo });
+    if (e) {
+      await db.registrarEvento({
+        tipo: 'descartado', entrada_id: e.id, lead_nome: e.dados.nome, lead_telefone: e.dados.telefone,
+        usuario_id: req.gestor.id, detalhe: motivo,
+      });
+    }
     res.json({ ok: !!e });
   } catch (err) { res.status(500).json({ ok: false }); }
 });
@@ -118,7 +191,9 @@ router.post('/campanha/:id/enviar', async (req, res) => {
       negocio: b.negocio, imovel: b.imovel, origem: b.origem || emp.nome, mensagem: b.mensagem,
       empreendimento_id: emp.id, entrada_id: b.entrada_id, token: b.token,
     });
+    if (b.reencaminhar_de) await db.substituirEnvio(b.reencaminhar_de, env.id);
     await baixarDaFila(b.entrada_id, env, req.gestor.id);
+    await eventoEnvio(env, req, emp.nome);
     res.json({ ok: true, campanha: await estadoCampanha(emp) });
   } catch (e) {
     console.error('[recepcao] falha no envio da campanha:', e.message);
@@ -140,7 +215,9 @@ router.post('/enviar', async (req, res) => {
       negocio: b.negocio, imovel: b.imovel, origem: b.origem, mensagem: b.mensagem,
       entrada_id: b.entrada_id, token: b.token,
     });
+    if (b.reencaminhar_de) await db.substituirEnvio(b.reencaminhar_de, env.id);
     await baixarDaFila(b.entrada_id, env, req.gestor.id);
+    await eventoEnvio(env, req, null);
     res.json({ ok: true });
   } catch (e) {
     console.error('[recepcao] falha ao registrar envio:', e.message);

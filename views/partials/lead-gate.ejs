@@ -1,0 +1,89 @@
+<%#
+  Formulário curto antes do WhatsApp (landings e portal).
+  Todo botão que leva a /wa/ pede nome, WhatsApp e interesse antes de abrir a
+  conversa. Assim o lead chega ao corretor com os dados completos e o sistema
+  registra quem é (auditoria), mesmo que a pessoa desista de mandar a mensagem.
+  Quem já preencheu neste navegador não vê o formulário de novo.
+  Parâmetros: interesses (lista de opções), titulo.
+%>
+<div class="lg-ov" id="lgOv" hidden>
+  <form class="lg-box" id="lgForm" novalidate>
+    <button type="button" class="lg-x" id="lgX" aria-label="Fechar">×</button>
+    <div class="lg-ic"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.5 4c1.7.7 2.4.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z"/></svg></div>
+    <h3><%= titulo %></h3>
+    <p>Para o consultor já te atender com tudo em mãos.</p>
+    <label>Seu nome<input name="nome" autocomplete="name" placeholder="Como podemos te chamar?" maxlength="80"></label>
+    <label>Seu WhatsApp<input name="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 9 0000-0000" maxlength="20"></label>
+    <label>Tenho interesse em<select name="int">
+      <% interesses.forEach(function(o){ %><option><%= o %></option><% }); %>
+    </select></label>
+    <div class="lg-err" id="lgErr" hidden></div>
+    <button type="submit" class="lg-go">Continuar no WhatsApp</button>
+    <div class="lg-terms">Seus dados são usados só para este atendimento.</div>
+  </form>
+</div>
+<style>
+.lg-ov{position:fixed;inset:0;z-index:9999;background:rgba(10,25,17,.55);display:grid;place-items:center;padding:16px;backdrop-filter:blur(3px)}
+.lg-ov[hidden]{display:none}
+.lg-box{position:relative;background:#fff;color:#152219;width:100%;max-width:400px;border-radius:20px;padding:26px 22px 18px;box-shadow:0 30px 70px -20px rgba(0,0,0,.45);font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif;max-height:calc(100vh - 32px);overflow:auto}
+.lg-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:none;background:none;font-size:26px;line-height:1;color:#6d7f74;cursor:pointer}
+.lg-ic{width:46px;height:46px;border-radius:14px;background:#25D366;display:grid;place-items:center;margin-bottom:12px}
+.lg-ic svg{width:26px;height:26px}
+.lg-box h3{font-size:20px;font-weight:750;letter-spacing:-.01em;margin:0 0 4px}
+.lg-box p{font-size:14px;color:#42544a;margin:0 0 16px}
+.lg-box label{display:block;font-size:13px;font-weight:650;margin-bottom:12px}
+.lg-box input,.lg-box select{display:block;width:100%;box-sizing:border-box;margin-top:6px;font:inherit;font-size:16px;font-weight:400;padding:12px 13px;border:1px solid rgba(0,0,0,.14);border-radius:11px;background:#f5f8f6;color:#152219}
+.lg-box input:focus,.lg-box select:focus{outline:none;border-color:#0E9E4A;background:#fff;box-shadow:0 0 0 3px rgba(14,158,74,.15)}
+.lg-err{background:#fdf0ee;color:#b5432f;font-size:13px;font-weight:600;padding:9px 12px;border-radius:10px;margin-bottom:10px}
+.lg-err[hidden]{display:none}
+.lg-go{width:100%;border:none;border-radius:12px;padding:14px;font:inherit;font-size:15.5px;font-weight:700;color:#fff;background:#25D366;cursor:pointer}
+.lg-go:hover{filter:brightness(.95)}
+.lg-terms{font-size:11.5px;color:#6d7f74;text-align:center;margin-top:10px}
+</style>
+<script>
+(function(){
+  var ov=document.getElementById('lgOv'), f=document.getElementById('lgForm'), err=document.getElementById('lgErr');
+  var K='ap_lead', pendente=null;
+  function ler(){ try{ var d=JSON.parse(localStorage.getItem(K)||'null'); return d&&d.nome&&d.tel&&(Date.now()-d.t<90*864e5)?d:null; }catch(_){ return null; } }
+  function guardar(d){ try{ d.t=Date.now(); localStorage.setItem(K,JSON.stringify(d)); }catch(_){} }
+  function digitos(t){ var d=String(t||'').replace(/\D/g,''); if(d.length===10||d.length===11) d='55'+d; return d; }
+  function valido(t){ var d=digitos(t); if(d.length<12||d.length>13) return false; var n=d.slice(4); if(/^(\d)\1+$/.test(n)) return false; if(n.length===9&&n[0]!=='9') return false; return true; }
+  function comDados(href,d){
+    var u=new URL(href,location.origin);
+    u.searchParams.set('nome',d.nome); u.searchParams.set('tel',d.tel); if(d.int) u.searchParams.set('int',d.int);
+    return u.pathname+u.search;
+  }
+  // Exposto para os formulários próprios da página (landing e portal).
+  window.__leadGate={ guardar:guardar, ler:ler, comDados:comDados, valido:valido };
+  function abrir(href){
+    pendente=href; err.hidden=true;
+    var d=ler()||{}; if(d.nome) f.nome.value=d.nome; if(d.tel) f.tel.value=d.tel;
+    ov.hidden=false; setTimeout(function(){ (f.nome.value?f.tel:f.nome).focus(); },30);
+  }
+  function fechar(){ ov.hidden=true; pendente=null; }
+  document.getElementById('lgX').addEventListener('click',fechar);
+  ov.addEventListener('click',function(e){ if(e.target===ov) fechar(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!ov.hidden) fechar(); });
+  // Captura: roda antes dos outros cliques da página (conversões etc. continuam).
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href*="/wa/"]');
+    if(!a) return;
+    var href=a.getAttribute('href');
+    if(/[?&]tel=/.test(href)) return;
+    var d=ler();
+    if(d){ a.setAttribute('href',comDados(href,d)); return; }   // já se identificou: segue direto
+    e.preventDefault(); abrir(href);
+  },true);
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var d={ nome:f.nome.value.replace(/\s+/g,' ').trim(), tel:f.tel.value.trim(), int:f.int.value };
+    if(d.nome.length<2){ err.textContent='Informe seu nome.'; err.hidden=false; f.nome.focus(); return; }
+    if(!valido(d.tel)){ err.textContent='Informe um WhatsApp válido, com DDD.'; err.hidden=false; f.tel.focus(); return; }
+    guardar(d);
+    if(window.gtag) gtag('event','formulario_whatsapp',{interesse:d.int});
+    if(window.fbq) fbq('track','Lead',{content_name:d.int});
+    var url=comDados(pendente,d); fechar();
+    window.open(url,'_blank')||(location.href=url);
+  });
+})();
+</script>

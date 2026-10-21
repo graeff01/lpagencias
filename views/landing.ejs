@@ -834,11 +834,19 @@
       if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV});
     }
     if(window.fbq) fbq('track','Lead',{content_name:EMP});
-    var msg='Olá! Meu nome é '+(d.get('nome')||'')+'. Tenho interesse em '+(d.get('interesse')||'')+' no empreendimento '+EMP+'.';
-    if(d.get('tel')) msg+=' Meu telefone: '+d.get('tel')+'.';
     var extra=window.__utm?'&'+new URLSearchParams(window.__utm).toString():'';
+    var G=window.__leadGate, lead={ nome:String(d.get('nome')||'').trim(), tel:String(d.get('tel')||'').trim(), int:d.get('interesse')||'' };
+    // Com o formulário padrão ligado, nome e WhatsApp vão estruturados (auditoria + mensagem padrão).
+    if(G && G.valido(lead.tel) && lead.nome.length>1){
+      G.guardar(lead);
+      window.open(G.comDados(WA_URL+'?src=formulario'+extra,lead),'_blank');
+      return;
+    }
+    var msg='Olá! Meu nome é '+lead.nome+'. Tenho interesse em '+lead.int+' no empreendimento '+EMP+'.';
+    if(lead.tel) msg+=' Meu telefone: '+lead.tel+'.';
     window.open(WA_URL+'?src=formulario&msg='+encodeURIComponent(msg)+extra,'_blank');
   });}
 </script>
+<% if (leadGate) { %><%- include('partials/lead-gate', { titulo: 'Fale com um consultor do ' + e.nome, interesses: ['Conhecer o empreendimento', 'Valores e condições de pagamento', 'Agendar uma visita', 'Plantas e metragens'] }) %><% } %>
 </body>
 </html>

@@ -50,6 +50,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Formulário padrão antes do WhatsApp nas landings (liga/desliga no painel).
+let gateCache = { v: true, ate: 0 };
+app.use(async (req, res, next) => {
+  if (Date.now() > gateCache.ate) {
+    try { gateCache = { v: (await db.getConfig('lp_formulario')) !== '0', ate: Date.now() + 30000 }; }
+    catch (e) { gateCache.ate = Date.now() + 30000; }
+  }
+  res.locals.leadGate = gateCache.v;
+  next();
+});
+
 // ---- Rotas ----
 app.use('/admin', adminRoutes);
 app.use('/gestor', gestorRoutes);
@@ -68,6 +79,12 @@ db.migrate()
   .then(() => {
     setTimeout(() => adminRoutes.completarPontosExistentes(), 5000);
     caixaLeads.iniciar();   // lê a caixa de leads (se configurada) e enche a fila da recepção
+    // LGPD: uma vez por dia, apaga os dados pessoais de leads mais antigos que LGPD_MESES.
+    const lgpd = () => db.anonimizarAntigos(process.env.LGPD_MESES)
+      .then((r) => { const n = Object.values(r).reduce((a, x) => a + x, 0); if (n) console.log('[lgpd] dados pessoais apagados:', r); })
+      .catch(e => console.error('[lgpd]', e.message));
+    setTimeout(lgpd, 60 * 1000);
+    setInterval(lgpd, 24 * 3600 * 1000).unref();
     app.listen(PORT, () => {
       console.log(`\n  Auxiliadora Landings rodando em http://localhost:${PORT}`);
       console.log(`  Painel:  http://localhost:${PORT}/admin`);

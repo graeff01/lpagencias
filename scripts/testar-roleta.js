@@ -241,6 +241,39 @@ function ok(cond, msg) {
   ok(cf.comLink === 2 && cf.confirmados === 1 && cf.pendentes === 1 && Math.round(cf.tempoMedio) === 10, 'métrica: confirmados, sem confirmar e tempo médio');
   ok(P.mensagemCorretor({ nome: 'X', telefone: '5551981112233', linkOk: 'https://s/ok/abc' }).includes('Confirme que recebeu:* https://s/ok/abc'), 'mensagem do corretor leva o link');
 
+  console.log('\n15) Auditoria: linha do tempo, cobrança, reencaminhamento e fechamento');
+  const tel = '51987654321';
+  await db.registrarEvento({ tipo: 'email_recebido', lead_nome: 'Lia', lead_telefone: tel, entrada_id: 1 });
+  const e1b = await db.registrarEncaminhamento({ usuario_id: 1, corretor_fone: '51985717877', corretor_nome: 'Ketlin', lead_nome: 'Lia', lead_telefone: tel, token: 'Tk' + 'x'.repeat(18) });
+  await db.registrarEvento({ tipo: 'encaminhado', lead_nome: 'Lia', lead_telefone: tel, encaminhamento_id: e1b.id, corretor_nome: 'Ketlin' });
+  const tl = await db.eventosDoLead({ telefone: '(51) 98765-4321' });
+  ok(tl.length === 2 && tl[0].tipo === 'email_recebido' && tl[1].tipo === 'encaminhado', 'linha do tempo pelo telefone, em ordem');
+  ok((await db.buscarLeadsAuditoria('98765-4321')).length === 1 && (await db.buscarLeadsAuditoria('lia')).length === 1, 'busca por telefone e por nome');
+  ok(!(await db.enviosSemConfirmacao(30)).some(x => x.id === e1b.id), 'envio recém-feito ainda não aparece para cobrar');
+  ok((await db.enviosSemConfirmacao(0)).some(x => x.id === e1b.id), 'sem confirmação passa a aparecer para cobrar');
+  const cob = await db.registrarCobranca(e1b.id);
+  ok(cob.cobrancas === 1, 'cobrança contada');
+  const e2b = await db.registrarEncaminhamento({ usuario_id: 1, corretor_fone: '51981792048', corretor_nome: 'Fernando Riolfi', lead_nome: 'Lia', lead_telefone: tel, token: 'Tk' + 'y'.repeat(18) });
+  await db.substituirEnvio(e1b.id, e2b.id);
+  ok(!(await db.enviosSemConfirmacao(0)).some(x => x.id === e1b.id), 'reencaminhado sai da lista de cobrança');
+  ok((await db.getEncaminhamento(e1b.id)).substituido_por === e2b.id, 'o envio antigo aponta para o novo (histórico)');
+  const fe = equipes.fechamento(
+    [{ status: 'encaminhado', recebido_em: new Date(Date.now() - 50 * 60000), tratado_em: new Date(), tratado_por: 1 },
+     { status: 'descartado', motivo: 'Spam', recebido_em: new Date(), tratado_em: new Date(), dados: {} },
+     { status: 'pendente', recebido_em: new Date() }],
+    [{ entrada_id: 5 }, { entrada_id: null }], [{ id: 1, nome: 'Larissa' }], 3);
+  ok(fe.chegaram === 3 && fe.encaminhados === 1 && fe.descartados === 1 && fe.pendentes === 1 && fe.fecha, 'fechamento: a conta fecha');
+  ok(fe.acima30 === 1 && Math.round(fe.esperaMedia) === 50 && fe.porPessoa[0].nome === 'Larissa', 'tempo de espera e quem encaminhou');
+  ok(fe.motivos[0].motivo === 'spam' && fe.manuais === 1 && fe.formulariosLp === 3, 'motivos de descarte, colados à mão e formulários');
+
+  console.log('\n16) LGPD: dados pessoais antigos são apagados');
+  const r0 = await db.anonimizarAntigos(12);
+  ok((await db.getEncaminhamento(e1b.id)).lead_nome === 'Lia', 'leads recentes ficam intactos');
+  await db.anonimizarAntigos(-1);   // corte no futuro: tudo é "antigo"
+  const anon = await db.getEncaminhamento(e1b.id);
+  ok(anon.lead_nome === null && anon.lead_telefone === null && anon.corretor_nome === 'Ketlin', 'apaga dados do cliente e mantém quem recebeu');
+  ok(!(await db.eventosDoLead({ telefone: tel })).length, 'linha do tempo também perde o telefone');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

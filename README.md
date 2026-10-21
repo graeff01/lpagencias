@@ -304,6 +304,39 @@ de leads e no CSV (`confirmado_em`, `minutos_ate_confirmar`). O código é
 aleatório (18 caracteres) e a página mostra só o primeiro nome do corretor e o
 nome do cliente.
 
+### Formulário padrão nas landings (antes do WhatsApp)
+Todo botão de WhatsApp das landings e do portal abre um formulário curto
+(**nome, WhatsApp e interesse**) antes da conversa. O corretor recebe a mensagem
+sempre no mesmo formato (nome, WhatsApp, empreendimento, interesse e
+**protocolo** `LP-XXXXXX`), e o lead fica gravado no clique e na auditoria
+mesmo que a pessoa desista de mandar a mensagem. O mesmo **telefone** volta para
+o mesmo corretor (mais firme que cookie ou IP). Quem já preencheu no navegador
+não vê o formulário de novo (90 dias). Liga/desliga em Painel → Recepção →
+*Formulário das landing pages*. Os relatórios de leads das páginas (gestor e
+admin) e o CSV ganham nome, telefone, interesse e protocolo.
+
+### Auditoria
+- **Linha do tempo** (`/admin/auditoria`): busca por telefone (a partir de 4
+  dígitos) ou nome e mostra, em ordem e com o tempo entre cada passo: e-mail
+  chegou, recepção abriu, encaminhou (para quem), corretor abriu o link,
+  confirmou, cobrança, reencaminhamento, formulário da landing. A tabela
+  `lead_eventos` só aceita inclusão: no Postgres um gatilho recusa UPDATE e
+  DELETE (exceto a anonimização da LGPD, que só apaga nome e telefone).
+- **Sem confirmação** (tela da recepção): envios sem o "Recebi" há mais de
+  `RECEPCAO_COBRAR_MIN` minutos (padrão 30). *Lembrar corretor* abre o WhatsApp
+  dele com um lembrete e o mesmo link; *Reencaminhar* carrega o lead para outro
+  corretor e o envio antigo fica marcado como "não confirmou · reencaminhado".
+- **Fechamento** (Painel → Recepção, por período): chegaram por e-mail ×
+  encaminhados × descartados × pendentes (a conta precisa fechar), colados à
+  mão, formulários das landings, tempo de espera na fila (média, acima de 30 min,
+  fora do horário, por recepcionista) e os descartes com motivo.
+- **Alerta de caixa parada**: erro na leitura ou leitura parada aparece em
+  vermelho para a recepção e o admin; muitas horas sem lead em horário
+  comercial (`LEADS_ALERTA_HORAS`, padrão 4) aparece como aviso no admin.
+- **LGPD**: uma vez por dia, nome, telefone, e-mail e mensagem de leads mais
+  antigos que `LGPD_MESES` (padrão 12) são apagados; as contagens continuam.
+- **Backups**: ative os backups automáticos do Postgres no Railway (plano Pro).
+
 ### Tabelas
 - `corretores` — nome, telefone, peso, ativo, contador da fila.
 - `cliques_whatsapp` — log de auditoria de cada clique (com o telefone de quem recebeu).
@@ -313,7 +346,8 @@ nome do cliente.
 - `encaminhamentos` — cada lead encaminhado pela recepção, com os dados do cliente,
   o código do link "Recebi" e a hora da confirmação.
 - `leads_entrada` — fila "A encaminhar" (e-mails importados, status e motivo de descarte).
-- `config_kv` — configurações do painel (conexão do Gmail, última leitura).
+- `config_kv` — configurações do painel (conexão do Gmail, formulário das landings).
+- `lead_eventos` — linha do tempo de cada lead (só inclusão).
 
 ### Proteções contra erro
 - **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o

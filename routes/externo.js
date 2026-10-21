@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const db = require('../lib/db');
 const caixa = require('../lib/caixa-leads');
+const { isBot } = require('../lib/roleta');
 
 function primeiroNome(n) { return String(n || '').trim().split(/\s+/)[0] || ''; }
 
@@ -18,6 +19,11 @@ router.get('/ok/:token', async (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     res.set('X-Robots-Tag', 'noindex');
     if (!e) return res.status(404).render('ok', { title: 'Link inválido', e: null, feito: false });
+    // Abertura por pessoa (não pela prévia automática do WhatsApp), uma vez só.
+    if (!e.confirmado_em && !isBot(req.headers['user-agent'])) {
+      const ja = (await db.eventosDoLead({ encaminhamento_id: e.id })).some(x => x.tipo === 'link_aberto');
+      if (!ja) await db.registrarEvento({ tipo: 'link_aberto', encaminhamento_id: e.id, lead_nome: e.lead_nome, lead_telefone: e.lead_telefone, corretor_nome: e.corretor_nome, corretor_fone: e.corretor_fone });
+    }
     res.render('ok', { title: 'Confirmar recebimento', e, feito: !!e.confirmado_em, primeiroNome });
   } catch (err) { next(err); }
 });
@@ -27,6 +33,9 @@ router.post('/ok/:token', async (req, res, next) => {
     const e = await db.envioPorToken(req.params.token);
     if (!e) return res.status(404).render('ok', { title: 'Link inválido', e: null, feito: false });
     const c = await db.confirmarEnvio(e.id);
+    if (!e.confirmado_em) {
+      await db.registrarEvento({ tipo: 'confirmado', encaminhamento_id: e.id, lead_nome: e.lead_nome, lead_telefone: e.lead_telefone, corretor_nome: e.corretor_nome, corretor_fone: e.corretor_fone });
+    }
     res.set('Cache-Control', 'no-store');
     res.render('ok', { title: 'Recebimento confirmado', e: c, feito: true, primeiroNome });
   } catch (err) { next(err); }

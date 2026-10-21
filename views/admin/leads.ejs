@@ -95,12 +95,13 @@
       <h2 class="panel-h">Últimos cliques <span class="sub">(200 mais recentes)</span></h2>
       <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Quando</th><th>Corretor</th><th>Tipo</th><th>Botão</th><th>Como foi decidido</th><th>Campanha</th></tr></thead>
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Corretor</th><th>Tipo</th><th>Botão</th><th>Como foi decidido</th><th>Campanha</th></tr></thead>
         <tbody>
-          <% if (!cliques.length) { %><tr><td colspan="6" class="empty">Nenhum clique registrado ainda.</td></tr><% } %>
+          <% if (!cliques.length) { %><tr><td colspan="7" class="empty">Nenhum clique registrado ainda.</td></tr><% } %>
           <% cliques.forEach(function(c){ %>
             <tr class="<%= c.bot ? 'off' : '' %>">
               <td class="sub"><%= new Date(c.created_at).toLocaleString('pt-BR') %></td>
+              <td><% if (c.lead_telefone) { %><a href="/admin/auditoria/lead?tel=<%= c.lead_telefone %>"><b><%= c.lead_nome %></b></a><span class="sub mono"><%= c.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %><%= c.protocolo ? ' · ' + c.protocolo : '' %></span><% } else { %><span class="sub">—</span><% } %></td>
               <td><%= c.corretor_nome || '—' %></td>
               <td>
                 <% if (c.bot) { %><span class="tag">robô</span>

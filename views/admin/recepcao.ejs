@@ -16,7 +16,7 @@
   %>
   <header class="topbar">
     <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
-    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes">Equipes</a><a href="/admin/recepcao" class="on">Recepção</a></nav>
+    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes">Equipes</a><a href="/admin/recepcao" class="on">Recepção</a><a href="/admin/auditoria">Auditoria</a></nav>
     <div class="sp"></div>
     <div class="top-links">
       <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
@@ -49,6 +49,39 @@
     </nav>
 
     <div style="margin:-6px 0 18px"><a class="btn btn-ghost btn-sm" href="/admin/recepcao/csv?periodo=<%= per.chave %>">Exportar leads do período (CSV)</a></div>
+
+    <% if (caixaAlerta) { %>
+      <div class="<%= caixaAlerta.grave ? 'flash' : 'warn-box' %>" <% if (caixaAlerta.grave) { %>style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f"<% } %>><b style="margin-right:4px"><%= caixaAlerta.grave ? 'Caixa de leads parada:' : 'Aviso:' %></b> <%= caixaAlerta.texto %></div>
+    <% } %>
+
+    <div class="panel">
+      <h2 class="panel-h">Fechamento · <%= rotulo.toLowerCase() %>
+        <span class="sub" style="margin-left:auto;font-weight:600;font-size:12.5px;color:<%= fech.fecha ? '#0d7a3f' : 'var(--danger)' %>"><%= fech.fecha ? '✓ a conta fecha: nenhum lead de e-mail sem destino' : 'a conta não fecha: confira' %></span></h2>
+      <div class="fech">
+        <div><span>Chegaram por e-mail</span><b><%= fech.chegaram %></b></div>
+        <div><span>Encaminhados</span><b><%= fech.encaminhados %></b></div>
+        <div><span>Descartados</span><b><%= fech.descartados %></b></div>
+        <div><span>Pendentes</span><b style="<%= fech.pendentes ? 'color:var(--danger)' : '' %>"><%= fech.pendentes %></b></div>
+        <div><span>Colados à mão</span><b><%= fech.manuais %></b></div>
+        <div><span>Formulários das landings</span><b><%= fech.formulariosLp %></b></div>
+      </div>
+      <div class="fech-det">
+        <div>
+          <h4>Tempo de espera na fila</h4>
+          <p>Da chegada do e-mail até o encaminhamento: <b><%= fech.esperaMedia == null ? '—' : duracao(fech.esperaMedia) %></b> em média.</p>
+          <p><b style="<%= fech.acima30 ? 'color:var(--danger)' : '' %>"><%= fech.acima30 %></b> esperaram mais de 30 min · <b><%= fech.foraHorario %></b> chegaram fora do horário (seg. a sáb., 8h às 19h).</p>
+          <% fech.porPessoa.forEach(function(p){ %><p class="sub"><%= p.nome %>: <%= p.n %> encaminhado(s), espera média <%= duracao(p.media) %></p><% }); %>
+        </div>
+        <div>
+          <h4>Descartes</h4>
+          <% if (!fech.descartados) { %><p class="sub">Nenhum descarte no período.</p><% } %>
+          <% fech.motivos.forEach(function(m){ %><p><b><%= m.n %></b> · <%= m.motivo %></p><% }); %>
+          <% fech.listaDescartes.forEach(function(d){ %>
+            <p class="sub"><%= fmt(d.tratado_em) %> · <% if (d.dados.telefone) { %><a href="/admin/auditoria/lead?tel=<%= d.dados.telefone %>" style="text-decoration:underline"><%= d.dados.nome || d.assunto || 'sem nome' %></a><% } else { %><%= d.dados.nome || d.assunto || 'sem nome' %><% } %> · “<%= d.motivo %>”</p>
+          <% }); %>
+        </div>
+      </div>
+    </div>
 
     <div class="kpis">
       <div class="kpi"><span>Envios · <%= rotulo.toLowerCase() %></span><b><%= total %></b><i>leads encaminhados pela recepção</i></div>
@@ -102,6 +135,18 @@
           <div class="panel-foot">
             <p class="hint">Quem já está em alguma roleta pode vir de uma vez, sem digitar de novo.</p>
             <form method="POST" action="/admin/recepcao/importar"><button class="btn btn-ghost btn-sm" type="submit">Importar das roletas</button></form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-h">Formulário das landing pages</h2>
+          <div class="frm">
+            <p class="hint" style="margin-bottom:10px">Antes de abrir o WhatsApp, o visitante informa <b>nome, WhatsApp e interesse</b>. O corretor recebe tudo organizado, com protocolo, e o lead fica registrado na auditoria mesmo que a pessoa desista de mandar a mensagem. Quem já preencheu não vê o formulário de novo.</p>
+            <form method="POST" action="/admin/recepcao/lp-formulario" style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13.5px;font-weight:650"><%= lpFormulario ? '✓ Ligado' : 'Desligado' %></span>
+              <input type="hidden" name="ligar" value="<%= lpFormulario ? '0' : '1' %>">
+              <button class="btn btn-ghost btn-sm" type="submit"><%= lpFormulario ? 'Desligar' : 'Ligar' %></button>
+            </form>
           </div>
         </div>
 
@@ -185,13 +230,14 @@
           <% leads.forEach(function(r){ %>
             <tr>
               <td class="sub"><%= fmt(r.created_at) %></td>
-              <td><b><%= r.lead_nome || '—' %></b><span class="sub mono"><%= r.lead_telefone ? tel(r.lead_telefone) : '' %></span><% if (r.lead_email) { %><span class="sub"><%= r.lead_email %></span><% } %></td>
+              <td><% if (r.lead_telefone) { %><a href="/admin/auditoria/lead?tel=<%= r.lead_telefone %>" title="Ver histórico do lead"><b style="text-decoration:underline;text-decoration-color:var(--line-strong)"><%= r.lead_nome || '—' %></b></a><% } else { %><b><%= r.lead_nome || '—' %></b><% } %><span class="sub mono"><%= r.lead_telefone ? tel(r.lead_telefone) : '' %></span><% if (r.lead_email) { %><span class="sub"><%= r.lead_email %></span><% } %></td>
               <td class="sub"><%= [r.negocio, r.imovel ? 'imóvel ' + r.imovel : ''].filter(Boolean).join(' · ') || '—' %><% if (r.mensagem) { %><span class="rc-msg" title="<%= r.mensagem %>"><%= r.mensagem %></span><% } %></td>
               <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
               <td><%= r.corretor_nome %></td>
               <td class="sub">
                 <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span>
-                <% } else if (r.token) { %><span style="color:var(--danger)">sem confirmar</span>
+                <% } else if (r.substituido_por) { %><span style="color:var(--danger)">não confirmou · reencaminhado</span>
+                <% } else if (r.token) { %><span style="color:var(--danger)">sem confirmar</span><% if (r.cobrancas) { %><span class="sub">lembrado <%= r.cobrancas %>x</span><% } %>
                 <% } else { %>—<% } %>
               </td>
               <td class="sub"><%= r.por %><% if (r.entrada_id) { %><span class="sub">da fila de e-mail</span><% } %></td>

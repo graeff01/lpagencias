@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <%
+    var fmt = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); };
+    var telf = function(t){ return String(t || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); };
+    var dur = function(min){ if (min < 1) return 'segundos depois'; if (min < 60) return Math.round(min) + ' min depois'; var h = Math.floor(min / 60); return h < 24 ? h + ' h ' + Math.round(min % 60) + ' min depois' : Math.floor(h / 24) + ' dia(s) depois'; };
+    var TIPOS = {
+      email_recebido: ['📥', 'E-mail de lead chegou na caixa'],
+      fila_aberta: ['👀', 'A recepção abriu o lead da fila'],
+      encaminhado: ['➡️', 'Encaminhado pela recepção'],
+      reencaminhado: ['🔁', 'Reencaminhado pela recepção'],
+      descartado: ['🗑️', 'Descartado pela recepção'],
+      cobranca: ['⏰', 'A recepção lembrou o corretor'],
+      link_aberto: ['🔗', 'O corretor abriu o link de confirmação'],
+      confirmado: ['✅', 'O corretor confirmou que recebeu'],
+      lp_formulario: ['📝', 'Preencheu o formulário da landing page'],
+      lp_whatsapp: ['💬', 'Clicou para falar no WhatsApp (landing page)'],
+      anonimizado: ['🔒', 'Dados pessoais apagados (LGPD)'],
+    };
+  %>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes">Equipes</a><a href="/admin/recepcao">Recepção</a><a href="/admin/auditoria" class="on">Auditoria</a></nav>
+    <div class="sp"></div>
+    <div class="top-links"><form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form></div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Auditoria</div>
+        <h1><%= tel ? 'Histórico do lead' : 'Histórico dos leads' %></h1>
+        <p>Tudo o que aconteceu com cada lead, na ordem: quando chegou, quem encaminhou, para quem, quando o corretor abriu e confirmou. Este registro não pode ser alterado nem apagado.</p>
+      </div>
+    </div>
+
+    <form method="GET" action="/admin/auditoria" class="aud-busca">
+      <input name="q" value="<%= q %>" placeholder="Buscar por telefone ou nome do cliente" autocomplete="off">
+      <button class="btn btn-green" type="submit">Buscar</button>
+    </form>
+
+    <% if (!tel) { %>
+      <div class="panel">
+        <h2 class="panel-h"><%= q ? 'Resultado da busca' : 'Leads mais recentes' %></h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Cliente</th><th>Eventos</th><th>Primeiro registro</th><th>Último</th><th></th></tr></thead>
+          <tbody>
+            <% if (!leads.length) { %><tr><td colspan="5" class="empty">Nenhum lead encontrado.</td></tr><% } %>
+            <% leads.forEach(function(l){ %>
+              <tr>
+                <td><b><%= l.lead_nome || '(sem nome)' %></b><span class="sub mono"><%= telf(l.lead_telefone) %></span></td>
+                <td class="num"><%= l.eventos %></td>
+                <td class="sub"><%= fmt(l.primeiro) %></td>
+                <td class="sub"><%= fmt(l.ultimo) %></td>
+                <td class="row-acts"><a class="btn btn-ghost btn-sm" href="/admin/auditoria/lead?tel=<%= l.lead_telefone %>">Ver histórico</a></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    <% } else { %>
+      <% var nome = (eventos.filter(function(e){ return e.lead_nome; }).pop() || {}).lead_nome; %>
+      <div class="panel">
+        <h2 class="panel-h"><%= nome || '(sem nome)' %> <span class="sub mono" style="margin-left:6px"><%= telf(tel) %></span>
+          <a class="btn btn-ghost btn-sm" style="margin-left:auto" href="/admin/auditoria">Voltar</a></h2>
+        <% if (!eventos.length) { %><p class="empty" style="padding:30px;text-align:center;color:var(--muted)">Nenhum evento para este telefone.</p><% } %>
+        <ol class="aud-tl">
+          <% eventos.forEach(function(e, i){ var t = TIPOS[e.tipo] || ['•', e.tipo]; var ant = i ? eventos[i-1] : null; %>
+            <li class="aud-<%= e.tipo %>">
+              <span class="aud-ic"><%= t[0] %></span>
+              <div>
+                <b><%= t[1] %><% if (e.corretor_nome && /encaminhado|reencaminhado|cobranca|lp_/.test(e.tipo)) { %>: <%= e.corretor_nome %><% } %></b>
+                <span class="aud-q"><%= fmt(e.created_at) %><% if (ant) { %> · <%= dur((new Date(e.created_at) - new Date(ant.created_at)) / 60000) %><% } %></span>
+                <% var extras = [
+                     e.usuario_id ? 'por ' + (usuarios[e.usuario_id] || 'usuário #' + e.usuario_id) : null,
+                     e.empreendimento_id != null && emps[e.empreendimento_id] ? emps[e.empreendimento_id] : null,
+                     e.detalhe,
+                     e.encaminhamento_id ? 'envio #' + e.encaminhamento_id : null,
+                     e.entrada_id ? 'fila #' + e.entrada_id : null,
+                   ].filter(Boolean); %>
+                <% if (extras.length) { %><span class="aud-d"><%= extras.join(' · ') %></span><% } %>
+              </div>
+            </li>
+          <% }); %>
+        </ol>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>
