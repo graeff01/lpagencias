@@ -327,3 +327,22 @@ a.chip:hover{border-color:var(--line-strong)}
 .rc-grupo[hidden]{display:none}
 .rc-item.rc-gerente{background:#fff7ee;border-color:#f0c79a}
 .rc-item.rc-gerente .rc-av{background:#e4610f;color:#fff}
+/* Recepção: abas e campanha com roleta */
+.rc-abas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.rc-abas button{font-size:13px;font-weight:650;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--sunken);color:var(--muted)}
+.rc-abas button.on{background:#fff7ee;border-color:#f0c79a;color:#a4520c}
+[data-painel][hidden]{display:none!important}
+.rc-camp{padding:0 18px 18px}
+.rc-camp-txt{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px}
+.rc-prox-lbl{font-size:11px;font-weight:720;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:4px 2px 6px}
+.rc-item.rc-prox{padding:16px 18px;border-color:#f0c79a;background:#fff7ee;max-width:520px}
+.rc-item.rc-prox .rc-av{background:#e4610f;color:#fff}
+.rc-item.rc-prox .rc-nm{font-size:16px}
+.rc-fila{margin-top:14px}
+.rc-fila ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;counter-reset:f}
+.rc-fila li{counter-increment:f;display:flex;flex-direction:column;background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:8px 12px 8px 34px;position:relative;font-size:13px;font-weight:620}
+.rc-fila li::before{content:counter(f);position:absolute;left:11px;top:9px;font-size:11px;font-weight:720;color:var(--faint)}
+.rc-fila li small{font-size:11.5px;font-weight:500;color:var(--muted)}
+.rc-fila li.vez{background:#fff7ee;border-color:#f0c79a}
+.rc-envios{list-style:none;display:grid;gap:4px;font-size:13px}
+.rc-envios li{color:#0d7a3f}.rc-envios b{color:var(--ink)}.rc-envios small{color:var(--faint);margin-left:4px}

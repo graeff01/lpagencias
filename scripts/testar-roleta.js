@@ -175,6 +175,28 @@ function ok(cond, msg) {
   const pg6 = await equipes.painel(g2, 'hoje');
   ok(!pg6.daRecepcao.length, 'gestor de outra equipe não vê');
 
+  console.log('\n11) Campanha Nimbus: roleta da landing + recepção, sem repetir corretor');
+  ok(!(await db.listCampanhasRecepcao()).length, 'sem o empreendimento Nimbus, a carga espera');
+  const nimbus = await db.create({ slug: 'nimbus', nome: 'Nimbus' });
+  await db.cargasUnicas();   // a carga roda na subida seguinte
+  const filaN = await db.filaCorretores(nimbus.id);
+  ok(filaN.length === 9, `roleta do Nimbus com os 9 corretores (${filaN.length})`);
+  ok((await db.listCampanhasRecepcao()).some(c => c.id === nimbus.id), 'Nimbus aparece como campanha na recepção');
+  await db.cargasUnicas();
+  ok((await db.filaCorretores(nimbus.id)).length === 9, 'subir de novo não duplica ninguém');
+  // 9 leads alternando recepção (pega o próximo da vez) e site (roleta): cada um recebe 1
+  const recebidos = [];
+  for (let i = 0; i < 9; i++) {
+    if (i % 2) recebidos.push((await db.proximoCorretor(nimbus.id)).id);
+    else {
+      const prox = (await db.filaCorretores(nimbus.id))[0];
+      recebidos.push((await db.atribuirCorretor(nimbus.id, prox.id)).id);
+    }
+  }
+  ok(new Set(recebidos).size === 9, 'em 9 leads (site e recepção misturados), ninguém recebeu dois');
+  const prox10 = (await db.filaCorretores(nimbus.id))[0];
+  ok(prox10.id === recebidos[0], 'o 10º lead volta para quem recebeu o 1º');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

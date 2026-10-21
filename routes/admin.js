@@ -454,10 +454,11 @@ router.get('/equipes/:id', async (req, res, next) => {
 router.get('/recepcao', async (req, res, next) => {
   try {
     const per = equipes.periodo(req.query.periodo);
-    const [corretores, envios, usuarios, leads] = await Promise.all([
+    const [corretores, envios, usuarios, leads, campanhas, emps] = await Promise.all([
       db.listAgencia(), db.encaminhamentosPorFone(per.desde, per.ate), db.listGestores(),
-      db.leadsRecepcao(per.desde, per.ate, null, 300),
+      db.leadsRecepcao(per.desde, per.ate, null, 300), db.listCampanhasRecepcao(), db.list({}),
     ]);
+    for (const c of campanhas) c.ativos = (await db.listCorretores(c.id, { ativosOnly: true })).length;
     const porFone = {};
     const porCanal = {};
     for (const r of envios) {
@@ -478,8 +479,24 @@ router.get('/recepcao', async (req, res, next) => {
     leads.forEach((l) => { l.por = quem[l.usuario_id] || '—'; });
     res.render('admin/recepcao', {
       title: 'Recepção · Painel', linhas, canais, total, per, periodos: equipes.PERIODOS,
-      recepcionistas, leads, q: req.query,
+      recepcionistas, leads, campanhas, emps, q: req.query,
     });
+  } catch (e) { next(e); }
+});
+
+// Campanhas: a roleta do empreendimento aparece numa aba da recepção.
+router.post('/recepcao/campanha', async (req, res, next) => {
+  try {
+    const emp = await db.getById(req.body.empreendimento_id);
+    if (emp) await db.addCampanhaRecepcao(emp.id);
+    res.redirect('/admin/recepcao?ok=1');
+  } catch (e) { next(e); }
+});
+
+router.post('/recepcao/campanha/:id/remover', async (req, res, next) => {
+  try {
+    await db.removeCampanhaRecepcao(req.params.id);
+    res.redirect('/admin/recepcao?ok=1');
   } catch (e) { next(e); }
 });
 

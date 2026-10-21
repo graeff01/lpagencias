@@ -106,6 +106,27 @@
         </div>
 
         <div class="panel">
+          <h2 class="panel-h">Campanhas na recepção</h2>
+          <div class="frm">
+            <p class="hint" style="margin-bottom:12px">A roleta do empreendimento vira uma aba na tela da recepção: ela envia sempre para o próximo da vez. A fila é a mesma da landing page.</p>
+            <% campanhas.forEach(function(c){ %>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <b style="flex:1"><%= c.nome %></b><span class="sub" style="font-size:12px;color:var(--muted)"><%= c.ativos %> na roleta</span>
+                <a class="btn btn-ghost btn-sm" href="/admin/corretores/<%= c.id %>">Roleta</a>
+                <form method="POST" action="/admin/recepcao/campanha/<%= c.id %>/remover" onsubmit="return confirm('Tirar a campanha <%= c.nome %> da recepção? A roleta do empreendimento continua igual.')"><button class="btn btn-ghost btn-sm" type="submit">Tirar</button></form>
+              </div>
+            <% }); %>
+            <form method="POST" action="/admin/recepcao/campanha" style="display:flex;gap:8px;margin-top:6px">
+              <select name="empreendimento_id" class="sel" style="flex:1" required>
+                <option value="">Adicionar empreendimento…</option>
+                <% emps.filter(function(e){ return !campanhas.some(function(c){ return c.id === e.id; }); }).forEach(function(e){ %><option value="<%= e.id %>"><%= e.nome %></option><% }); %>
+              </select>
+              <button class="btn btn-green btn-sm" type="submit">Adicionar</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
           <h2 class="panel-h">Por canal</h2>
           <div class="tbl-wrap">
           <table class="tbl">

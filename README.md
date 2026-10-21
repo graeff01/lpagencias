@@ -236,6 +236,13 @@ A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
   recepção aparece num grupo próprio, no topo da lista (para campanhas cujos
   leads vão direto ao gerente). Alberto Ceballos e Fabrício Bilhalva entram
   assim na primeira subida; depois disso, a marcação é feita pelo painel.
+- **Campanhas com roleta:** em `/admin/recepcao` → *Campanhas na recepção*, um
+  empreendimento vira uma aba na tela dela. A aba mostra o **próximo da vez**,
+  a fila e quem já recebeu; ela envia sempre para o próximo, e a vez é gravada
+  na roleta do empreendimento. A fila é a mesma da landing page: lead do site e
+  lead da recepção entram no mesmo rodízio, sem repetir corretor. O Nimbus
+  entra assim, com as equipes do Alberto e do Fabrício (`lib/campanha-nimbus.js`),
+  na primeira subida em que o empreendimento existir.
 - **Configurar:** em `/admin/equipes`, crie um acesso do tipo *Recepção*. Em
   `/admin/recepcao` cadastre os corretores (nome e WhatsApp) ou use *Importar
   das roletas*. *Ocultar* tira o corretor da lista sem apagar os envios dele.

@@ -71,10 +71,21 @@
         </span>
       </h2>
       <div class="frm" style="padding-bottom:6px">
-        <div class="rc-sugerido" id="rc-sugerido" hidden></div>
-        <div class="rc-busca"><input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off"></div>
+        <% if (campanhas.length) { %>
+          <div class="rc-abas" id="rc-abas">
+            <button type="button" data-aba="geral" class="on">Lista geral</button>
+            <% campanhas.forEach(function(c){ %><button type="button" data-aba="c<%= c.id %>">Campanha <%= c.nome %></button><% }); %>
+          </div>
+        <% } %>
+        <div data-painel="geral">
+          <div class="rc-sugerido" id="rc-sugerido" hidden></div>
+          <div class="rc-busca"><input id="rc-busca" type="search" placeholder="Buscar corretor pelo nome" autocomplete="off"></div>
+        </div>
       </div>
-      <div class="rc-lista" id="rc-lista">
+      <% campanhas.forEach(function(c){ %>
+        <div class="rc-camp" data-painel="c<%= c.id %>" data-camp="<%= c.id %>" hidden></div>
+      <% }); %>
+      <div class="rc-lista" id="rc-lista" data-painel="geral">
         <% if (!corretores.length) { %>
           <div class="warn-box" style="grid-column:1/-1">Nenhum corretor cadastrado ainda. O administrador cadastra em <b>Painel → Recepção</b>.</div>
         <% } %>
@@ -110,6 +121,7 @@
 
   <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 
+  <script>window.RC_CAMPANHAS = <%- JSON.stringify(campanhas).replace(/</g, '\\u003c') %>;</script>
   <script src="/js/lead-parser.js?v=<%= v %>"></script>
   <script>
     (function () {
@@ -241,7 +253,58 @@
 
       // O link é montado na hora do clique, e o envio é registrado em
       // paralelo: se o registro falhar, o WhatsApp abre igual.
-      document.getElementById('rc-lista').addEventListener('click', function (e) {
+      // ---- Campanhas: roleta de um empreendimento dentro da recepção ----
+      var horaCurta = function (d) { return d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; };
+      function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+      function renderCampanha(c) {
+        var box = document.querySelector('.rc-camp[data-camp="' + c.id + '"]');
+        if (!box) return;
+        var prox = c.fila[0];
+        var h = '<p class="rc-camp-txt">Roleta da campanha <b>' + esc(c.nome) + '</b>: os leads vão em rodízio entre os corretores abaixo. '
+          + 'Envie sempre para o <b>próximo da vez</b>. Os leads que chegam pela página do ' + esc(c.nome) + ' também entram nesta fila.</p>';
+        if (!prox) {
+          h += '<div class="warn-box">Nenhum corretor ativo nesta roleta. O administrador ajusta em Painel → Corretores do ' + esc(c.nome) + '.</div>';
+        } else {
+          h += '<div class="rc-prox-lbl">Próximo da vez</div>'
+            + '<a class="rc-item rc-prox" href="https://wa.me/' + prox.telefone + '" target="_blank" rel="noopener" data-id="' + prox.id + '" data-nome="' + esc(prox.nome) + '" data-fone="' + prox.telefone + '" data-camp="' + c.id + '">'
+            + '<span class="rc-av">' + esc(prox.nome.replace(/[^A-Za-zÀ-ÿ\s]/g, '').trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join('').toUpperCase()) + '</span>'
+            + '<span class="rc-nm">Enviar para ' + esc(prox.nome) + '</span>'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>';
+          h += '<div class="rc-fila"><div class="rc-prox-lbl">Fila</div><ol>' + c.fila.map(function (f, i) {
+            return '<li class="' + (i === 0 ? 'vez' : '') + '"><span>' + esc(f.nome) + '</span><small>'
+              + (i === 0 ? 'é a vez' : f.ultima ? '✓ recebeu ' + horaCurta(f.ultima) : 'ainda não recebeu') + ' · ' + f.atribuicoes + (f.atribuicoes === 1 ? ' lead' : ' leads') + '</small></li>';
+          }).join('') + '</ol></div>';
+        }
+        if (c.envios.length) {
+          h += '<div class="rc-prox-lbl" style="margin-top:14px">Seus envios nesta campanha</div><ul class="rc-envios">' + c.envios.slice(0, 10).map(function (e) {
+            return '<li>✓ <b>' + esc(e.corretor) + '</b> · ' + esc(e.cliente || '') + ' <small>' + horaCurta(e.quando) + '</small></li>';
+          }).join('') + '</ul>';
+        }
+        box.innerHTML = h;
+      }
+      (window.RC_CAMPANHAS || []).forEach(renderCampanha);
+      // A fila também anda com leads do site: atualiza a cada 20 s.
+      setInterval(function () {
+        (window.RC_CAMPANHAS || []).forEach(function (c) {
+          fetch('/recepcao/campanha/' + c.id, { credentials: 'same-origin' }).then(function (r) { return r.json(); })
+            .then(function (j) { if (j.ok) renderCampanha(j.campanha); }).catch(function () {});
+        });
+      }, 20000);
+
+      var abas = document.getElementById('rc-abas');
+      function mostrarAba(id) {
+        if (!document.querySelector('[data-painel="' + id + '"]')) id = 'geral';
+        document.querySelectorAll('[data-painel]').forEach(function (p) { p.hidden = p.dataset.painel !== id; });
+        if (abas) abas.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.aba === id); });
+        try { localStorage.setItem('rc-aba', id); } catch (e) {}
+      }
+      if (abas) {
+        abas.addEventListener('click', function (e) { var b = e.target.closest('[data-aba]'); if (b) mostrarAba(b.dataset.aba); });
+        var abaSalva = 'geral'; try { abaSalva = localStorage.getItem('rc-aba') || 'geral'; } catch (e) {}
+        mostrarAba(abaSalva);
+      }
+
+      document.querySelector('.rc-wrap').addEventListener('click', function (e) {
         var a = e.target.closest('.rc-item');
         if (!a) return;
         var d = {
@@ -261,10 +324,14 @@
         a.rel = modo === 'web' ? '' : 'noopener';
 
         var corpo = Object.assign({ corretor_id: a.dataset.id }, d);
-        fetch('/recepcao/enviar', {
+        var camp = a.dataset.camp;
+        fetch(camp ? '/recepcao/campanha/' + camp + '/enviar' : '/recepcao/enviar', {
           method: 'POST', keepalive: true, credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
-        }).then(function (r) { if (!r.ok) avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); })
+        }).then(function (r) {
+          if (!r.ok) { avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); return null; }
+          return r.json();
+        }).then(function (j) { if (j && j.campanha) renderCampanha(j.campanha); })
           .catch(function () {});
 
         var tb = document.getElementById('rc-recentes');
