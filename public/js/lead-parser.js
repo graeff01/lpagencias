@@ -159,6 +159,8 @@
     var orig = [d.origem, d.canal && d.canal !== d.origem && d.canal !== 'Portais' ? d.canal : ''].filter(Boolean).join(' · ') || d.canal;
     if (orig) l.push('*Origem:* ' + orig);
     if (d.mensagem) l.push('', '*Mensagem do cliente:*', d.mensagem);
+    // Link para o corretor avisar que recebeu (a recepção e o gestor veem).
+    if (d.linkOk) l.push('', '✅ *Confirme que recebeu:* ' + d.linkOk);
     return l.join('\n');
   }
 

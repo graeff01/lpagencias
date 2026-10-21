@@ -209,6 +209,38 @@ function ok(cond, msg) {
   const alb2 = await db.getGestor(alb.id);
   ok(!alb2.trocar_senha && equipes.confereSenha('nova-senha-1', alb2.senha_hash), 'depois de trocar, entra com a nova senha');
 
+  console.log('\n13) Caixa de leads: e-mail entra na fila "A encaminhar"');
+  process.env.LEADS_WEBHOOK_TOKEN = 'x';
+  const caixa = require('../lib/caixa-leads');
+  const html = '<p>Dados do Lead</p><p>Nome: Joana Prado<br>Telefone:<br>(51) 98111-2233<br>E-mail:<br>joana@ex.com</p>'
+    + '<p>Mensagem: Quero visitar o apto.</p><p>Corretor Responsável<br>Nome: Fábio Goulart</p>';
+  const e1 = await caixa.receberWebhook({ message_id: 'abc-1', from: 'portal@zap.com', subject: 'Novo lead', html });
+  ok(e1 && e1.dados && (typeof e1.dados === 'string' ? JSON.parse(e1.dados) : e1.dados).telefone === '5551981112233', 'e-mail em HTML vira lead com telefone na fila');
+  ok(!(await caixa.receberWebhook({ message_id: 'abc-1', from: 'portal@zap.com', subject: 'Novo lead', html })), 'o mesmo e-mail não entra duas vezes');
+  let pend = await db.listEntradas('pendente');
+  ok(pend.length === 1 && pend[0].dados.nome === 'Joana Prado' && pend[0].dados.corretor === 'Fábio Goulart', 'fila mostra nome e corretor responsável');
+  await caixa.receberWebhook({ message_id: 'spam-1', subject: 'Promoção', text: 'compre agora' });
+  const spam = (await db.listEntradas('pendente')).find(x => x.assunto === 'Promoção');
+  await db.tratarEntrada(spam.id, { status: 'descartado', motivo: 'spam' });
+  ok((await db.listEntradas('pendente')).length === 1, 'descartar tira da fila');
+  ok(!(await db.tratarEntrada(spam.id, { status: 'encaminhado' })), 'lead já tratado não é tratado de novo');
+
+  console.log('\n14) Link "Recebi" do corretor');
+  const tk = 'Tk' + 'abcdefghij0123456789';
+  const envT = await db.registrarEncaminhamento({ usuario_id: 99, corretor_fone: '51985717877', corretor_nome: 'Ketlin Lima',
+    lead_nome: 'Joana Prado', lead_telefone: '51981112233', token: tk, entrada_id: pend[0].id });
+  await db.tratarEntrada(pend[0].id, { status: 'encaminhado', encaminhamento_id: envT.id });
+  ok(!(await db.listEntradas('pendente')).length, 'encaminhar tira o lead da fila');
+  ok((await db.envioPorToken(tk)).id === envT.id, 'o token acha o envio');
+  ok(!(await db.envioPorToken('curto')) && !(await db.envioPorToken('x'.repeat(20) + "' or 1=1")), 'token inválido não acha nada');
+  const c1 = await db.confirmarEnvio(envT.id);
+  await new Promise(r => setTimeout(r, 20));
+  const c2 = await db.confirmarEnvio(envT.id);
+  ok(c1.confirmado_em && String(c2.confirmado_em) === String(c1.confirmado_em), 'confirmar duas vezes guarda o primeiro horário');
+  const cf = equipes.confirmacoes([{ token: 'a', created_at: new Date(Date.now() - 10 * 60000), confirmado_em: new Date() }, { token: 'b', created_at: new Date() }, { created_at: new Date() }]);
+  ok(cf.comLink === 2 && cf.confirmados === 1 && cf.pendentes === 1 && Math.round(cf.tempoMedio) === 10, 'métrica: confirmados, sem confirmar e tempo médio');
+  ok(P.mensagemCorretor({ nome: 'X', telefone: '5551981112233', linkOk: 'https://s/ok/abc' }).includes('Confirme que recebeu:* https://s/ok/abc'), 'mensagem do corretor leva o link');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

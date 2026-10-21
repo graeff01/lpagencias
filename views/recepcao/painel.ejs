@@ -30,6 +30,14 @@
       </div>
     </div>
 
+    <div class="panel rc-fila-entrada" id="rc-entrada">
+      <h2 class="panel-h">A encaminhar <span class="rc-cont" id="rc-cont"><%= fila.length %></span>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">leads que chegaram por e-mail</span></h2>
+      <div id="rc-entrada-lista"></div>
+    </div>
+
+    <div class="rc-atual" id="rc-atual" hidden></div>
+
     <div class="panel rc-lead">
       <h2 class="panel-h"><span class="rc-n">1</span> Cole a mensagem do lead</h2>
       <div class="frm">
@@ -112,7 +120,7 @@
         <tbody id="rc-recentes">
           <% if (!recentes.length) { %><tr class="rc-vazio"><td colspan="3" class="empty">Nenhum envio ainda.</td></tr><% } %>
           <% recentes.forEach(function(r){ %>
-            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.lead_nome || '—' %><span class="sub mono"><%= r.lead_telefone ? r.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '' %></span></td><td><%= r.corretor_nome %></td></tr>
+            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.lead_nome || '—' %><span class="sub mono"><%= r.lead_telefone ? r.lead_telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '' %></span></td><td><%= r.corretor_nome %><% if (r.confirmado_em) { %><span class="sub" style="color:#0d7a3f">✓ confirmou recebimento</span><% } else if (r.token) { %><span class="sub">aguardando confirmação</span><% } %></td></tr>
           <% }); %>
         </tbody>
       </table>
@@ -122,6 +130,7 @@
 
   <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 
+  <script>window.RC_FILA = <%- JSON.stringify(fila).replace(/</g, '\\u003c') %>;</script>
   <script>window.RC_CAMPANHAS = <%- JSON.stringify(campanhas).replace(/</g, '\\u003c') %>;</script>
   <script src="/js/lead-parser.js?v=<%= v %>"></script>
   <script>
@@ -231,7 +240,74 @@
       function limpar() {
         cola.value = ''; form.reset(); marcarCanal(''); lido.textContent = ''; dono.hidden = true;
         destacarResponsavel('');
+        soltarEntrada();
       }
+
+      // ---- Fila "A encaminhar" (leads que chegaram por e-mail) ----
+      var fila = window.RC_FILA || [];
+      var entradaAtual = null;
+      var listaEntrada = document.getElementById('rc-entrada-lista');
+      var atualBox = document.getElementById('rc-atual');
+      function ha(d) {
+        var min = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 60000));
+        if (min < 60) return 'há ' + min + ' min';
+        var h = Math.floor(min / 60);
+        return h < 24 ? 'há ' + h + ' h' + (min % 60 ? ' ' + (min % 60) + ' min' : '') : 'há ' + Math.floor(h / 24) + ' dia(s)';
+      }
+      function renderFila() {
+        document.getElementById('rc-cont').textContent = fila.length;
+        document.title = (fila.length ? '(' + fila.length + ') ' : '') + 'Recepção · Encaminhar leads';
+        if (!fila.length) { listaEntrada.innerHTML = '<p class="rc-fila-vazia">Nenhum lead esperando. Os que chegarem por e-mail aparecem aqui sozinhos.</p>'; return; }
+        listaEntrada.innerHTML = fila.map(function (f) {
+          var d = f.dados || {};
+          var atrasado = (Date.now() - new Date(f.recebido).getTime()) > 30 * 60000;
+          return '<div class="rc-ent' + (entradaAtual === f.id ? ' on' : '') + '" data-ent="' + f.id + '">'
+            + '<div class="rc-ent-q' + (atrasado ? ' atraso' : '') + '">' + ha(f.recebido) + '</div>'
+            + '<div class="rc-ent-d"><b>' + esc(d.nome || '(sem nome)') + '</b> ' + (d.telefone ? '<span class="mono">' + esc(P.formatarFone(d.telefone)) + '</span>' : '<span class="rc-falta">sem telefone</span>')
+            + '<small>' + esc([d.origem, d.imovel ? 'imóvel ' + d.imovel : '', f.assunto].filter(Boolean).join(' · ')) + '</small>'
+            + (f.jaEnviado ? '<small class="rc-ent-dono">Já foi enviado para ' + esc(f.jaEnviado.corretor) + ' em ' + new Date(f.jaEnviado.quando).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</small>' : '')
+            + '</div><div class="rc-ent-a"><button type="button" class="btn btn-green btn-sm" data-usar="' + f.id + '">Encaminhar</button>'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-descartar="' + f.id + '">Descartar</button></div></div>';
+        }).join('');
+      }
+      function soltarEntrada() { entradaAtual = null; atualBox.hidden = true; renderFila(); }
+      function usarEntrada(id) {
+        var f = fila.filter(function (x) { return x.id === id; })[0];
+        if (!f) return;
+        cola.value = f.bruto || ''; preencher();
+        var d = f.dados || {};
+        if (d.nome && !el.nome.value) el.nome.value = d.nome;
+        if (d.telefone && !el.telefone.value) el.telefone.value = P.formatarFone(d.telefone);
+        entradaAtual = id;
+        atualBox.innerHTML = 'Encaminhando o lead da fila: <b>' + esc(d.nome || '(sem nome)') + '</b>, recebido ' + ha(f.recebido) + '. Confira os dados e escolha o corretor. <button type="button" id="rc-atual-x">cancelar</button>';
+        atualBox.hidden = false;
+        document.getElementById('rc-atual-x').onclick = function () { limpar(); };
+        renderFila();
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      listaEntrada.addEventListener('click', function (e) {
+        var u = e.target.closest('[data-usar]'), x = e.target.closest('[data-descartar]');
+        if (u) usarEntrada(Number(u.dataset.usar));
+        if (x) {
+          var id = Number(x.dataset.descartar);
+          var motivo = window.prompt('Por que descartar este lead? (ex.: spam, teste, repetido)');
+          if (motivo === null) return;
+          fetch('/recepcao/fila/' + id + '/descartar', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ motivo: motivo }) })
+            .then(function () { fila = fila.filter(function (f) { return f.id !== id; }); if (entradaAtual === id) limpar(); renderFila(); });
+        }
+      });
+      function atualizarFila() {
+        fetch('/recepcao/fila', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+          if (!j.ok) return;
+          var antes = fila.length;
+          fila = j.fila;
+          if (entradaAtual && !fila.some(function (f) { return f.id === entradaAtual; })) soltarEntrada();
+          renderFila();
+          if (fila.length > antes) avisar('Chegou lead novo na fila "A encaminhar".');
+        }).catch(function () {});
+      }
+      setInterval(atualizarFila, 30000);
+      renderFila();
       document.getElementById('rc-limpar').addEventListener('click', limpar);
 
       document.getElementById('rc-busca').addEventListener('input', function () {
@@ -319,12 +395,16 @@
           (d.nome ? el.telefone : el.nome).focus();
           return;
         }
+        // Token do link "Recebi": gerado aqui para já ir na mensagem.
+        var tk = Array.from(crypto.getRandomValues(new Uint8Array(18))).map(function (b) { return 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 56]; }).join('');
+        d.linkOk = location.origin + '/ok/' + tk;
         a.href = linkWhats(a.dataset.fone, P.mensagemCorretor(d));
         // Aba nomeada: o mesmo WhatsApp Web é reaproveitado a cada envio.
         a.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
         a.rel = modo === 'web' ? '' : 'noopener';
 
-        var corpo = Object.assign({ corretor_id: a.dataset.id }, d);
+        var corpo = Object.assign({ corretor_id: a.dataset.id, token: tk, entrada_id: entradaAtual }, d);
+        if (entradaAtual) { var idSaiu = entradaAtual; fila = fila.filter(function (f) { return f.id !== idSaiu; }); }
         var camp = a.dataset.camp;
         fetch(camp ? '/recepcao/campanha/' + camp + '/enviar' : '/recepcao/enviar', {
           method: 'POST', keepalive: true, credentials: 'same-origin',

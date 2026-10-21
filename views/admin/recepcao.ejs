@@ -106,6 +106,38 @@
         </div>
 
         <div class="panel">
+          <h2 class="panel-h">Caixa de leads (e-mail)</h2>
+          <div class="frm">
+            <%
+              var cs = caixaStatus;
+              var ativo = cs.gmailEmail || cs.imap || cs.webhook;
+              var msgs = { conectado: 'Gmail conectado. A primeira leitura já começou.', desconectado: 'Gmail desconectado.', recusado: 'A conexão foi cancelada na tela do Google.',
+                falhou: 'Não foi possível conectar. Tente de novo.', 'sem-google': 'Falta configurar GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no Railway.',
+                verificado: (q.n || 0) + ' lead(s) novo(s) importado(s).', erro: 'A verificação deu erro (veja abaixo).' };
+            %>
+            <% if (q.caixa && msgs[q.caixa]) { %><div class="flash" style="margin-bottom:12px<%= /falhou|recusado|sem-google|erro/.test(q.caixa) ? ';background:#fdf0ee;border-color:#f3c9c1;color:#b5432f' : '' %>"><%= msgs[q.caixa] %></div><% } %>
+            <p class="hint" style="margin-bottom:10px">Os e-mails com o marcador <b><%= cs.rotulo %></b> entram sozinhos na fila “A encaminhar” da recepção, a cada <%= cs.intervalo %> s. O sistema só lê: não apaga, não move e não marca nada.</p>
+            <p style="font-size:13px;margin-bottom:6px"><b>Na fila agora:</b> <%= pendentes %> lead(s) esperando</p>
+            <% if (cs.gmailEmail) { %>
+              <p style="font-size:13px;margin-bottom:8px">✓ Gmail conectado (só leitura): <b><%= cs.gmailEmail %></b></p>
+              <form method="POST" action="/admin/recepcao/gmail/desconectar" onsubmit="return confirm('Desconectar o Gmail? A fila para de receber e-mails.')"><button class="btn btn-ghost btn-sm" type="submit">Desconectar Gmail</button></form>
+            <% } else if (cs.gmailDisponivel) { %>
+              <a class="btn btn-green btn-sm" href="/admin/recepcao/gmail/conectar">Conectar Gmail (só leitura)</a>
+            <% } %>
+            <% if (cs.imap) { %><p style="font-size:13px;margin-top:8px">✓ Caixa via senha de app: <b><%= cs.imap %></b></p><% } %>
+            <% if (cs.webhook) { %><p style="font-size:13px;margin-top:8px">✓ Recebimento por webhook: <span class="mono" style="font-size:11.5px"><%= baseUrl %>/entrada/email</span></p><% } %>
+            <% if (!ativo && !cs.gmailDisponivel) { %>
+              <div class="warn-box" style="margin:6px 0 0">Nenhuma caixa configurada ainda. Escolha uma forma e configure as variáveis no Railway (veja o README, seção “Caixa de leads”).</div>
+            <% } %>
+            <% if (ativo) { %>
+              <form method="POST" action="/admin/recepcao/caixa/verificar" style="margin-top:10px"><button class="btn btn-ghost btn-sm" type="submit">Verificar agora</button></form>
+              <p class="hint" style="margin-top:8px">Última leitura: <%= cs.ultima ? new Date(cs.ultima).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'ainda não' %></p>
+              <% if (cs.erro) { %><p style="font-size:12.5px;color:var(--danger);margin-top:4px">Erro: <%= cs.erro %></p><% } %>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="panel">
           <h2 class="panel-h">Campanhas na recepção</h2>
           <div class="frm">
             <p class="hint" style="margin-bottom:12px">A roleta do empreendimento vira uma aba na tela da recepção: ela envia sempre para o próximo da vez. A fila é a mesma da landing page.</p>
@@ -143,12 +175,13 @@
 
   <div class="wrap" style="padding-top:0">
     <div class="panel">
-      <h2 class="panel-h">Leads encaminhados · <%= rotulo.toLowerCase() %></h2>
+      <h2 class="panel-h">Leads encaminhados · <%= rotulo.toLowerCase() %>
+        <% if (conf.comLink) { %><span class="sub" style="margin-left:auto;font-weight:500;font-size:12.5px"><%= conf.confirmados %> de <%= conf.comLink %> confirmados pelo corretor<% if (conf.tempoMedio != null) { %> · tempo médio <%= duracao(conf.tempoMedio) %><% } %></span><% } %></h2>
       <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th><th>Enviado por</th></tr></thead>
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th><th>Recebimento</th><th>Enviado por</th></tr></thead>
         <tbody>
-          <% if (!leads.length) { %><tr><td colspan="6" class="empty">Nenhum lead encaminhado no período.</td></tr><% } %>
+          <% if (!leads.length) { %><tr><td colspan="7" class="empty">Nenhum lead encaminhado no período.</td></tr><% } %>
           <% leads.forEach(function(r){ %>
             <tr>
               <td class="sub"><%= fmt(r.created_at) %></td>
@@ -156,7 +189,12 @@
               <td class="sub"><%= [r.negocio, r.imovel ? 'imóvel ' + r.imovel : ''].filter(Boolean).join(' · ') || '—' %><% if (r.mensagem) { %><span class="rc-msg" title="<%= r.mensagem %>"><%= r.mensagem %></span><% } %></td>
               <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
               <td><%= r.corretor_nome %></td>
-              <td class="sub"><%= r.por %></td>
+              <td class="sub">
+                <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span>
+                <% } else if (r.token) { %><span style="color:var(--danger)">sem confirmar</span>
+                <% } else { %>—<% } %>
+              </td>
+              <td class="sub"><%= r.por %><% if (r.entrada_id) { %><span class="sub">da fila de e-mail</span><% } %></td>
             </tr>
           <% }); %>
         </tbody>

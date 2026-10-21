@@ -12,7 +12,7 @@ const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
-const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'recepcao', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
+const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'recepcao', 'ok', 'entrada', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img']);
 const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -23,6 +23,7 @@ const CADASTRO_PASSWORD = process.env.CADASTRO_PASSWORD || '';
 
 const { ipDe, bloqueado, registrarFalha, limpar: limparTentativas } = require('../lib/tentativas');
 const equipes = require('../lib/equipes');
+const caixa = require('../lib/caixa-leads');
 
 // ---- Middleware de autenticação ----
 function requireAuth(req, res, next) {
@@ -479,10 +480,51 @@ router.get('/recepcao', async (req, res, next) => {
     const recepcionistas = usuarios.filter(u => u.papel === 'recepcao');
     const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
     leads.forEach((l) => { l.por = quem[l.usuario_id] || '—'; });
+    const [caixaStatus, pendentes] = await Promise.all([caixa.status(), db.contarEntradasPendentes()]);
+    const conf = equipes.confirmacoes(leads);
     res.render('admin/recepcao', {
       title: 'Recepção · Painel', linhas, canais, total, per, periodos: equipes.PERIODOS,
-      recepcionistas, leads, campanhas, emps, q: req.query,
+      recepcionistas, leads, campanhas, emps, q: req.query, caixaStatus, pendentes, conf,
+      duracao: equipes.duracao, baseUrl: baseUrl(req),
     });
+  } catch (e) { next(e); }
+});
+
+// ---- Caixa de leads (e-mails que entram sozinhos na fila da recepção) ----
+function baseUrl(req) {
+  return (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+}
+
+router.get('/recepcao/gmail/conectar', (req, res) => {
+  if (!caixa.gmailDisponivel()) return res.redirect('/admin/recepcao?caixa=sem-google');
+  const state = require('crypto').randomBytes(16).toString('hex');
+  req.session.gmailState = state;
+  res.redirect(caixa.urlAutorizacao(baseUrl(req) + '/admin/recepcao/gmail/retorno', state));
+});
+
+router.get('/recepcao/gmail/retorno', async (req, res) => {
+  const ok = req.query.state && req.query.state === req.session.gmailState;
+  delete req.session.gmailState;
+  if (!ok || !req.query.code) return res.redirect('/admin/recepcao?caixa=' + (req.query.error ? 'recusado' : 'falhou'));
+  try {
+    await caixa.conectarGmail(String(req.query.code), baseUrl(req) + '/admin/recepcao/gmail/retorno');
+    caixa.verificar().catch(() => {});
+    res.redirect('/admin/recepcao?caixa=conectado');
+  } catch (e) {
+    console.error('[caixa-leads] conexão falhou:', e.message);
+    res.redirect('/admin/recepcao?caixa=falhou');
+  }
+});
+
+router.post('/recepcao/gmail/desconectar', async (req, res, next) => {
+  try { await caixa.desconectarGmail(); res.redirect('/admin/recepcao?caixa=desconectado'); }
+  catch (e) { next(e); }
+});
+
+router.post('/recepcao/caixa/verificar', async (req, res, next) => {
+  try {
+    const r = await caixa.verificar();
+    res.redirect('/admin/recepcao?caixa=' + (r.erro ? 'erro' : 'verificado') + '&n=' + (r.importados || 0));
   } catch (e) { next(e); }
 });
 
@@ -509,11 +551,14 @@ router.get('/recepcao/csv', async (req, res, next) => {
     const [linhas, usuarios] = await Promise.all([db.leadsRecepcao(per.desde, per.ate, null, 50000), db.listGestores()]);
     const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
     const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const head = ['data_hora', 'enviado_por', 'corretor', 'corretor_whatsapp', 'cliente', 'cliente_telefone', 'cliente_email', 'negocio', 'imovel', 'origem', 'canal', 'mensagem'];
+    const head = ['data_hora', 'enviado_por', 'corretor', 'corretor_whatsapp', 'cliente', 'cliente_telefone', 'cliente_email', 'negocio', 'imovel', 'origem', 'canal', 'mensagem', 'confirmado_em', 'minutos_ate_confirmar', 'veio_da_fila_de_email'];
     const csv = [head.join(';')].concat(linhas.map(l => [
       new Date(l.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
       quem[l.usuario_id] || '', l.corretor_nome, l.corretor_fone, l.lead_nome, l.lead_telefone, l.lead_email,
       l.negocio, l.imovel, l.origem, l.canal, l.mensagem,
+      l.confirmado_em ? new Date(l.confirmado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '',
+      l.confirmado_em ? Math.round((new Date(l.confirmado_em) - new Date(l.created_at)) / 60000) : '',
+      l.entrada_id ? 'sim' : 'nao',
     ].map(esc).join(';'))).join('\n');
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="leads-recepcao-${per.chave}.csv"`);

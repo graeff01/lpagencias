@@ -55,7 +55,7 @@
     <div class="kpis">
       <div class="kpi"><span>Leads · <%= rotulo.toLowerCase() %></span><b><%= total.leads %></b><i>pessoas distintas que chamaram a equipe</i></div>
       <div class="kpi"><span>Média por corretor</span><b><%= media.toFixed(1).replace('.', ',') %></b><i><%= total.corretores %> corretor(es) na equipe</i></div>
-      <div class="kpi"><span>Pela recepção</span><b><%= total.recepcao %></b><i>leads que a recepção encaminhou</i></div>
+      <div class="kpi"><span>Pela recepção</span><b><%= total.recepcao %></b><i><% if (total.confirmados || total.semConfirmar) { %><%= total.confirmados %> confirmado(s) pelo corretor<% if (total.tempoMedio != null) { %> · em média <%= duracao(total.tempoMedio) %><% } %><% if (total.semConfirmar) { %> · <b style="color:var(--danger);font-size:inherit;display:inline;font-weight:700"><%= total.semConfirmar %> sem confirmar</b><% } %><% } else { %>leads que a recepção encaminhou<% } %></i></div>
       <div class="kpi"><span>Não retornou</span><b><%= total.nao_retornados %></b><i>voltaram após 24h e trocaram de corretor</i></div>
     </div>
 
@@ -78,7 +78,7 @@
                 <div class="bar"><span style="width:<%= Math.min(100, pct).toFixed(1) %>%"></span></div>
                 <span class="sub"><%= pct.toFixed(1).replace('.', ',') %>%</span>
               </td>
-              <td class="num"><%= l.recepcao %></td>
+              <td class="num"><%= l.recepcao %><% if (l.confirmados || l.semConfirmar) { %><span class="sub" style="font-weight:500"><%= l.confirmados %> ✓<% if (l.tempoMedio != null) { %> · <%= duracao(l.tempoMedio) %><% } %><% if (l.semConfirmar) { %> · <span style="color:var(--danger)"><%= l.semConfirmar %> sem confirmar</span><% } %></span><% } %></td>
               <td class="num"><%= l.resgatados %></td>
               <td class="num" <% if (l.nao_retornados) { %>style="color:var(--danger)"<% } %>><%= l.nao_retornados %></td>
               <td class="sub"><%= fmt(l.ultimo) %></td>
@@ -93,7 +93,7 @@
       </div>
       <div class="panel-foot"><p class="hint">
         <b>Leads</b> conta pessoas, não cliques: quem aperta vários botões da mesma página conta uma vez só.
-        <b>Recepção</b> são os leads de qualquer canal que a recepção encaminhou ao corretor pelo WhatsApp.
+        <b>Recepção</b> são os leads de qualquer canal que a recepção encaminhou ao corretor pelo WhatsApp. Abaixo do número: quantos o corretor confirmou pelo link “Recebi” e o tempo médio até confirmar.
         <b>“Não retornou”</b> conta os leads que voltaram à página depois de 24h e foram repassados a outro corretor.
         É um sinal de que o atendimento pode ter falhado, não uma prova. Vale olhar a tendência ao longo das semanas.
         Nos leads das páginas o site não recebe nome nem telefone do cliente (eles ficam no WhatsApp do corretor); nos da recepção, sim.
@@ -104,9 +104,9 @@
       <h2 class="panel-h">Leads encaminhados pela recepção · <%= rotulo.toLowerCase() %></h2>
       <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th></tr></thead>
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th><th>Recebimento</th></tr></thead>
         <tbody>
-          <% if (!daRecepcao.length) { %><tr><td colspan="5" class="empty">Nenhum lead encaminhado pela recepção no período.</td></tr><% } %>
+          <% if (!daRecepcao.length) { %><tr><td colspan="6" class="empty">Nenhum lead encaminhado pela recepção no período.</td></tr><% } %>
           <% daRecepcao.forEach(function(r){ %>
             <tr>
               <td class="sub"><%= fmt(r.created_at) %></td>
@@ -114,6 +114,11 @@
               <td class="sub"><%= [r.negocio, r.imovel ? 'imóvel ' + r.imovel : ''].filter(Boolean).join(' · ') || '—' %><% if (r.mensagem) { %><span class="rc-msg" title="<%= r.mensagem %>"><%= r.mensagem %></span><% } %></td>
               <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
               <td><%= r.corretor %></td>
+              <td class="sub">
+                <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ confirmou</span><span class="sub">em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span>
+                <% } else if (r.token) { var esp = (Date.now() - new Date(r.created_at)) / 60000; %><span style="<%= esp > 60 ? 'color:var(--danger);font-weight:650' : '' %>">sem confirmar</span><span class="sub">há <%= duracao(esp) %></span>
+                <% } else { %>—<% } %>
+              </td>
             </tr>
           <% }); %>
         </tbody>

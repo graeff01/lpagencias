@@ -261,13 +261,59 @@ A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
 - O leitor da mensagem fica em `public/js/lead-parser.js` (roda no navegador e
   no servidor). Um formato novo de mensagem se ensina por ali.
 
+### Fila "A encaminhar" (leads que chegam por e-mail)
+Os e-mails de lead entram sozinhos numa fila no topo da tela da recepção, já
+lidos pelo mesmo leitor da colagem. Ela clica em **Encaminhar** (os campos já
+vêm preenchidos), escolhe o corretor ou a campanha e envia; o lead sai da fila
+ligado ao envio. **Descartar** tira da fila com um motivo (spam, teste,
+repetido). A fila mostra há quanto tempo cada lead espera (vermelho após 30 min),
+avisa quando o cliente já foi enviado antes e se atualiza a cada 30 s.
+
+O sistema **só lê** a caixa: não apaga, não move, não marca como lido. Cada
+e-mail entra uma vez. Na primeira conexão, só o último dia é trazido.
+
+**Três formas de ligar a caixa** (configuração em `.env.example`; status e
+botão "Verificar agora" em Painel → Recepção → *Caixa de leads*):
+
+1. **Gmail só leitura (recomendada).** No Google Cloud do Workspace da empresa:
+   criar projeto → ativar *Gmail API* → tela de consentimento **Interna** →
+   credencial *ID do cliente OAuth* (aplicativo da Web) com o redirect
+   `https://SEU-DOMINIO/admin/recepcao/gmail/retorno`. Colocar
+   `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no Railway e clicar em
+   *Conectar Gmail* no painel, entrando com a conta da caixa. O acesso é só
+   leitura e pode ser revogado na conta Google.
+2. **IMAP com senha de app.** Conta com verificação em duas etapas → senha de
+   app → `LEADS_IMAP_USER` / `LEADS_IMAP_PASS`. Mais simples, mas a senha abre
+   a caixa inteira.
+3. **Webhook.** Um serviço de recebimento (Cloudflare Email Routing, Postmark…)
+   faz `POST /entrada/email` com `X-Leads-Token: <LEADS_WEBHOOK_TOKEN>` e JSON
+   `{ message_id, from, subject, text | html | raw }`.
+
+Nas formas 1 e 2, crie no Gmail o marcador **Leads** (ou o nome em
+`LEADS_ROTULO`) e um filtro que aplique esse marcador aos e-mails de lead (pelo
+remetente do portal ou pelo assunto). Serve tanto para a caixa da recepção
+quanto para uma caixa só de leads.
+
+### Link "Recebi" (confirmação do corretor)
+Toda mensagem que a recepção manda ao corretor termina com um link
+`/ok/<código>`. Abrir o link não confirma nada (a pré-visualização do WhatsApp
+abre links sozinha); só o botão **Recebi o lead** confirma, e o primeiro
+horário fica gravado. O gestor vê quem confirmou, o tempo médio até confirmar e
+os que estão **sem confirmar** (vermelho após 1 h); o admin vê o mesmo na lista
+de leads e no CSV (`confirmado_em`, `minutos_ate_confirmar`). O código é
+aleatório (18 caracteres) e a página mostra só o primeiro nome do corretor e o
+nome do cliente.
+
 ### Tabelas
 - `corretores` — nome, telefone, peso, ativo, contador da fila.
 - `cliques_whatsapp` — log de auditoria de cada clique (com o telefone de quem recebeu).
 - `gestores` — usuário e senha (hash scrypt) de cada gestor.
 - `equipe_corretores` — telefone do corretor → gestor.
 - `agencia_corretores` — lista de corretores da recepção.
-- `encaminhamentos` — cada lead encaminhado pela recepção, com os dados do cliente.
+- `encaminhamentos` — cada lead encaminhado pela recepção, com os dados do cliente,
+  o código do link "Recebi" e a hora da confirmação.
+- `leads_entrada` — fila "A encaminhar" (e-mails importados, status e motivo de descarte).
+- `config_kv` — configurações do painel (conexão do Gmail, última leitura).
 
 ### Proteções contra erro
 - **Lead nunca vira tela de erro.** Se a roleta falhar (banco fora do ar), o

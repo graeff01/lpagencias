@@ -346,3 +346,22 @@ a.chip:hover{border-color:var(--line-strong)}
 .rc-fila li.vez{background:#fff7ee;border-color:#f0c79a}
 .rc-envios{list-style:none;display:grid;gap:4px;font-size:13px}
 .rc-envios li{color:#0d7a3f}.rc-envios b{color:var(--ink)}.rc-envios small{color:var(--faint);margin-left:4px}
+/* Recepção: fila "A encaminhar" */
+.rc-fila-entrada .panel-h{gap:8px}
+.rc-cont{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:#e4610f;color:#fff;font-size:12px;font-weight:720}
+.rc-fila-vazia{padding:14px 18px;font-size:13px;color:var(--muted)}
+.rc-ent{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line)}
+.rc-ent:first-child{border-top:none}
+.rc-ent.on{background:#fff7ee}
+.rc-ent-q{flex:none;width:86px;font-size:12px;font-weight:650;color:var(--muted)}
+.rc-ent-q.atraso{color:var(--danger)}
+.rc-ent-d{flex:1;min-width:0;font-size:13.5px}
+.rc-ent-d .mono{color:var(--muted);margin-left:4px}
+.rc-ent-d small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-ent-d .rc-ent-dono{color:#8a5a12;font-weight:600;white-space:normal}
+.rc-falta{color:var(--danger);font-size:12px;font-weight:650;margin-left:4px}
+.rc-ent-a{display:flex;gap:6px;flex:none}
+.rc-atual{background:#fff7ee;border:1px solid #f0c79a;color:#7a4a12;border-radius:12px;padding:11px 14px;font-size:13.5px;margin-bottom:14px}
+.rc-atual[hidden]{display:none}
+.rc-atual button{margin-left:6px;font-weight:700;text-decoration:underline;color:#a4520c}
+@media(max-width:620px){.rc-ent{flex-wrap:wrap}.rc-ent-q{width:auto}.rc-ent-a{width:100%}.rc-ent-a .btn{flex:1;justify-content:center}}

@@ -9,6 +9,8 @@ const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const gestorRoutes = require('./routes/gestor');
 const recepcaoRoutes = require('./routes/recepcao');
+const externoRoutes = require('./routes/externo');
+const caixaLeads = require('./lib/caixa-leads');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -52,6 +54,7 @@ app.use((req, res, next) => {
 app.use('/admin', adminRoutes);
 app.use('/gestor', gestorRoutes);
 app.use('/recepcao', recepcaoRoutes);
+app.use('/', externoRoutes);
 app.use('/', publicRoutes);
 
 // 404
@@ -64,6 +67,7 @@ const PORT = process.env.PORT || 3000;
 db.migrate()
   .then(() => {
     setTimeout(() => adminRoutes.completarPontosExistentes(), 5000);
+    caixaLeads.iniciar();   // lê a caixa de leads (se configurada) e enche a fila da recepção
     app.listen(PORT, () => {
       console.log(`\n  Auxiliadora Landings rodando em http://localhost:${PORT}`);
       console.log(`  Painel:  http://localhost:${PORT}/admin`);
