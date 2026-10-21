@@ -197,6 +197,18 @@ function ok(cond, msg) {
   const prox10 = (await db.filaCorretores(nimbus.id))[0];
   ok(prox10.id === recebidos[0], 'o 10º lead volta para quem recebeu o 1º');
 
+  console.log('\n12) Acessos do Alberto e do Fabrício com senha temporária');
+  const alb = await db.getGestorPorUsuario('alberto');
+  const fab = await db.getGestorPorUsuario('fabricio');
+  ok(alb && fab && alb.trocar_senha && fab.trocar_senha, 'os dois existem e precisam trocar a senha no primeiro acesso');
+  const eqA = (await db.listEquipe(alb.id)).map(m => m.telefone).sort();
+  const eqF = (await db.listEquipe(fab.id)).map(m => m.telefone).sort();
+  ok(eqA.length === 5 && eqF.length === 4, `equipes montadas (Alberto ${eqA.length}, Fabrício ${eqF.length})`);
+  ok(eqA.includes('5551994915337') && eqF.includes('5551981792048'), 'cada Fernando na equipe certa');
+  await db.updateGestor(alb.id, { senha_hash: equipes.hashSenha('nova-senha-1'), trocar_senha: false });
+  const alb2 = await db.getGestor(alb.id);
+  ok(!alb2.trocar_senha && equipes.confereSenha('nova-senha-1', alb2.senha_hash), 'depois de trocar, entra com a nova senha');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

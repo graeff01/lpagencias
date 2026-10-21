@@ -200,6 +200,12 @@ quebra por empreendimento e os últimos leads. Períodos: hoje, 7 dias, 30 dias,
 este mês, mês passado e tudo (limites no horário de Brasília). Não dá acesso
 ao painel de empreendimentos.
 
+**Primeiro acesso:** senha criada pelo administrador é temporária. No primeiro
+login o sistema pede uma senha nova e não mostra mais nada até ela ser trocada.
+Depois, *Alterar senha* fica no topo do painel. Os acessos do Alberto
+(`alberto`) e do Fabrício (`fabricio`) e as equipes deles são criados na
+primeira subida (`cargasUnicas` em `lib/db.js`, só o hash da senha).
+
 **Configurar:** `/admin/equipes` (aba *Equipes*) → cadastre o gestor (nome,
 usuário, senha de 8+ caracteres) → na lista de corretores, escolha a equipe de
 cada um → *Salvar equipes*. O botão **Ver painel** mostra exatamente o que o

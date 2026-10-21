@@ -401,8 +401,10 @@ router.post('/equipes/gestor', async (req, res, next) => {
     if (outro && outro.id !== id) return res.redirect('/admin/equipes?erro=usuario');
     const senha_hash = senha ? equipes.hashSenha(senha) : null;
     const papel = b.papel === 'recepcao' ? 'recepcao' : 'gestor';
-    if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel });
-    else await db.createGestor({ nome, usuario, senha_hash, papel });
+    // Senha definida pelo administrador é temporária: a pessoa troca no próximo acesso.
+    const trocar_senha = senha ? true : undefined;
+    if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel, trocar_senha });
+    else await db.createGestor({ nome, usuario, senha_hash, papel, trocar_senha: true });
     res.redirect('/admin/equipes?ok=gestor');
   } catch (e) { next(e); }
 });

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></div>
+      <% if (g.trocar_senha) { %>
+        <h1>Crie sua senha</h1>
+        <p>Olá, <%= g.nome.split(' ')[0] %>! Você entrou com uma senha temporária. Escolha uma senha só sua para continuar.</p>
+      <% } else { %>
+        <h1>Alterar senha</h1>
+        <p><%= g.nome %> · usuário <b><%= g.usuario %></b></p>
+      <% } %>
+      <% if (error) { %><div class="login-err"><%= error %></div><% } %>
+      <form method="POST" action="/gestor/senha">
+        <label><%= g.trocar_senha ? 'Senha temporária' : 'Senha atual' %></label>
+        <input type="password" name="atual" autocomplete="current-password" required autofocus>
+        <label style="margin-top:14px">Nova senha</label>
+        <input type="password" name="nova" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres" required>
+        <label style="margin-top:14px">Repita a nova senha</label>
+        <input type="password" name="confirma" minlength="8" autocomplete="new-password" required>
+        <button class="btn btn-green" type="submit">Salvar senha</button>
+      </form>
+      <% if (!g.trocar_senha) { %>
+        <p style="margin:16px 0 0;text-align:center"><a href="<%= g.papel === 'recepcao' ? '/recepcao' : '/gestor' %>" style="font-size:13px;color:var(--muted)">Voltar</a></p>
+      <% } else { %>
+        <form method="POST" action="/gestor/logout" style="margin-top:14px;text-align:center"><button type="submit" style="font-size:13px;color:var(--muted)">Sair</button></form>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

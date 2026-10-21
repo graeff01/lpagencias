@@ -35,13 +35,47 @@ router.post('/login', async (req, res, next) => {
       req.session.gestorId = g.id;
       req.session.papelEquipe = g.papel || 'gestor';
       db.marcarAcessoGestor(g.id).catch(() => {});
-      res.redirect(destino(g));
+      res.redirect(g.trocar_senha ? '/gestor/senha' : destino(g));
     });
   } catch (e) { next(e); }
 });
 
 router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/gestor/login'));
+});
+
+// ---- Trocar a senha (obrigatório no primeiro acesso com senha temporária) ----
+async function logado(req) {
+  const id = req.session && req.session.gestorId;
+  const g = id ? await db.getGestor(id) : null;
+  return g && g.ativo ? g : null;
+}
+
+function telaSenha(res, g, status, error) {
+  return res.status(status).render('gestor/senha', { title: 'Nova senha · Equipe', g, error });
+}
+
+router.get('/senha', async (req, res, next) => {
+  try {
+    const g = await logado(req);
+    if (!g) return res.redirect('/gestor/login');
+    telaSenha(res, g, 200, null);
+  } catch (e) { next(e); }
+});
+
+router.post('/senha', async (req, res, next) => {
+  try {
+    const g = await logado(req);
+    if (!g) return res.redirect('/gestor/login');
+    const atual = String(req.body.atual || '');
+    const nova = String(req.body.nova || '');
+    if (!equipes.confereSenha(atual, g.senha_hash)) return telaSenha(res, g, 400, 'A senha atual não confere.');
+    if (nova.length < 8) return telaSenha(res, g, 400, 'A nova senha precisa de pelo menos 8 caracteres.');
+    if (nova !== String(req.body.confirma || '')) return telaSenha(res, g, 400, 'A confirmação não é igual à nova senha.');
+    if (nova === atual) return telaSenha(res, g, 400, 'A nova senha precisa ser diferente da atual.');
+    await db.updateGestor(g.id, { senha_hash: equipes.hashSenha(nova), trocar_senha: false });
+    res.redirect(destino(g) + '?senha=ok');
+  } catch (e) { next(e); }
 });
 
 // Usuário desativado ou excluído perde o acesso na hora, mesmo logado.
@@ -55,6 +89,7 @@ function exigeEquipe(papel) {
         if (id) delete req.session.gestorId;
         return res.redirect('/gestor/login');
       }
+      if (g.trocar_senha) return res.redirect('/gestor/senha');
       if ((g.papel || 'gestor') !== papel) return res.redirect(destino(g));
       req.gestor = g;
       next();
