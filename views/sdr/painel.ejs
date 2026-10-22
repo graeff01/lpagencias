@@ -32,8 +32,12 @@
     </div>
 
     <div class="kpis">
-      <div class="kpi"><span>Ligações hoje</span><b id="k-lig"><%= hoje.ligacoes %></b><i><em id="k-at"><%= hoje.atendidas %></em> atenderam</i></div>
-      <div class="kpi"><span>Qualificados hoje</span><b id="k-q"><%= hoje.qualificados %></b><i><em id="k-qt"><%= hoje.quente %></em> quentes · <em id="k-mo"><%= hoje.morno %></em> mornos</i></div>
+      <div class="kpi"><span>Ligações hoje</span><b><em id="k-lig"><%= hoje.ligacoes %></em><small class="sd-de">/ <%= metas.ligacoes %></small></b>
+        <div class="sd-meta"><span id="k-lig-bar" style="width:<%= Math.min(100, hoje.ligacoes * 100 / metas.ligacoes).toFixed(0) %>%"></span></div>
+        <i><em id="k-at"><%= hoje.atendidas %></em> atenderam · média <em id="k-tm"><%= hoje.tempoMedio %></em> por ligação</i></div>
+      <div class="kpi"><span>Qualificados hoje</span><b><em id="k-q"><%= hoje.qualificados %></em><small class="sd-de">/ <%= metas.qualificados %></small></b>
+        <div class="sd-meta"><span id="k-q-bar" style="width:<%= Math.min(100, hoje.qualificados * 100 / metas.qualificados).toFixed(0) %>%"></span></div>
+        <i><em id="k-qt"><%= hoje.quente %></em> quentes · <em id="k-mo"><%= hoje.morno %></em> mornos</i></div>
       <div class="kpi"><span>Faltam na lista</span><b id="k-fila"><%= lista.naFila %></b><i>de <em id="k-total"><%= lista.total %></em> contatos</i></div>
       <div class="kpi"><span>Enviados no total</span><b id="k-env"><%= lista.porStatus.enviado || 0 %></b><i>para o plantão</i></div>
     </div>
@@ -42,6 +46,20 @@
       <h2 class="panel-h">Sem confirmação do corretor <span class="rc-cont rc-cont-v" id="sd-pend-cont"><%= pend.length %></span>
         <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">enviados há mais de <%= minCobrar %> min e ainda sem o “Recebi”</span></h2>
       <div id="sd-pend-lista"></div>
+    </div>
+
+    <div class="flash sd-horario" id="sd-horario" hidden></div>
+
+    <div class="panel rc-fila-entrada" id="sd-agenda" <%= agenda.length ? '' : 'hidden' %>>
+      <h2 class="panel-h">Retornos de hoje <span class="rc-cont" id="sd-agenda-cont"><%= agenda.length %></span>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">clientes que pediram para você ligar de novo</span></h2>
+      <div id="sd-agenda-lista"></div>
+    </div>
+
+    <div class="panel rc-fila-entrada" id="sd-ret" <%= retornos.length ? '' : 'hidden' %>>
+      <h2 class="panel-h">Como foi o atendimento? <span class="rc-cont" id="sd-ret-cont" style="background:var(--green)"><%= retornos.length %></span>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">o corretor confirmou há mais de <%= horasRetorno %> h e ainda não contou como foi</span></h2>
+      <div id="sd-ret-lista"></div>
     </div>
 
     <div class="sd-grid">
@@ -141,12 +159,12 @@
 
   <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 
-  <script>window.SD = <%- JSON.stringify({ plantao: plantao, pend: pend, script: script, usuario: usuario.nome, rotulos: Object.fromEntries(Object.entries(resultados).map(function(e){ return [e[0], e[1].rotulo]; })) }).replace(/</g, '\\u003c') %>;</script>
+  <script>window.SD = <%- JSON.stringify({ plantao: plantao, pend: pend, script: script, usuario: usuario.nome, metas: metas, mensagens: mensagens, retornos: retornos, agenda: agenda, rotulos: Object.fromEntries(Object.entries(resultados).map(function(e){ return [e[0], e[1].rotulo]; })) }).replace(/</g, '\\u003c') %>;</script>
   <script src="/js/lead-parser.js?v=<%= v %>"></script>
   <script>
     (function () {
       var P = window.LeadParser, S = window.SD;
-      var contato = null, reencaminharDe = null, reencFone = null;
+      var contato = null, reencaminharDe = null, reencFone = null, aviso = null;
       var plantao = S.plantao, pend = S.pend;
       var $ = function (id) { return document.getElementById(id); };
       function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
@@ -222,9 +240,10 @@
           + '<div class="sd-st">' + esc(c.statusRotulo) + (c.tentativas ? ' · ' + c.tentativas + ' tentativa(s)' : '') + (c.retornarEm && c.status === 'retornar' ? ' · retorno marcado para ' + quando(c.retornarEm) : '') + '</div></div>'
           + '<button type="button" class="btn btn-ghost btn-sm" data-acao="pular" style="margin-left:auto">Pular</button></div>'
           + '<div class="sd-fones">' + fones.map(function (f) {
-            return '<div class="sd-fone"><span class="mono">' + esc(P.formatarFone(f)) + '</span><a class="btn btn-green btn-sm" href="tel:+' + f + '">Ligar</a>'
-              + '<a class="btn btn-ghost btn-sm" href="https://wa.me/' + f + '" target="_blank" rel="noopener">WhatsApp</a></div>';
+            return '<div class="sd-fone"><span class="mono">' + esc(P.formatarFone(f)) + '</span><a class="btn btn-green btn-sm" href="tel:+' + f + '" data-ligar>Ligar</a>'
+              + '<a class="btn btn-ghost btn-sm" href="#" data-tentei="' + f + '" title="Mensagem pronta: tentei te ligar">Mensagem “tentei ligar”</a></div>';
           }).join('') + '</div>'
+          + '<div class="sd-crono"><button type="button" class="btn btn-ghost btn-sm" data-acao="crono" id="sd-crono-btn">Iniciar cronômetro</button><span id="sd-crono" class="mono">0:00</span><small>tempo da ligação</small></div>'
           + (c.email ? '<div class="sd-info"><span>E-mail</span>' + esc(c.email) + '</div>' : '')
           + (info.length ? '<div class="sd-infos">' + info.map(function (k) { return '<div class="sd-info"><span>' + esc(k) + '</span>' + esc(c.info[k]) + '</div>'; }).join('') + '</div>' : '')
           + (hist && hist.length ? '<div class="sd-hist"><b>Ligações anteriores:</b> ' + hist.map(function (h) { return esc(quando(h.quando) + ' · ' + h.resultado + (h.classe ? ' (' + h.classe + ')' : '')); }).join(' · ') + '</div>' : '')
@@ -232,7 +251,9 @@
           + '</div>';
         verificarDono();
       }
-      function bloquear(sim) { document.querySelectorAll('.sd-main .panel:not(:first-child)').forEach(function (p) { p.classList.toggle('sd-off', sim); }); }
+      // Sem cliente aberto: resultado e ficha ficam inativos. O plantão não
+      // (o aviso ao cliente do último envio continua clicável).
+      function bloquear(sim) { document.querySelectorAll('.sd-main .panel:not(:first-child):not(:last-child)').forEach(function (p) { p.classList.toggle('sd-off', sim); }); }
       function verificarDono() {
         if (!contato) return;
         get('/sdr/lead?tel=' + contato.telefone).then(function (j) {
@@ -242,6 +263,7 @@
         }).catch(function () {});
       }
       function abrir(c, hist, ficha) {
+        if (!c || !contato || c.id !== contato.id) zerarCrono();
         contato = c; limparFicha();
         if (c) fichaForm.nome.value = c.nome || '';
         if (ficha) preencherFicha(ficha);
@@ -268,7 +290,36 @@
         if (!b) return;
         if (b.dataset.acao === 'pular') proximo(contato && contato.id);
         if (b.dataset.acao === 'proximo') proximo();
+        if (b.dataset.acao === 'crono') { if (crono.ini) pararCrono(); else iniciarCrono(); }
       });
+      boxContato.addEventListener('click', function (e) {
+        if (e.target.closest('[data-ligar]')) iniciarCrono();
+        var t = e.target.closest('[data-tentei]');
+        if (!t || !contato) return;
+        t.href = linkWhats(t.dataset.tentei, preencherMsg(S.mensagens.tentativa, contato.nome, ''));
+        t.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+        post('/sdr/contato/' + contato.id + '/whats', { tipo: 'tentativa' });
+        avisar('Mensagem aberta no WhatsApp. Depois registre o resultado da ligação.');
+      });
+
+      // ---- Cronômetro da ligação (a duração vai junto com o resultado) ----
+      var crono = { ini: 0, acum: 0, t: null };
+      function segundos() { return Math.round((crono.acum + (crono.ini ? Date.now() - crono.ini : 0)) / 1000); }
+      function mostrarCrono() {
+        var el = $('sd-crono'); if (!el) return;
+        var s = segundos(); el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        el.classList.toggle('sd-longa', s > 180);
+        var b = $('sd-crono-btn'); if (b) b.textContent = crono.ini ? 'Pausar' : (s ? 'Continuar' : 'Iniciar cronômetro');
+      }
+      function iniciarCrono() { if (crono.ini) return; crono.ini = Date.now(); clearInterval(crono.t); crono.t = setInterval(mostrarCrono, 1000); mostrarCrono(); }
+      function pararCrono() { if (crono.ini) { crono.acum += Date.now() - crono.ini; crono.ini = 0; } clearInterval(crono.t); mostrarCrono(); }
+      function zerarCrono() { var s = segundos(); crono = { ini: 0, acum: 0, t: (clearInterval(crono.t), null) }; mostrarCrono(); return s; }
+
+      // Mensagens prontas: [NOME DO CLIENTE], [NOME] (SDR) e [CORRETOR].
+      function preencherMsg(t, cliente, corretor) {
+        return String(t || '').replace(/\[NOME DO CLIENTE\]/g, String(cliente || '').split(/\s+/)[0] || 'tudo bem')
+          .replace(/\[NOME\]/g, String(S.usuario || '').split(/\s+/)[0]).replace(/\[CORRETOR\]/g, corretor || '');
+      }
 
       // Busca e contato fora da lista
       var tBusca, res = $('sd-resultados');
@@ -372,7 +423,7 @@
       function registrar(resultado, retornarEm) {
         var c = contato, f = lerFicha();
         var temFicha = ['interesse', 'objetivo', 'faixa', 'pagamento', 'prazo'].some(function (k) { return f[k]; }) || f.obs;
-        post('/sdr/contato/' + c.id + '/resultado', { resultado: resultado, retornar_em: retornarEm, ficha: temFicha ? f : null }).then(function (j) {
+        post('/sdr/contato/' + c.id + '/resultado', { resultado: resultado, retornar_em: retornarEm, ficha: temFicha ? f : null, duracao_s: segundos() || null }).then(function (j) {
           if (!j.ok) return avisar(j.erro || 'Não consegui registrar. Tente de novo.');
           linhaRecente(c, S.rotulos[resultado], null);
           numeros(j.hoje);
@@ -390,6 +441,8 @@
         var fila = reencaminharDe ? plantao.filter(function (p) { return p.telefone !== reencFone; }) : plantao;
         var prox = fila[0];
         var h = '';
+        if (aviso) h += '<div class="sd-avisar">Lead enviado para <b>' + esc(aviso.corretor) + '</b>. Avise <b>' + esc(aviso.nome || 'o cliente') + '</b> que o corretor vai chamar:'
+          + ' <a href="#" class="btn btn-green btn-sm" data-apresentar>Mandar mensagem ao cliente</a><button type="button" data-fechar-aviso title="Fechar">×</button></div>';
         if (reencaminharDe) h += '<div class="rc-atual">Reencaminhando: o corretor anterior não confirmou. Envie para o próximo da vez. <button type="button" id="sd-reenc-x">cancelar</button></div>';
         if (!prox) h += '<div class="warn-box">Nenhum corretor no plantão. O administrador cadastra em Painel → SDR.</div>';
         else {
@@ -422,6 +475,7 @@
         if (f.obs) l.push('', '*Observações:* ' + f.obs);
         l.push('', 'O cliente autorizou o contato pelo WhatsApp.');
         l.push('', '✅ *Confirme que recebeu:* ' + linkOk);
+        l.push('Depois de falar com o cliente, conte como foi pelo mesmo link.');
         return l.join('\n');
       }
       boxPlantao.addEventListener('click', function (e) {
@@ -435,7 +489,8 @@
         a.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
         a.rel = modo === 'web' ? '' : 'noopener';
         var de = reencaminharDe;
-        post('/sdr/contato/' + c.id + '/enviar', { corretor_id: a.dataset.id, token: tk, ficha: f, nome: fichaForm.nome.value.trim(), reencaminhar_de: de }).then(function (j) {
+        aviso = { contatoId: c.id, nome: fichaForm.nome.value.trim() || c.nome, telefone: c.telefone, corretor: a.dataset.nome };
+        post('/sdr/contato/' + c.id + '/enviar', { corretor_id: a.dataset.id, token: tk, ficha: f, nome: fichaForm.nome.value.trim(), reencaminhar_de: de, duracao_s: segundos() || null }).then(function (j) {
           if (!j.ok) { avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); return; }
           plantao = j.plantao; numeros(j.hoje); renderPlantao();
         });
@@ -443,6 +498,15 @@
         else linhaRecente(Object.assign({}, c, { nome: fichaForm.nome.value.trim() || c.nome }), 'Qualificado (enviado ao corretor)', classe(f));
         avisar('Lead de ' + (fichaForm.nome.value.trim() || c.nome || 'cliente') + ' enviado para ' + a.dataset.nome + '.');
         setTimeout(function () { proximo(); }, 400);
+      });
+      boxPlantao.addEventListener('click', function (e) {
+        var ap = e.target.closest('[data-apresentar]'), fx = e.target.closest('[data-fechar-aviso]');
+        if (fx) { aviso = null; renderPlantao(); return; }
+        if (!ap || !aviso) return;
+        ap.href = linkWhats(aviso.telefone, preencherMsg(S.mensagens.apresentacao, aviso.nome, aviso.corretor));
+        ap.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+        post('/sdr/contato/' + aviso.contatoId + '/whats', { tipo: 'apresentacao' });
+        setTimeout(function () { aviso = null; renderPlantao(); }, 300);
       });
       setInterval(function () { get('/sdr/plantao').then(function (j) { if (j.ok) { plantao = j.plantao; renderPlantao(); } }).catch(function () {}); }, 30000);
 
@@ -487,9 +551,78 @@
       // ---- Números e histórico ----
       function numeros(h) {
         if (!h) return;
-        $('k-lig').textContent = h.ligacoes; $('k-at').textContent = h.atendidas;
+        $('k-lig').textContent = h.ligacoes; $('k-at').textContent = h.atendidas; $('k-tm').textContent = h.tempoMedio || '—';
         $('k-q').textContent = h.qualificados; $('k-qt').textContent = h.quente; $('k-mo').textContent = h.morno;
+        $('k-lig-bar').style.width = Math.min(100, h.ligacoes * 100 / S.metas.ligacoes) + '%';
+        $('k-q-bar').style.width = Math.min(100, h.qualificados * 100 / S.metas.qualificados) + '%';
       }
+
+      // ---- Retornos de hoje (agenda) ----
+      var agendaDados = S.agenda || [];
+      function renderAgenda() {
+        $('sd-agenda').hidden = !agendaDados.length;
+        $('sd-agenda-cont').textContent = agendaDados.length;
+        var hora = function (d) { return new Date(d).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }); };
+        $('sd-agenda-lista').innerHTML = agendaDados.map(function (a) {
+          var venceu = new Date(a.quando).getTime() <= Date.now();
+          var ontem = new Date(a.quando).getTime() < Date.now() - 12 * 3600000;
+          return '<div class="rc-ent"><div class="rc-ent-q' + (venceu ? ' atraso' : '') + '">' + (ontem ? quando(a.quando) : hora(a.quando)) + (venceu ? ' · agora' : '') + '</div>'
+            + '<div class="rc-ent-d"><b>' + esc(a.nome || '(sem nome)') + '</b> <span class="mono">' + esc(P.formatarFone(a.telefone)) + '</span></div>'
+            + '<div class="rc-ent-a"><button type="button" class="btn btn-green btn-sm" data-agenda="' + a.id + '">Abrir</button></div></div>';
+        }).join('');
+      }
+      $('sd-agenda-lista').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-agenda]');
+        if (b) { reencaminharDe = null; abrirPorId(b.dataset.agenda); }
+      });
+
+      // ---- Pedir ao corretor o retorno do atendimento ----
+      var retDados = S.retornos || [];
+      function renderRet() {
+        $('sd-ret').hidden = !retDados.length;
+        $('sd-ret-cont').textContent = retDados.length;
+        $('sd-ret-lista').innerHTML = retDados.map(function (r) {
+          return '<div class="rc-ent"><div class="rc-ent-q">' + ha(r.quando) + '</div>'
+            + '<div class="rc-ent-d"><b>' + esc(r.lead.nome || '(sem nome)') + '</b> → ' + esc(r.corretor)
+            + '<small>confirmou ' + ha(r.confirmado) + (r.pedidos ? ' · retorno pedido ' + r.pedidos + 'x' : '') + '</small></div>'
+            + '<div class="rc-ent-a"><a class="btn btn-ghost btn-sm" href="#" data-pedir="' + r.id + '">Pedir retorno</a></div></div>';
+        }).join('');
+      }
+      $('sd-ret-lista').addEventListener('click', function (e) {
+        var l = e.target.closest('[data-pedir]');
+        if (!l) return;
+        var r = retDados.filter(function (x) { return x.id === Number(l.dataset.pedir); })[0];
+        if (!r) return;
+        var txt = 'Oi, ' + String(r.corretor || '').split(/\s+/)[0] + '! Como está o atendimento de *' + (r.lead.nome || 'cliente') + '*'
+          + (r.lead.telefone ? ' (' + P.formatarFone(r.lead.telefone) + ')' : '') + ', que te mandei em ' + quando(r.quando) + '?'
+          + '\n\nMarque em 10 segundos, é só tocar: ' + location.origin + '/ok/' + r.token;
+        l.href = linkWhats(r.corretorFone, txt);
+        l.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+        post('/sdr/envio/' + r.id + '/pedir-retorno');
+        r.pedidos += 1;
+        setTimeout(renderRet, 50);
+      });
+
+      // Agenda, pedidos de retorno e números se atualizam sozinhos.
+      setInterval(function () {
+        get('/sdr/painel').then(function (j) {
+          if (!j.ok) return;
+          var antes = agendaDados.filter(function (a) { return new Date(a.quando).getTime() <= Date.now(); }).length;
+          agendaDados = j.agenda; retDados = j.retornos; renderAgenda(); renderRet(); numeros(j.hoje);
+          var agora = agendaDados.filter(function (a) { return new Date(a.quando).getTime() <= Date.now(); }).length;
+          if (agora > antes) avisar('Hora de um retorno agendado: veja “Retornos de hoje”.');
+        }).catch(function () {});
+      }, 60000);
+
+      // Horário bom para ligar: seg a sex 9h–20h, sáb 9h–14h (Brasília).
+      function conferirHorario() {
+        var l = new Date(Date.now() - 3 * 3600000), dia = l.getUTCDay(), h = l.getUTCHours();
+        var t = dia === 0 ? 'Hoje é domingo: evite ligar para clientes.'
+          : dia === 6 && (h < 9 || h >= 14) ? 'Sábado fora do horário (9h às 14h): evite ligar agora.'
+          : dia >= 1 && dia <= 5 && (h < 9 || h >= 20) ? 'Fora do horário comercial (9h às 20h): evite ligar agora.' : '';
+        $('sd-horario').textContent = t; $('sd-horario').hidden = !t;
+      }
+      conferirHorario(); setInterval(conferirHorario, 300000);
       function linhaRecente(c, rotulo, cl) {
         var tb = $('sd-recentes'); var v = tb.querySelector('.rc-vazio'); if (v) v.remove();
         var tr = document.createElement('tr');
@@ -499,6 +632,8 @@
       }
 
       renderPend();
+      renderAgenda();
+      renderRet();
       renderPlantao();
       proximo();
     })();

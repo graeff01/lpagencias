@@ -100,8 +100,23 @@
       </p></div>
     </div>
 
+    <% if (sdr) { %>
     <div class="panel">
-      <h2 class="panel-h">Leads encaminhados pela recepção · <%= rotulo.toLowerCase() %></h2>
+      <h2 class="panel-h">SDR · <%= rotulo.toLowerCase() %>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">ligações para a lista de clientes e o que virou na sua equipe</span></h2>
+      <div class="sd-retornos sd-ret-g">
+        <div><b><%= sdr.ligacoes %></b><span>ligações · <%= sdr.atendidas %> atenderam</span></div>
+        <div><b><%= sdr.qualificados %></b><span>qualificados (<%= sdr.atendidas ? Math.round(sdr.qualificados * 100 / sdr.atendidas) : 0 %>% dos que atenderam)</span></div>
+        <div><b><%= sdr.tempoMedio %></b><span>tempo médio por ligação</span></div>
+        <div><b><%= sdr.equipe.enviados %></b><span>leads para a sua equipe</span></div>
+        <div><b><%= sdr.equipe.visitas %></b><span>viraram visita<%= sdr.equipe.porRetorno.fechou ? ' · ' + sdr.equipe.porRetorno.fechou + ' fecharam' : '' %></span></div>
+        <div><b><%= sdr.equipe.enviados - sdr.equipe.comRetorno %></b><span>sem retorno do corretor</span></div>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="panel">
+      <h2 class="panel-h">Leads encaminhados (recepção e SDR) · <%= rotulo.toLowerCase() %></h2>
       <div class="tbl-wrap">
       <table class="tbl">
         <thead><tr><th>Quando</th><th>Cliente</th><th>Interesse</th><th>Origem</th><th>Corretor</th><th>Recebimento</th></tr></thead>
@@ -115,7 +130,7 @@
               <td class="sub"><%= [r.origem, r.canal].filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(' · ') || '—' %></td>
               <td><%= r.corretor %></td>
               <td class="sub">
-                <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ confirmou</span><span class="sub">em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span>
+                <% if (r.confirmado_em) { %><span style="color:#0d7a3f;font-weight:650">✓ confirmou</span><span class="sub">em <%= duracao((new Date(r.confirmado_em) - new Date(r.created_at)) / 60000) %></span><% if (r.retorno) { %><span class="sub" style="color:#0d7a3f;font-weight:650"><%= RETORNOS[r.retorno] %></span><% } %>
                 <% } else if (r.substituido_por) { %><span style="color:var(--danger);font-weight:650">não confirmou</span><span class="sub">reencaminhado a outro corretor</span>
                 <% } else if (r.token) { var esp = (Date.now() - new Date(r.created_at)) / 60000; %><span style="<%= esp > 60 ? 'color:var(--danger);font-weight:650' : '' %>">sem confirmar</span><span class="sub">há <%= duracao(esp) %></span>
                 <% } else { %>—<% } %>

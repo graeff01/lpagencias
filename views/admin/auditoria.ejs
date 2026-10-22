@@ -17,6 +17,9 @@
       encaminhado: ['➡️', 'Enviado ao corretor'],
       reencaminhado: ['🔁', 'Reenviado a outro corretor'],
       sdr_ligacao: ['📞', 'Ligação do SDR'],
+      sdr_whats: ['💬', 'O SDR mandou mensagem ao cliente'],
+      retorno_corretor: ['📋', 'Retorno do corretor'],
+      pedido_retorno: ['🔔', 'O SDR pediu o retorno do atendimento'],
       descartado: ['🗑️', 'Descartado pela recepção'],
       cobranca: ['⏰', 'A recepção lembrou o corretor'],
       link_aberto: ['🔗', 'O corretor abriu o link de confirmação'],
@@ -79,7 +82,7 @@
             <li class="aud-<%= e.tipo %>">
               <span class="aud-ic"><%= t[0] %></span>
               <div>
-                <b><%= t[1] %><% if (e.corretor_nome && /encaminhado|reencaminhado|cobranca|lp_/.test(e.tipo)) { %>: <%= e.corretor_nome %><% } %></b>
+                <b><%= t[1] %><% if (e.corretor_nome && /encaminhado|reencaminhado|cobranca|lp_|retorno_corretor|pedido_retorno/.test(e.tipo)) { %>: <%= e.corretor_nome %><% } %></b>
                 <span class="aud-q"><%= fmt(e.created_at) %><% if (ant) { %> · <%= dur((new Date(e.created_at) - new Date(ant.created_at)) / 60000) %><% } %></span>
                 <% var extras = [
                      e.usuario_id ? 'por ' + (usuarios[e.usuario_id] || 'usuário #' + e.usuario_id) : null,

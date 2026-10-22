@@ -37,6 +37,8 @@
     <% if (q.apagados !== undefined) { %><div class="flash" style="<%= erroBox %>"><%= q.apagados %> contato(s) ainda não ligados foram tirados da lista.</div><% } %>
     <% if (q.plantao === 'ok') { %><div class="flash">Plantão atualizado.</div><% } %>
     <% if (q.script === 'ok') { %><div class="flash">Roteiro salvo.</div><% } %>
+    <% if (q.metas === 'ok') { %><div class="flash">Metas salvas.</div><% } %>
+    <% if (q.mensagens === 'ok') { %><div class="flash">Mensagens salvas.</div><% } %>
     <% if (q.erro === 'vazio') { %><div class="flash" style="<%= erroBox %>">Escolha a planilha ou cole a lista.</div><% } else if (q.erro === 'plantao') { %><div class="flash" style="<%= erroBox %>">Informe nome e WhatsApp válidos do corretor.</div><% } else if (q.erro) { %><div class="flash" style="<%= erroBox %>">Não consegui ler a planilha: <%= q.erro %></div><% } %>
     <% if (!sdrs.length) { %>
       <div class="warn-box">Ninguém tem acesso de SDR ainda. Crie em <a href="/admin/equipes" style="font-weight:700;text-decoration:underline">Equipes</a> com o tipo <b>SDR</b>.</div>
@@ -49,10 +51,22 @@
     </nav>
 
     <div class="kpis">
-      <div class="kpi"><span>Ligações · <%= rotulo.toLowerCase() %></span><b><%= resumo.ligacoes %></b><i><%= resumo.atendidas %> atenderam</i></div>
-      <div class="kpi"><span>Qualificados</span><b><%= resumo.qualificados %></b><i><%= resumo.quente %> quentes · <%= resumo.morno %> mornos</i></div>
-      <div class="kpi"><span>Taxa de qualificação</span><b><%= resumo.atendidas ? Math.round(resumo.qualificados * 100 / resumo.atendidas) : 0 %>%</b><i>dos que atenderam</i></div>
+      <div class="kpi"><span>Ligações · <%= rotulo.toLowerCase() %></span><b><%= resumo.ligacoes %></b><i><%= resumo.atendidas %> atenderam · média <%= minSeg(resumo.tempoMedioS) %></i></div>
+      <div class="kpi"><span>Qualificados</span><b><%= resumo.qualificados %></b><i><%= resumo.atendidas ? Math.round(resumo.qualificados * 100 / resumo.atendidas) : 0 %>% dos que atenderam · <%= resumo.quente %> quentes</i></div>
+      <div class="kpi"><span>Viraram visita</span><b><%= ret.visitas %></b><i>de <%= ret.enviados %> enviados · <%= ret.porRetorno.fechou || 0 %> fecharam</i></div>
       <div class="kpi"><span>Faltam na lista</span><b><%= lista.naFila %></b><i>de <%= lista.total %> contatos</i></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Retorno dos corretores · <%= rotulo.toLowerCase() %>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px"><%= ret.comRetorno %> de <%= ret.enviados %> leads com retorno</span></h2>
+      <div class="sd-retornos">
+        <% Object.keys(RETORNOS).forEach(function(k){ %>
+          <div><b><%= ret.porRetorno[k] || 0 %></b><span><%= RETORNOS[k] %></span></div>
+        <% }); %>
+        <div><b><%= ret.enviados - ret.comRetorno %></b><span>Sem retorno ainda</span></div>
+      </div>
+      <div class="panel-foot"><p class="hint">O corretor conta como foi pelo mesmo link do “Recebi”. Quem não contou em 24 h aparece na tela do SDR para ele pedir o retorno.</p></div>
     </div>
 
     <div class="panel" id="ligacoes">
@@ -70,7 +84,7 @@
               <td><b><%= l.contato_nome || '—' %></b><span class="sub mono"><%= tel(l.contato_telefone) %></span></td>
               <td><%= (RESULTADOS[l.resultado] || {}).rotulo || l.resultado %><% if (l.classificacao) { %> <span class="sd-tag sd-<%= l.classificacao %>"><%= l.classificacao %></span><% } %></td>
               <td class="sub"><%= [f.objetivo, f.faixa, f.pagamento, f.prazo].filter(Boolean).join(' · ') || '—' %><% if (f.obs) { %><span class="rc-msg" title="<%= f.obs %>"><%= f.obs %></span><% } %></td>
-              <td><% if (e) { %><%= e.corretor_nome %><span class="sub"><% if (e.confirmado_em) { %><span style="color:#0d7a3f">✓ confirmou em <%= duracao((new Date(e.confirmado_em) - new Date(e.created_at)) / 60000) %></span><% } else if (e.substituido_por) { %>não confirmou · reencaminhado<% } else { %>sem confirmar<% } %></span><% } else { %>—<% } %></td>
+              <td><% if (e) { %><%= e.corretor_nome %><span class="sub"><% if (e.retorno) { %><b style="color:#0d7a3f"><%= RETORNOS[e.retorno] %></b><% } else if (e.confirmado_em) { %><span style="color:#0d7a3f">✓ confirmou em <%= duracao((new Date(e.confirmado_em) - new Date(e.created_at)) / 60000) %></span><% } else if (e.substituido_por) { %>não confirmou · reencaminhado<% } else { %>sem confirmar<% } %></span><% } else { %>—<% } %></td>
             </tr>
           <% }); %>
         </tbody>
@@ -156,6 +170,33 @@
         </form>
         <p class="hint" style="flex-basis:100%">O lead vai sempre para quem recebeu menos até agora. Quem entra ou volta de pausa começa no nível dos outros, sem receber vários seguidos.</p>
       </div>
+    </div>
+
+    <div class="split">
+      <form class="panel" id="metas" method="POST" action="/admin/sdr/metas">
+        <h2 class="panel-h">Metas do dia</h2>
+        <div class="frm">
+          <div class="fg2">
+            <div class="fg"><label>Ligações por dia</label><input name="ligacoes" type="number" min="1" max="999" value="<%= metas.ligacoes %>"></div>
+            <div class="fg"><label>Qualificados por dia</label><input name="qualificados" type="number" min="1" max="999" value="<%= metas.qualificados %>"></div>
+          </div>
+          <p class="hint" style="margin-bottom:14px">Aparecem para o SDR como barras de progresso no topo da tela.</p>
+          <button class="btn btn-green" type="submit">Salvar metas</button>
+        </div>
+      </form>
+
+      <form class="panel" id="mensagens" method="POST" action="/admin/sdr/mensagens">
+        <h2 class="panel-h">Mensagens prontas para o cliente</h2>
+        <div class="frm">
+          <div class="fg"><label>Quando não atende (“tentei ligar”)</label><textarea name="tentativa" rows="4" class="sd-txt"><%= mensagens.tentativa %></textarea></div>
+          <div class="fg"><label>Depois de enviar ao corretor</label><textarea name="apresentacao" rows="4" class="sd-txt"><%= mensagens.apresentacao %></textarea></div>
+          <p class="hint" style="margin-bottom:14px"><b>[NOME DO CLIENTE]</b>, <b>[NOME]</b> (o SDR) e <b>[CORRETOR]</b> são trocados na hora.</p>
+          <div class="frm-acts">
+            <button class="btn btn-green" type="submit">Salvar mensagens</button>
+            <button class="btn btn-ghost" type="submit" name="restaurar" value="1" onclick="return confirm('Voltar às mensagens originais?')">Restaurar originais</button>
+          </div>
+        </div>
+      </form>
     </div>
 
     <form class="panel" id="roteiro" method="POST" action="/admin/sdr/script">

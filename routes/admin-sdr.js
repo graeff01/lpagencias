@@ -22,9 +22,9 @@ async function lotes() {
 router.get('/', async (req, res, next) => {
   try {
     const per = equipes.periodo(req.query.periodo);
-    const [lista, ligs, plantao, agencia, usuarios, script, ls] = await Promise.all([
+    const [lista, ligs, plantao, agencia, usuarios, script, ls, metas, mensagens, envSdr] = await Promise.all([
       sdr.resumoLista(), sdr.ligacoesPeriodo(per.desde, per.ate), sdr.listPlantao(), db.listAgencia({ ativosOnly: true }),
-      db.listGestores(), sdr.getScript(), lotes(),
+      db.listGestores(), sdr.getScript(), lotes(), sdr.getMetas(), sdr.getMensagens(), sdr.enviosSdr(per.desde, per.ate),
     ]);
     const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
     const envIds = ligs.map(l => l.encaminhamento_id).filter(Boolean);
@@ -33,6 +33,7 @@ router.get('/', async (req, res, next) => {
     const nosPlantao = new Set(plantao.map(p => p.telefone));
     res.render('admin/sdr', {
       title: 'SDR · Painel', per, periodos: equipes.PERIODOS, lista, ligs, resumo: sdr.resumoLigacoes(ligs), plantao,
+      metas, mensagens, ret: sdr.resumoRetornos(envSdr), RETORNOS: equipes.RETORNOS, minSeg: sdr.minSeg,
       agencia: agencia.filter(a => !nosPlantao.has(a.telefone)), quem, envios, script, lotes: ls,
       STATUS: sdr.STATUS, RESULTADOS: sdr.RESULTADOS, sdrs: usuarios.filter(u => u.papel === 'sdr'),
       q: req.query, duracao: equipes.duracao,
@@ -102,6 +103,18 @@ router.post('/script', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ---- Metas do dia e mensagens prontas ----
+router.post('/metas', async (req, res, next) => {
+  try { await sdr.salvarMetas(req.body); res.redirect('/admin/sdr?metas=ok#metas'); } catch (e) { next(e); }
+});
+
+router.post('/mensagens', async (req, res, next) => {
+  try {
+    await sdr.salvarMensagens(req.body.restaurar ? { tentativa: '', apresentacao: '' } : req.body);
+    res.redirect('/admin/sdr?mensagens=ok#mensagens');
+  } catch (e) { next(e); }
+});
+
 // ---- Planilhas para baixar ----
 const cel = (v) => {
   let s = String(v == null ? '' : v);
@@ -115,14 +128,15 @@ router.get('/ligacoes.csv', async (req, res, next) => {
     const per = equipes.periodo(req.query.periodo);
     const [ligs, usuarios] = await Promise.all([sdr.ligacoesPeriodo(per.desde, per.ate), db.listGestores()]);
     const quem = Object.fromEntries(usuarios.map(u => [u.id, u.nome]));
-    const head = ['data_hora', 'sdr', 'cliente', 'telefone', 'resultado', 'classificacao', 'interesse', 'objetivo', 'faixa', 'pagamento', 'prazo', 'observacoes', 'autorizou_whatsapp', 'corretor', 'confirmado_em'];
+    const head = ['data_hora', 'sdr', 'cliente', 'telefone', 'resultado', 'classificacao', 'duracao', 'interesse', 'objetivo', 'faixa', 'pagamento', 'prazo', 'observacoes', 'autorizou_whatsapp', 'corretor', 'confirmado_em', 'retorno_do_corretor', 'retorno_obs'];
     const linhas = [];
     for (const l of ligs) {
       const f = l.ficha || {};
       const e = l.encaminhamento_id ? await db.getEncaminhamento(l.encaminhamento_id) : null;
       linhas.push([dataBr(l.created_at), quem[l.usuario_id] || '', l.contato_nome, l.contato_telefone,
-        (sdr.RESULTADOS[l.resultado] || {}).rotulo || l.resultado, l.classificacao || '', f.interesse, f.objetivo, f.faixa,
-        f.pagamento, f.prazo, f.obs, f.autorizou ? 'sim' : '', e ? e.corretor_nome : '', e ? dataBr(e.confirmado_em) : ''].map(cel).join(';'));
+        (sdr.RESULTADOS[l.resultado] || {}).rotulo || l.resultado, l.classificacao || '', l.duracao_s ? sdr.minSeg(l.duracao_s) : '',
+        f.interesse, f.objetivo, f.faixa, f.pagamento, f.prazo, f.obs, f.autorizou ? 'sim' : '', e ? e.corretor_nome : '', e ? dataBr(e.confirmado_em) : '',
+        e && e.retorno ? equipes.RETORNOS[e.retorno] : '', e ? e.retorno_obs : ''].map(cel).join(';'));
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="ligacoes-sdr-${per.chave}.csv"`);

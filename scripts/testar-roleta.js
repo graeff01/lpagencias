@@ -321,6 +321,34 @@ function ok(cond, msg) {
   ok((await db.eventosDoLead({ telefone: sc1.telefone })).some(e => e.tipo === 'sdr_ligacao'), 'ligação entra na auditoria');
   ok((await sdr.buscarContatos('bruno')).length === 1 && (await sdr.buscarContatos('97777')).length === 2, 'busca por nome e telefone');
 
+  console.log('\n18) SDR: cronômetro, agenda, retorno do corretor, metas');
+  ok(sdr.duracaoValida(95) === 95 && sdr.duracaoValida(0) === null && sdr.duracaoValida(99999) === null && sdr.minSeg(95) === '1:35', 'duração da ligação validada e formatada');
+  const cT = await sdr.criarContato({ nome: 'Teo Tempo', telefone: '51 95555-1010' });
+  await sdr.registrarLigacao({ contato: cT, usuarioId: 7, resultado: 'sem_interesse', duracaoS: 120 });
+  const rT = sdr.resumoLigacoes(await sdr.ligacoesPeriodo(new Date(0), new Date(Date.now() + 60000)));
+  ok(rT.tempoMedioS === 120, 'tempo médio só das ligações atendidas com cronômetro (' + rT.tempoMedioS + ')');
+  const cA = await sdr.criarContato({ nome: 'Agenda Hoje', telefone: '51 95555-2020' });
+  await sdr.registrarLigacao({ contato: cA, usuarioId: 7, resultado: 'retornar', retornarEm: new Date(Date.now() + 3600000) });
+  const cB = await sdr.criarContato({ nome: 'Agenda Semana', telefone: '51 95555-3030' });
+  await sdr.registrarLigacao({ contato: cB, usuarioId: 7, resultado: 'retornar', retornarEm: new Date(Date.now() + 5 * 864e5) });
+  const ag = await sdr.agendaHoje();
+  ok(ag.some(a => a.id === cA.id) && !ag.some(a => a.id === cB.id) || new Date(Date.now() + 3600000).getUTCDate() !== new Date().getUTCDate(), 'agenda mostra os retornos de hoje e não os da semana que vem');
+  await db.confirmarEnvio(envSdr.id);
+  await db.query(`UPDATE encaminhamentos SET confirmado_em = now() - interval '30 hours' WHERE id=$1`, [envSdr.id]);
+  ok((await sdr.retornosAPedir(7, 24)).some(e => e.id === envSdr.id), 'confirmado há mais de 24h sem retorno: aparece para pedir retorno');
+  await db.registrarPedidoRetorno(envSdr.id);
+  ok((await db.getEncaminhamento(envSdr.id)).retorno_pedidos === 1, 'pedido de retorno contado');
+  await db.registrarRetorno(envSdr.id, 'visita', 'sábado 10h');
+  ok(!(await sdr.retornosAPedir(7, 24)).some(e => e.id === envSdr.id), 'com retorno, sai da lista de pedidos');
+  const rr = sdr.resumoRetornos(await sdr.enviosSdr(new Date(0), new Date(Date.now() + 60000)));
+  ok(rr.enviados === 1 && rr.visitas === 1 && rr.comRetorno === 1, 'resumo: enviados, com retorno e viraram visita ' + JSON.stringify(rr));
+  const mt = await sdr.getMetas();
+  ok(mt.ligacoes === 40 && mt.qualificados === 5, 'metas padrão 40 ligações e 5 qualificados');
+  await sdr.salvarMetas({ ligacoes: '60', qualificados: '0' });
+  const mt2 = await sdr.getMetas();
+  ok(mt2.ligacoes === 60 && mt2.qualificados === 5, 'meta salva; valor inválido não apaga a anterior');
+  ok((await sdr.getMensagens()).tentativa.includes('[NOME DO CLIENTE]'), 'mensagens prontas com os campos trocáveis');
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

@@ -296,6 +296,21 @@ qualificação**:
   de qualificação por período, com exportação das ligações e da lista em CSV.
   Cada ligação entra na auditoria do lead. Os leads enviados aparecem também
   no painel do gestor do corretor (origem "Ligação SDR").
+- **Ritmo do dia:** metas de ligações e qualificados (em `/admin/sdr` →
+  *Metas do dia*) aparecem como barras no topo; o **cronômetro** mede cada
+  ligação (começa ao tocar em *Ligar* ou no botão) e o tempo médio das
+  atendidas entra nos números; aviso fora do horário de ligar (seg–sex 9h–20h,
+  sáb 9h–14h); **Retornos de hoje** lista os "ligar depois" do dia.
+- **Mensagens prontas ao cliente:** *Mensagem "tentei ligar"* (quando não
+  atende) e, depois do envio, *Mandar mensagem ao cliente* avisando que o
+  corretor vai chamar. Textos editáveis em `/admin/sdr` (`[NOME DO CLIENTE]`,
+  `[NOME]`, `[CORRETOR]`).
+- **Retorno do corretor:** o mesmo link do "Recebi" pergunta como está o
+  atendimento (ainda não falou, conversando, visita agendada, proposta, fechou,
+  sem perfil) e pode ser atualizado depois. Quem confirmou há mais de
+  `SDR_RETORNO_HORAS` (padrão 24) sem contar aparece na tela do SDR para
+  *Pedir retorno*. `/admin/sdr` e o painel do gestor mostram quantos leads
+  viraram visita.
 - **LGPD:** contatos sem ligação há mais de `LGPD_MESES` perdem nome, e-mail,
   colunas extras e telefone (quem pediu para não ligar mantém o telefone, para
   não ser chamado de novo).

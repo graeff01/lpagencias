@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
 </head>
 <body>
+  <% var quem = e && e.fonte === 'sdr' ? 'pelo SDR' : 'pela recepção'; var hora = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }; %>
   <div class="login-wrap">
     <div class="login-card" style="text-align:center">
       <div class="m" style="margin:0 auto 20px"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></div>
@@ -15,13 +16,30 @@
         <h1>Link inválido</h1>
         <p>Este link de confirmação não existe ou foi digitado errado.</p>
       <% } else if (feito) { %>
-        <h1>✅ Recebimento confirmado</h1>
-        <p>Obrigado, <%= primeiroNome(e.corretor_nome) %>! O lead de <b><%= e.lead_nome || 'cliente' %></b> está com você.
-          Confirmado em <%= new Date(e.confirmado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) %>.</p>
+        <% if (salvo) { %>
+          <h1>✅ Obrigado!</h1>
+          <p>Retorno registrado: <b><%= RETORNOS[e.retorno] %></b>. Quando o atendimento andar, é só abrir este link de novo e atualizar.</p>
+        <% } else if (e.retorno) { %>
+          <h1>Como está o atendimento?</h1>
+          <p>Lead de <b><%= e.lead_nome || 'cliente' %></b>. Último retorno: <b><%= RETORNOS[e.retorno] %></b> em <%= hora(e.retorno_em) %>.</p>
+        <% } else { %>
+          <h1>✅ Recebimento confirmado</h1>
+          <p>Obrigado, <%= primeiroNome(e.corretor_nome) %>! O lead de <b><%= e.lead_nome || 'cliente' %></b> está com você.
+            Confirmado em <%= hora(e.confirmado_em) %>.</p>
+        <% } %>
+        <% if (!salvo) { %>
+          <form method="POST" action="/ok/<%= e.token %>/retorno" class="ok-ret">
+            <div class="ok-ret-t">Depois de falar com o cliente, conte como foi:</div>
+            <input name="obs" maxlength="300" onkeydown="if(event.key==='Enter')event.preventDefault()" placeholder="Observação (opcional): ex. visita sábado 10h" value="<%= e.retorno_obs || '' %>">
+            <% Object.keys(RETORNOS).forEach(function(k){ %>
+              <button type="submit" name="retorno" value="<%= k %>" class="<%= e.retorno === k ? 'on' : '' %>"><%= RETORNOS[k] %></button>
+            <% }); %>
+          </form>
+        <% } %>
       <% } else { %>
         <h1>Confirmar recebimento</h1>
-        <p><%= primeiroNome(e.corretor_nome) %>, você recebeu o lead de <b><%= e.lead_nome || 'cliente' %></b> pela recepção.
-          Confirme para a recepção e o seu gestor saberem que ele está com você.</p>
+        <p><%= primeiroNome(e.corretor_nome) %>, você recebeu o lead de <b><%= e.lead_nome || 'cliente' %></b> <%= quem %>.
+          Confirme para <%= e.fonte === 'sdr' ? 'o SDR' : 'a recepção' %> e o seu gestor saberem que ele está com você.</p>
         <form method="POST">
           <button class="btn btn-green" type="submit" style="margin-top:4px">Recebi o lead</button>
         </form>

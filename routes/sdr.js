@@ -45,20 +45,36 @@ async function pendencias(usuarioId) {
 
 async function numerosDeHoje(usuarioId) {
   const hoje = equipes.periodo('hoje');
-  return sdr.resumoLigacoes(await sdr.ligacoesPeriodo(hoje.desde, hoje.ate, usuarioId));
+  const r = sdr.resumoLigacoes(await sdr.ligacoesPeriodo(hoje.desde, hoje.ate, usuarioId));
+  r.tempoMedio = sdr.minSeg(r.tempoMedioS);
+  return r;
+}
+
+const HORAS_RETORNO = Math.max(1, Number(process.env.SDR_RETORNO_HORAS) || 24);
+
+async function retornos(usuarioId) {
+  return (await sdr.retornosAPedir(usuarioId, HORAS_RETORNO)).map(e => ({
+    id: e.id, quando: e.created_at, confirmado: e.confirmado_em, corretor: e.corretor_nome, corretorFone: e.corretor_fone,
+    token: e.token, pedidos: e.retorno_pedidos || 0, ultimoPedido: e.retorno_pedido_em, lead: { nome: e.lead_nome, telefone: e.lead_telefone },
+  }));
+}
+
+async function agenda() {
+  return (await sdr.agendaHoje()).map(c => ({ id: c.id, nome: c.nome, telefone: c.telefone, quando: c.retornar_em }));
 }
 
 router.get('/', async (req, res, next) => {
   try {
-    const [plantao, lista, hoje, pend, script, recentes] = await Promise.all([
+    const [plantao, lista, hoje, pend, script, recentes, ret, ag, metas, mensagens] = await Promise.all([
       sdr.filaPlantao(), sdr.resumoLista(), numerosDeHoje(req.gestor.id), pendencias(req.gestor.id), sdr.getScript(),
       sdr.ligacoesPeriodo(new Date(Date.now() - 7 * 864e5), new Date(Date.now() + 60000), req.gestor.id),
+      retornos(req.gestor.id), agenda(), sdr.getMetas(), sdr.getMensagens(),
     ]);
     res.set('Cache-Control', 'no-store');
     res.render('sdr/painel', {
       title: 'SDR · Ligações', usuario: req.gestor, plantao: plantaoJson(plantao), lista, hoje, pend, script,
       ficha: sdr.FICHA, resultados: sdr.RESULTADOS, minCobrar: MIN_COBRAR,
-      recentes: recentes.slice(0, 30),
+      recentes: recentes.slice(0, 30), retornos: ret, agenda: ag, metas, mensagens, horasRetorno: HORAS_RETORNO,
     });
   } catch (e) { next(e); }
 });
@@ -117,7 +133,7 @@ router.post('/contato/:id/resultado', async (req, res) => {
       if (isNaN(retornarEm)) return res.status(400).json({ ok: false, erro: 'Escolha quando ligar de novo.' });
     }
     const temFicha = req.body.ficha && Object.keys(req.body.ficha).length;
-    await sdr.registrarLigacao({ contato: c, usuarioId: req.gestor.id, resultado: r, ficha: temFicha ? sdr.fichaLimpa(req.body.ficha) : null, retornarEm });
+    await sdr.registrarLigacao({ contato: c, usuarioId: req.gestor.id, resultado: r, ficha: temFicha ? sdr.fichaLimpa(req.body.ficha) : null, retornarEm, duracaoS: req.body.duracao_s });
     res.json({ ok: true, hoje: await numerosDeHoje(req.gestor.id) });
   } catch (e) { console.error('[sdr] resultado:', e.message); res.status(500).json({ ok: false }); }
 });
@@ -148,7 +164,7 @@ router.post('/contato/:id/enviar', async (req, res) => {
     }
     if (nome && nome !== c.nome) await db.query('UPDATE sdr_contatos SET nome=$1, busca=$2 WHERE id=$3', [nome.slice(0, 120), sdr.semAcento(nome), c.id]);
     // Reencaminhar não é ligação nova (não conta de novo como qualificado).
-    if (!de) await sdr.registrarLigacao({ contato: { ...c, nome: nome || c.nome }, usuarioId: req.gestor.id, resultado: 'qualificado', ficha, encaminhamentoId: env.id });
+    if (!de) await sdr.registrarLigacao({ contato: { ...c, nome: nome || c.nome }, usuarioId: req.gestor.id, resultado: 'qualificado', ficha, encaminhamentoId: env.id, duracaoS: req.body.duracao_s });
     await db.registrarEvento({
       tipo: de ? 'reencaminhado' : 'encaminhado', lead_nome: nome, lead_telefone: c.telefone, encaminhamento_id: env.id,
       corretor_nome: corretor.nome, corretor_fone: corretor.telefone, usuario_id: req.gestor.id,
@@ -187,6 +203,44 @@ router.post('/envio/:id/cobrar', async (req, res) => {
     });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false }); }
+});
+
+// Agenda (retornos de hoje), pedidos de retorno e números: a tela atualiza sozinha.
+router.get('/painel', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const [ag, ret, hoje] = await Promise.all([agenda(), retornos(req.gestor.id), numerosDeHoje(req.gestor.id)]);
+    res.json({ ok: true, agenda: ag, retornos: ret, hoje });
+  } catch (e) { res.status(500).json({ ok: false }); }
+});
+
+// O SDR abriu o WhatsApp do corretor pedindo o retorno do atendimento.
+router.post('/envio/:id/pedir-retorno', async (req, res) => {
+  try {
+    const atual = await db.getEncaminhamento(req.params.id);
+    if (!atual || atual.usuario_id !== req.gestor.id) return res.status(404).json({ ok: false });
+    const e = await db.registrarPedidoRetorno(atual.id);
+    await db.registrarEvento({
+      tipo: 'pedido_retorno', encaminhamento_id: e.id, lead_nome: e.lead_nome, lead_telefone: e.lead_telefone,
+      corretor_nome: e.corretor_nome, corretor_fone: e.corretor_fone, usuario_id: req.gestor.id,
+      detalhe: e.retorno_pedidos + 'º pedido',
+    });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false }); }
+});
+
+// Mensagem pronta mandada ao cliente (tentativa de contato ou apresentação do corretor).
+router.post('/contato/:id/whats', async (req, res) => {
+  try {
+    const c = await sdr.getContato(req.params.id);
+    const tipo = req.body.tipo === 'apresentacao' ? 'apresentacao' : 'tentativa';
+    if (!c) return res.status(404).json({ ok: false });
+    await db.registrarEvento({
+      tipo: 'sdr_whats', lead_nome: c.nome, lead_telefone: c.telefone, usuario_id: req.gestor.id,
+      detalhe: tipo === 'apresentacao' ? 'avisou que o corretor vai chamar' : 'mensagem de tentativa de contato',
+    });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false }); }
 });
 
 // Este cliente já foi mandado para algum corretor? Só um aviso.
