@@ -9,6 +9,7 @@ const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const gestorRoutes = require('./routes/gestor');
 const recepcaoRoutes = require('./routes/recepcao');
+const sdrRoutes = require('./routes/sdr');
 const externoRoutes = require('./routes/externo');
 const caixaLeads = require('./lib/caixa-leads');
 
@@ -65,6 +66,7 @@ app.use(async (req, res, next) => {
 app.use('/admin', adminRoutes);
 app.use('/gestor', gestorRoutes);
 app.use('/recepcao', recepcaoRoutes);
+app.use('/sdr', sdrRoutes);
 app.use('/', externoRoutes);
 app.use('/', publicRoutes);
 
@@ -76,6 +78,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 db.migrate()
+  .then(() => require('./lib/sdr').migrate())
   .then(() => {
     setTimeout(() => adminRoutes.completarPontosExistentes(), 5000);
     caixaLeads.iniciar();   // lê a caixa de leads (se configurada) e enche a fila da recepção

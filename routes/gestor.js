@@ -11,10 +11,10 @@ function telaLogin(res, status, error, usuario) {
 }
 
 // Gestores e recepção usam o mesmo login; cada perfil cai na sua tela.
-const destino = (g) => (g.papel === 'recepcao' ? '/recepcao' : '/gestor');
+const destino = (g) => ({ recepcao: '/recepcao', sdr: '/sdr' }[g.papel] || '/gestor');
 
 router.get('/login', (req, res) => {
-  if (req.session && req.session.gestorId) return res.redirect(req.session.papelEquipe === 'recepcao' ? '/recepcao' : '/gestor');
+  if (req.session && req.session.gestorId) return res.redirect(destino({ papel: req.session.papelEquipe }));
   telaLogin(res, 200, null);
 });
 

@@ -13,6 +13,7 @@ function ok(cond, msg) {
 
 (async () => {
   await db.migrate();
+  await require('../lib/sdr').migrate();
   const emp = await db.create({ slug: 'teste-roleta', nome: 'Teste', whatsapp: '(51) 98888-0000' });
 
   console.log('\n1) Rodízio com 10 corretores e 100 leads');
@@ -273,6 +274,52 @@ function ok(cond, msg) {
   const anon = await db.getEncaminhamento(e1b.id);
   ok(anon.lead_nome === null && anon.lead_telefone === null && anon.corretor_nome === 'Ketlin', 'apaga dados do cliente e mantém quem recebeu');
   ok(!(await db.eventosDoLead({ telefone: tel })).length, 'linha do tempo também perde o telefone');
+
+  console.log('\n17) SDR: lista, ligações, ficha e plantão');
+  const sdr = require('../lib/sdr');
+  const planilha = require('../lib/planilha');
+  const csv = 'Nome;Celular;Telefone;Endereço\n"Ana Souza";(51) 99111-2222;51 3333-4444;Rua A, 10\nBruno;51 99111-3333 / 51 98888-0000;;\nSem Fone;;;\nAna Repetida;51991112222;;\n';
+  const linhasCsv = planilha.lerCsv(csv);
+  ok(linhasCsv.length === 5 && linhasCsv[1][0] === 'Ana Souza', 'CSV com ; e aspas lido');
+  const simp = await sdr.importar(linhasCsv, 'teste');
+  ok(simp.novos === 2 && simp.repetidos === 1 && simp.semTelefone === 1, `importação: 2 novos, 1 repetido, 1 sem telefone (${JSON.stringify(simp)})`);
+  const semCab = await sdr.importar(planilha.lerCsv('Carla Dias,51 97777-1111\nDiego Lima,51 97777-2222'), 'sem cabeçalho');
+  ok(semCab.novos === 2, 'lista colada sem cabeçalho: acha nome e telefone pelo conteúdo');
+  const sc1 = await sdr.proximoContato(1);
+  ok(sc1 && sc1.nome === 'Ana Souza' && sc1.telefone === '5551991112222' && sc1.telefone2 === '555133334444' && sc1.info['Endereço'] === 'Rua A, 10',
+    'próximo da lista: primeiro da planilha, celular como principal e colunas extras');
+  const sc2 = await sdr.proximoContato(2);
+  ok(sc2 && sc2.id !== sc1.id, 'contato reservado não vai para outro SDR ao mesmo tempo');
+  await sdr.registrarLigacao({ contato: sc1, usuarioId: 1, resultado: 'nao_atendeu' });
+  ok((await sdr.getContato(sc1.id)).tentativas === 1, 'não atendeu: conta a tentativa');
+  const sc3 = await sdr.proximoContato(1);
+  ok(sc3 && sc3.id !== sc1.id, 'quem não atendeu não volta na hora');
+  await sdr.registrarLigacao({ contato: sc3, usuarioId: 1, resultado: 'retornar', retornarEm: new Date(Date.now() - 60000) });
+  const sc4 = await sdr.proximoContato(1);
+  ok(sc4 && sc4.id === sc3.id, 'retorno agendado que venceu vem primeiro');
+  ok(sdr.classificar({ interesse: 'Sim', prazo: 'Imediato', faixa: 'Até R$ 250 mil' }) === 'quente'
+    && sdr.classificar({ interesse: 'Sim', prazo: 'Imediato', faixa: 'A definir' }) === 'morno'
+    && sdr.classificar({ interesse: 'Talvez, dependendo da oportunidade', prazo: 'De 3 a 6 meses' }) === 'morno'
+    && sdr.classificar({ interesse: 'Não' }) === 'frio', 'classificação quente / morno / frio');
+  const sfl = sdr.fichaLimpa({ interesse: 'Sim', faixa: 'inventado', obs: ' ok ', autorizou: true });
+  ok(sfl.interesse === 'Sim' && !sfl.faixa && sfl.obs === 'ok' && sfl.autorizou, 'ficha só aceita as opções da lista');
+  const spl = await sdr.filaPlantao();
+  ok(spl.length === 9, 'plantão começa com as equipes do Fabrício e do Alberto (' + spl.length + ')');
+  await sdr.atribuirPlantao(spl[0].id);
+  ok((await sdr.filaPlantao())[0].id === spl[1].id, 'depois de receber, vai para o fim da fila');
+  const novoP = await sdr.salvarPlantao({ nome: 'Novo Corretor', telefone: '51 96666-0000' });
+  ok(novoP.atribuicoes === 0 && (await sdr.filaPlantao()).some(p => p.id === novoP.id), 'novo no plantão entra no nível dos outros');
+  const envSdr = await db.registrarEncaminhamento({ usuario_id: 7, corretor_fone: spl[0].telefone, corretor_nome: spl[0].nome, fonte: 'sdr', lead_nome: 'Ana Souza', lead_telefone: sc1.telefone, token: 'Sd' + 'z'.repeat(18) });
+  ok(envSdr.fonte === 'sdr', 'envio do SDR marcado');
+  ok(!(await db.enviosSemConfirmacao(0)).some(x => x.id === envSdr.id), 'envio do SDR não aparece na cobrança da recepção');
+  ok((await sdr.pendenciasSdr(7, 0)).some(x => x.id === envSdr.id), 'aparece na cobrança do próprio SDR');
+  await sdr.registrarLigacao({ contato: sc1, usuarioId: 7, resultado: 'qualificado', ficha: sfl, encaminhamentoId: envSdr.id });
+  ok((await sdr.getContato(sc1.id)).status === 'enviado', 'qualificado: contato marcado como enviado');
+  const slg = await sdr.ligacoesPeriodo(new Date(0), new Date(Date.now() + 60000));
+  const srs = sdr.resumoLigacoes(slg);
+  ok(srs.ligacoes === 3 && srs.qualificados === 1 && srs.quente + srs.morno === 1 && srs.atendidas === 2, 'números das ligações: ' + JSON.stringify(srs));
+  ok((await db.eventosDoLead({ telefone: sc1.telefone })).some(e => e.tipo === 'sdr_ligacao'), 'ligação entra na auditoria');
+  ok((await sdr.buscarContatos('bruno')).length === 1 && (await sdr.buscarContatos('97777')).length === 2, 'busca por nome e telefone');
 
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);

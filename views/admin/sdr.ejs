@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <%
+    var rotulo = periodos.find(function(p){ return p[0] === per.chave; })[1];
+    var fmt = function(d){ return d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+    var tel = function(t){ return String(t || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); };
+    var erroBox = 'background:#fdf0ee;border-color:#f3c9c1;color:#b5432f';
+    var ps = lista.porStatus;
+    var ORDEM = ['novo', 'nao_atendeu', 'retornar', 'enviado', 'sem_interesse', 'nao_ligar', 'invalido'];
+  %>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes">Equipes</a><a href="/admin/recepcao">Recepção</a><a href="/admin/sdr" class="on">SDR</a><a href="/admin/auditoria">Auditoria</a></nav>
+    <div class="sp"></div>
+    <div class="top-links">
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">SDR</div>
+        <h1>Ligações e plantão</h1>
+        <p>O SDR entra em <b>/gestor</b>, liga para a lista abaixo e manda quem tem interesse para o corretor do plantão, com a ficha completa e o link “Recebi”.</p>
+      </div>
+    </div>
+
+    <% if (q.importados !== undefined) { %><div class="flash"><b><%= q.importados %></b> contato(s) novo(s) na lista.<% if (Number(q.repetidos)) { %> <%= q.repetidos %> já estavam na lista (telefone repetido).<% } %><% if (Number(q.sem)) { %> <%= q.sem %> linha(s) sem telefone válido ficaram de fora.<% } %></div><% } %>
+    <% if (q.apagados !== undefined) { %><div class="flash" style="<%= erroBox %>"><%= q.apagados %> contato(s) ainda não ligados foram tirados da lista.</div><% } %>
+    <% if (q.plantao === 'ok') { %><div class="flash">Plantão atualizado.</div><% } %>
+    <% if (q.script === 'ok') { %><div class="flash">Roteiro salvo.</div><% } %>
+    <% if (q.erro === 'vazio') { %><div class="flash" style="<%= erroBox %>">Escolha a planilha ou cole a lista.</div><% } else if (q.erro === 'plantao') { %><div class="flash" style="<%= erroBox %>">Informe nome e WhatsApp válidos do corretor.</div><% } else if (q.erro) { %><div class="flash" style="<%= erroBox %>">Não consegui ler a planilha: <%= q.erro %></div><% } %>
+    <% if (!sdrs.length) { %>
+      <div class="warn-box">Ninguém tem acesso de SDR ainda. Crie em <a href="/admin/equipes" style="font-weight:700;text-decoration:underline">Equipes</a> com o tipo <b>SDR</b>.</div>
+    <% } %>
+
+    <nav class="chips" style="margin-bottom:18px" aria-label="Período">
+      <% periodos.forEach(function(p){ %>
+        <a class="chip <%= p[0] === per.chave ? 'on' : '' %>" href="/admin/sdr?periodo=<%= p[0] %>"><%= p[1] %></a>
+      <% }); %>
+    </nav>
+
+    <div class="kpis">
+      <div class="kpi"><span>Ligações · <%= rotulo.toLowerCase() %></span><b><%= resumo.ligacoes %></b><i><%= resumo.atendidas %> atenderam</i></div>
+      <div class="kpi"><span>Qualificados</span><b><%= resumo.qualificados %></b><i><%= resumo.quente %> quentes · <%= resumo.morno %> mornos</i></div>
+      <div class="kpi"><span>Taxa de qualificação</span><b><%= resumo.atendidas ? Math.round(resumo.qualificados * 100 / resumo.atendidas) : 0 %>%</b><i>dos que atenderam</i></div>
+      <div class="kpi"><span>Faltam na lista</span><b><%= lista.naFila %></b><i>de <%= lista.total %> contatos</i></div>
+    </div>
+
+    <div class="panel" id="ligacoes">
+      <h2 class="panel-h">Ligações · <%= rotulo.toLowerCase() %>
+        <a class="btn btn-ghost btn-sm" style="margin-left:auto" href="/admin/sdr/ligacoes.csv?periodo=<%= per.chave %>">Exportar (CSV)</a></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>SDR</th><th>Cliente</th><th>Resultado</th><th>Ficha</th><th>Corretor</th></tr></thead>
+        <tbody>
+          <% if (!ligs.length) { %><tr><td colspan="6" class="empty">Nenhuma ligação no período.</td></tr><% } %>
+          <% ligs.slice(0, 300).forEach(function(l){ var f = l.ficha || {}; var e = envios[l.encaminhamento_id]; %>
+            <tr>
+              <td class="sub"><%= fmt(l.created_at) %></td>
+              <td><%= quem[l.usuario_id] || '—' %></td>
+              <td><b><%= l.contato_nome || '—' %></b><span class="sub mono"><%= tel(l.contato_telefone) %></span></td>
+              <td><%= (RESULTADOS[l.resultado] || {}).rotulo || l.resultado %><% if (l.classificacao) { %> <span class="sd-tag sd-<%= l.classificacao %>"><%= l.classificacao %></span><% } %></td>
+              <td class="sub"><%= [f.objetivo, f.faixa, f.pagamento, f.prazo].filter(Boolean).join(' · ') || '—' %><% if (f.obs) { %><span class="rc-msg" title="<%= f.obs %>"><%= f.obs %></span><% } %></td>
+              <td><% if (e) { %><%= e.corretor_nome %><span class="sub"><% if (e.confirmado_em) { %><span style="color:#0d7a3f">✓ confirmou em <%= duracao((new Date(e.confirmado_em) - new Date(e.created_at)) / 60000) %></span><% } else if (e.substituido_por) { %>não confirmou · reencaminhado<% } else { %>sem confirmar<% } %></span><% } else { %>—<% } %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="panel" id="lista">
+        <h2 class="panel-h">Lista de contatos
+          <a class="btn btn-ghost btn-sm" style="margin-left:auto" href="/admin/sdr/contatos.csv">Baixar lista (CSV)</a></h2>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <tbody>
+            <% ORDEM.forEach(function(s){ %>
+              <tr><td><%= STATUS[s] %></td><td class="num" style="text-align:right"><b><%= ps[s] || 0 %></b></td></tr>
+            <% }); %>
+            <tr><td><b>Total</b></td><td class="num big" style="text-align:right"><%= lista.total %></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <% if (lotes.length) { %>
+          <div class="panel-foot" style="display:block">
+            <div class="sub" style="font-weight:650;margin-bottom:8px">Importações</div>
+            <% lotes.forEach(function(l){ %>
+              <div class="sd-lote">
+                <span><b><%= l.lote || 'sem nome' %></b> · <%= l.total %> contato(s), <%= l.novos %> ainda não ligado(s)</span>
+                <% if (l.novos) { %>
+                  <form method="POST" action="/admin/sdr/lote/apagar" onsubmit="return confirm('Tirar da lista os <%= l.novos %> contato(s) deste lote que ainda não foram ligados? Os já ligados continuam no histórico.')">
+                    <input type="hidden" name="lote" value="<%= l.lote || '' %>"><button class="btn btn-ghost btn-sm" type="submit">Tirar não ligados</button>
+                  </form>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-h">Importar contatos</h2>
+        <form class="frm" method="POST" action="/admin/sdr/importar" enctype="multipart/form-data">
+          <div class="fg"><label>Planilha (.xlsx ou .csv)</label><input type="file" name="arquivo" accept=".xlsx,.csv,.txt,text/csv"></div>
+          <div class="fg"><label>ou cole a lista</label><textarea name="colado" rows="4" class="sd-txt" placeholder="Nome;Telefone&#10;Maria Silva;51999990000"></textarea></div>
+          <div class="fg"><label>Nome desta lista (opcional)</label><input name="lote" placeholder="Ex.: Proprietários Jardim do Lago"></div>
+          <p class="hint" style="margin-bottom:14px">O sistema acha sozinho as colunas de nome, telefone/celular e e-mail. As outras colunas (endereço, imóvel, observações) aparecem para o SDR na hora da ligação. Telefone repetido não entra duas vezes.</p>
+          <button class="btn btn-green" type="submit">Importar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel" id="plantao">
+      <h2 class="panel-h">Plantão: quem recebe os leads do SDR</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Corretor</th><th>Leads recebidos</th><th>Último</th><th></th></tr></thead>
+        <tbody>
+          <% if (!plantao.length) { %><tr><td colspan="4" class="empty">Ninguém no plantão. Adicione abaixo.</td></tr><% } %>
+          <% plantao.forEach(function(p){ %>
+            <tr class="<%= p.ativo ? '' : 'off' %>">
+              <td><b><%= p.nome %></b><% if (!p.ativo) { %><span class="tag pause">pausado</span><% } %><span class="sub mono"><%= tel(p.telefone) %></span></td>
+              <td class="num"><%= p.atribuicoes %></td>
+              <td class="sub"><%= fmt(p.ultima_atribuicao) %></td>
+              <td class="row-acts">
+                <form method="POST" action="/admin/sdr/plantao/<%= p.id %>/toggle"><button class="btn btn-ghost btn-sm" type="submit"><%= p.ativo ? 'Pausar' : 'Ativar' %></button></form>
+                <form method="POST" action="/admin/sdr/plantao/<%= p.id %>/remover" onsubmit="return confirm('Tirar <%= p.nome %> do plantão?')"><button class="btn btn-danger btn-sm" type="submit" title="Remover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot sd-add">
+        <% if (agencia.length) { %>
+          <form method="POST" action="/admin/sdr/plantao">
+            <select name="agencia_id" class="sel"><% agencia.forEach(function(a){ %><option value="<%= a.id %>"><%= a.nome %></option><% }); %></select>
+            <button class="btn btn-green btn-sm" type="submit">Adicionar da lista da recepção</button>
+          </form>
+        <% } %>
+        <form method="POST" action="/admin/sdr/plantao">
+          <input name="nome" placeholder="Nome" required>
+          <input name="telefone" placeholder="WhatsApp (51) 99999-0000" inputmode="tel" required>
+          <button class="btn btn-ghost btn-sm" type="submit">Adicionar</button>
+        </form>
+        <p class="hint" style="flex-basis:100%">O lead vai sempre para quem recebeu menos até agora. Quem entra ou volta de pausa começa no nível dos outros, sem receber vários seguidos.</p>
+      </div>
+    </div>
+
+    <form class="panel" id="roteiro" method="POST" action="/admin/sdr/script">
+      <h2 class="panel-h">Roteiro da ligação</h2>
+      <div class="frm">
+        <textarea name="script" rows="18" class="sd-txt sd-mono"><%= script %></textarea>
+        <p class="hint" style="margin-top:8px"><b>## Título</b> vira seção, <b>**texto**</b> fica em negrito e linha começando com <b>-</b> vira item. <b>[NOME]</b> vira o nome do SDR e <b>[NOME DO CLIENTE]</b>, o do cliente da vez.</p>
+      </div>
+      <div class="panel-foot">
+        <button class="btn btn-green" type="submit">Salvar roteiro</button>
+        <button class="btn btn-ghost" type="submit" name="restaurar" value="1" onclick="return confirm('Voltar ao roteiro original?')">Restaurar original</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

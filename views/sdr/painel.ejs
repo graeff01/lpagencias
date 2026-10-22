@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <%
+    var fmt = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+    var telf = function(t){ return String(t || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); };
+    var CAMPOS = [['interesse', 'Interesse em investir'], ['objetivo', 'Objetivo do investimento'], ['faixa', 'Faixa de investimento'], ['pagamento', 'Forma de pagamento'], ['prazo', 'Prazo de compra']];
+  %>
+  <header class="topbar">
+    <a class="brand" href="/sdr"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>SDR · <%= usuario.nome %></small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/gestor/senha">Alterar senha</a>
+      <form method="POST" action="/sdr/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap sd-wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Ligações</div>
+        <h1>Prospecção de investidores</h1>
+        <p>Ligue para o cliente da vez, siga o roteiro e registre o resultado. Quem tiver interesse vai direto para o corretor do plantão, com a ficha completa.</p>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><span>Ligações hoje</span><b id="k-lig"><%= hoje.ligacoes %></b><i><em id="k-at"><%= hoje.atendidas %></em> atenderam</i></div>
+      <div class="kpi"><span>Qualificados hoje</span><b id="k-q"><%= hoje.qualificados %></b><i><em id="k-qt"><%= hoje.quente %></em> quentes · <em id="k-mo"><%= hoje.morno %></em> mornos</i></div>
+      <div class="kpi"><span>Faltam na lista</span><b id="k-fila"><%= lista.naFila %></b><i>de <em id="k-total"><%= lista.total %></em> contatos</i></div>
+      <div class="kpi"><span>Enviados no total</span><b id="k-env"><%= lista.porStatus.enviado || 0 %></b><i>para o plantão</i></div>
+    </div>
+
+    <div class="panel rc-fila-entrada rc-pend" id="sd-pend" <%= pend.length ? '' : 'hidden' %>>
+      <h2 class="panel-h">Sem confirmação do corretor <span class="rc-cont rc-cont-v" id="sd-pend-cont"><%= pend.length %></span>
+        <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">enviados há mais de <%= minCobrar %> min e ainda sem o “Recebi”</span></h2>
+      <div id="sd-pend-lista"></div>
+    </div>
+
+    <div class="sd-grid">
+      <div class="sd-main">
+        <div class="panel">
+          <h2 class="panel-h"><span class="rc-n">1</span> Cliente da vez
+            <span class="rc-modo" id="sd-modo" title="Onde o WhatsApp abre">
+              <button type="button" data-modo="web">WhatsApp Web</button><button type="button" data-modo="app">Aplicativo</button>
+            </span>
+          </h2>
+          <div class="frm">
+            <div class="sd-busca">
+              <input id="sd-busca" type="search" placeholder="Buscar na lista por nome ou telefone" autocomplete="off">
+              <button type="button" class="btn btn-ghost btn-sm" id="sd-novo-btn">+ Fora da lista</button>
+            </div>
+            <div class="sd-resultados" id="sd-resultados" hidden></div>
+            <form class="sd-novo" id="sd-novo" hidden onsubmit="return false">
+              <input name="nome" placeholder="Nome do cliente">
+              <input name="telefone" inputmode="tel" placeholder="(51) 99999-0000">
+              <button type="submit" class="btn btn-green btn-sm">Abrir</button>
+            </form>
+            <div id="sd-contato"></div>
+          </div>
+        </div>
+
+        <div class="panel" id="sd-p-res">
+          <h2 class="panel-h"><span class="rc-n">2</span> Como foi a ligação?</h2>
+          <div class="frm">
+            <div class="sd-res">
+              <button type="button" data-res="nao_atendeu">Não atendeu</button>
+              <button type="button" data-res="invalido">Número errado</button>
+              <button type="button" data-res="sem_interesse">Sem interesse</button>
+              <button type="button" data-res="retornar">Ligar depois</button>
+              <button type="button" data-res="nao_ligar">Pediu para não ligar</button>
+            </div>
+            <div class="sd-retornar" id="sd-retornar" hidden>
+              <label>Ligar de novo em</label>
+              <div class="chips" id="sd-ret-rapido">
+                <button type="button" class="chip" data-ret="h2">Daqui 2 h</button>
+                <button type="button" class="chip" data-ret="a10">Amanhã 10h</button>
+                <button type="button" class="chip" data-ret="a15">Amanhã 15h</button>
+                <button type="button" class="chip" data-ret="d7">Em 1 semana</button>
+              </div>
+              <div class="sd-ret-linha"><input type="datetime-local" id="sd-ret-data"><button type="button" class="btn btn-green btn-sm" id="sd-ret-ok">Salvar retorno</button></div>
+            </div>
+            <p class="hint" style="margin-top:10px">Atendeu e tem interesse? Preencha a ficha abaixo e envie ao plantão.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-h"><span class="rc-n">3</span> Ficha de qualificação <span class="sd-classe" id="sd-classe" hidden></span></h2>
+          <form class="frm sd-ficha" id="sd-ficha" autocomplete="off" onsubmit="return false">
+            <div class="fg"><label>Nome do cliente</label><input name="nome" placeholder="Nome completo"></div>
+            <% CAMPOS.forEach(function(c){ %>
+              <div class="fg">
+                <label><%= c[1] %></label>
+                <div class="chips" data-campo="<%= c[0] %>">
+                  <% ficha[c[0]].forEach(function(o){ %><button type="button" class="chip" data-v="<%= o %>"><%= o %></button><% }); %>
+                </div>
+              </div>
+            <% }); %>
+            <div class="fg"><label>Observações</label><textarea name="obs" rows="3" placeholder="Bairro de preferência, tipo de imóvel, melhor horário…"></textarea></div>
+            <label class="sd-aut"><input type="checkbox" name="autorizou"> Cliente autorizou o contato do corretor pelo WhatsApp</label>
+          </form>
+        </div>
+
+        <div class="panel" style="overflow:visible">
+          <h2 class="panel-h"><span class="rc-n">4</span> Enviar ao corretor do plantão</h2>
+          <div class="frm" id="sd-plantao"></div>
+        </div>
+      </div>
+
+      <aside class="sd-side">
+        <details class="panel sd-script" id="sd-script-box" open>
+          <summary class="panel-h">Roteiro da ligação <span class="sub" style="margin-left:auto;font-weight:500;font-size:12px">mostrar / esconder</span></summary>
+          <div class="sd-script-txt" id="sd-script"></div>
+        </details>
+      </aside>
+    </div>
+
+    <div class="panel" style="margin-top:4px">
+      <h2 class="panel-h">Suas ligações · últimos 7 dias</h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Resultado</th></tr></thead>
+        <tbody id="sd-recentes">
+          <% if (!recentes.length) { %><tr class="rc-vazio"><td colspan="3" class="empty">Nenhuma ligação registrada ainda.</td></tr><% } %>
+          <% recentes.forEach(function(r){ %>
+            <tr><td class="sub"><%= fmt(r.created_at) %></td><td><%= r.contato_nome || '—' %><span class="sub mono"><%= telf(r.contato_telefone) %></span></td>
+              <td><%= (resultados[r.resultado] || {}).rotulo || r.resultado %><% if (r.classificacao) { %> <span class="sd-tag sd-<%= r.classificacao %>"><%= r.classificacao %></span><% } %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
+
+  <script>window.SD = <%- JSON.stringify({ plantao: plantao, pend: pend, script: script, usuario: usuario.nome, rotulos: Object.fromEntries(Object.entries(resultados).map(function(e){ return [e[0], e[1].rotulo]; })) }).replace(/</g, '\\u003c') %>;</script>
+  <script src="/js/lead-parser.js?v=<%= v %>"></script>
+  <script>
+    (function () {
+      var P = window.LeadParser, S = window.SD;
+      var contato = null, reencaminharDe = null, reencFone = null;
+      var plantao = S.plantao, pend = S.pend;
+      var $ = function (id) { return document.getElementById(id); };
+      function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+      var toast = $('rc-toast'), tt;
+      function avisar(txt) { toast.textContent = txt; toast.classList.add('on'); clearTimeout(tt); tt = setTimeout(function () { toast.classList.remove('on'); }, 3500); }
+      function post(url, corpo) {
+        return fetch(url, { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) })
+          .then(function (r) { return r.json().catch(function () { return { ok: false }; }); });
+      }
+      function get(url) { return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); }
+      var quando = function (d) { return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+      function ha(d) {
+        var min = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 60000));
+        if (min < 60) return 'há ' + min + ' min';
+        var h = Math.floor(min / 60);
+        return h < 24 ? 'há ' + h + ' h' : 'há ' + Math.floor(h / 24) + ' dia(s)';
+      }
+      var iniciais = function (n) { return String(n).replace(/[^A-Za-zÀ-ÿ\s]/g, '').trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join('').toUpperCase(); };
+
+      // ---- Onde o WhatsApp abre (igual à recepção) ----
+      var celular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      var modo = celular ? 'app' : 'web';
+      try { modo = localStorage.getItem('rc-whats') || modo; } catch (e) {}
+      function marcarModo(m) {
+        modo = m;
+        try { localStorage.setItem('rc-whats', m); } catch (e) {}
+        document.querySelectorAll('#sd-modo button').forEach(function (b) { b.classList.toggle('on', b.dataset.modo === m); });
+      }
+      marcarModo(modo);
+      $('sd-modo').addEventListener('click', function (e) { var b = e.target.closest('[data-modo]'); if (b) marcarModo(b.dataset.modo); });
+      function linkWhats(fone, texto) {
+        return modo === 'web'
+          ? 'https://web.whatsapp.com/send?phone=' + fone + '&text=' + encodeURIComponent(texto)
+          : 'https://wa.me/' + fone + '?text=' + encodeURIComponent(texto);
+      }
+
+      // ---- Roteiro ----
+      function renderScript() {
+        var primeiro = String(S.usuario || '').split(/\s+/)[0];
+        var cliente = contato && contato.nome ? String(contato.nome).split(/\s+/)[0] : '[NOME DO CLIENTE]';
+        var html = '', lista = false;
+        String(S.script || '').split(/\n/).forEach(function (l) {
+          var t = esc(l.trim()).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+            .replace(/\[NOME DO CLIENTE\]/g, '<mark>' + esc(cliente) + '</mark>').replace(/\[NOME\]/g, '<mark>' + esc(primeiro) + '</mark>');
+          if (/^- /.test(l.trim())) { if (!lista) { html += '<ul>'; lista = true; } html += '<li>' + t.slice(2) + '</li>'; return; }
+          if (lista) { html += '</ul>'; lista = false; }
+          if (/^##\s/.test(l.trim())) html += '<h3>' + t.replace(/^##\s*/, '') + '</h3>';
+          else if (t) html += '<p>' + t + '</p>';
+        });
+        if (lista) html += '</ul>';
+        $('sd-script').innerHTML = html;
+      }
+      // No celular o roteiro começa fechado (fica acima da ficha); a escolha fica salva.
+      var pref = null; try { pref = localStorage.getItem('sd-script'); } catch (e) {}
+      if (pref === 'fechado' || (!pref && window.innerWidth < 1020)) $('sd-script-box').open = false;
+      $('sd-script-box').addEventListener('toggle', function () { try { localStorage.setItem('sd-script', this.open ? 'aberto' : 'fechado'); } catch (e) {} });
+
+      // ---- Cliente da vez ----
+      var boxContato = $('sd-contato');
+      function renderContato(hist) {
+        renderScript();
+        if (!contato) {
+          boxContato.innerHTML = '<div class="sd-vazio"><b>Lista concluída.</b> Não há contatos para ligar agora. Os retornos agendados e quem não atendeu voltam sozinhos no horário certo.'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-acao="proximo">Atualizar</button></div>';
+          bloquear(true);
+          return;
+        }
+        bloquear(false);
+        var c = contato, info = Object.keys(c.info || {});
+        var fones = [c.telefone, c.telefone2].filter(Boolean);
+        boxContato.innerHTML = '<div class="sd-card">'
+          + '<div class="sd-card-top"><span class="rc-av sd-av">' + esc(iniciais(c.nome || '?') || '?') + '</span><div><div class="sd-nome">' + esc(c.nome || '(sem nome)') + '</div>'
+          + '<div class="sd-st">' + esc(c.statusRotulo) + (c.tentativas ? ' · ' + c.tentativas + ' tentativa(s)' : '') + (c.retornarEm && c.status === 'retornar' ? ' · retorno marcado para ' + quando(c.retornarEm) : '') + '</div></div>'
+          + '<button type="button" class="btn btn-ghost btn-sm" data-acao="pular" style="margin-left:auto">Pular</button></div>'
+          + '<div class="sd-fones">' + fones.map(function (f) {
+            return '<div class="sd-fone"><span class="mono">' + esc(P.formatarFone(f)) + '</span><a class="btn btn-green btn-sm" href="tel:+' + f + '">Ligar</a>'
+              + '<a class="btn btn-ghost btn-sm" href="https://wa.me/' + f + '" target="_blank" rel="noopener">WhatsApp</a></div>';
+          }).join('') + '</div>'
+          + (c.email ? '<div class="sd-info"><span>E-mail</span>' + esc(c.email) + '</div>' : '')
+          + (info.length ? '<div class="sd-infos">' + info.map(function (k) { return '<div class="sd-info"><span>' + esc(k) + '</span>' + esc(c.info[k]) + '</div>'; }).join('') + '</div>' : '')
+          + (hist && hist.length ? '<div class="sd-hist"><b>Ligações anteriores:</b> ' + hist.map(function (h) { return esc(quando(h.quando) + ' · ' + h.resultado + (h.classe ? ' (' + h.classe + ')' : '')); }).join(' · ') + '</div>' : '')
+          + '<div class="sd-aviso" id="sd-dono" hidden></div>'
+          + '</div>';
+        verificarDono();
+      }
+      function bloquear(sim) { document.querySelectorAll('.sd-main .panel:not(:first-child)').forEach(function (p) { p.classList.toggle('sd-off', sim); }); }
+      function verificarDono() {
+        if (!contato) return;
+        get('/sdr/lead?tel=' + contato.telefone).then(function (j) {
+          if (!j.ok || !j.ultimo || !$('sd-dono')) return;
+          $('sd-dono').textContent = 'Este cliente já foi enviado para ' + j.ultimo.corretor + ' em ' + new Date(j.ultimo.quando).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '.';
+          $('sd-dono').hidden = false;
+        }).catch(function () {});
+      }
+      function abrir(c, hist, ficha) {
+        contato = c; limparFicha();
+        if (c) fichaForm.nome.value = c.nome || '';
+        if (ficha) preencherFicha(ficha);
+        renderContato(hist);
+      }
+      function proximo(pular) {
+        reencaminharDe = null;
+        get('/sdr/proximo' + (pular ? '?pular=' + pular : '')).then(function (j) {
+          if (!j.ok) return avisar('Não consegui carregar o próximo contato.');
+          if (j.lista) { $('k-fila').textContent = j.lista.naFila; $('k-total').textContent = j.lista.total; $('k-env').textContent = j.lista.porStatus.enviado || 0; }
+          abrir(j.contato);
+        }).catch(function () { avisar('Sem conexão. Tente de novo.'); });
+      }
+      function abrirPorId(id, ficha) {
+        get('/sdr/contato/' + id).then(function (j) {
+          if (!j.ok) return avisar('Contato não encontrado.');
+          abrir(j.contato, j.historico, ficha || null);
+          if (!ficha && j.ultimaFicha && reencaminharDe) preencherFicha(j.ultimaFicha);
+          window.scrollTo({ top: $('sd-contato').getBoundingClientRect().top + scrollY - 90, behavior: 'smooth' });
+        });
+      }
+      boxContato.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-acao]');
+        if (!b) return;
+        if (b.dataset.acao === 'pular') proximo(contato && contato.id);
+        if (b.dataset.acao === 'proximo') proximo();
+      });
+
+      // Busca e contato fora da lista
+      var tBusca, res = $('sd-resultados');
+      $('sd-busca').addEventListener('input', function () {
+        clearTimeout(tBusca);
+        var q = this.value.trim();
+        if (q.length < 2) { res.hidden = true; return; }
+        tBusca = setTimeout(function () {
+          get('/sdr/buscar?q=' + encodeURIComponent(q)).then(function (j) {
+            res.hidden = false;
+            res.innerHTML = j.contatos && j.contatos.length ? j.contatos.map(function (c) {
+              return '<button type="button" data-id="' + c.id + '"><b>' + esc(c.nome || '(sem nome)') + '</b> <span class="mono">' + esc(P.formatarFone(c.telefone)) + '</span><small>' + esc(c.statusRotulo) + '</small></button>';
+            }).join('') : '<p>Ninguém na lista com esse nome ou telefone. Use “+ Fora da lista”.</p>';
+          });
+        }, 250);
+      });
+      res.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-id]');
+        if (!b) return;
+        res.hidden = true; $('sd-busca').value = ''; reencaminharDe = null;
+        abrirPorId(b.dataset.id);
+      });
+      $('sd-novo-btn').addEventListener('click', function () { $('sd-novo').hidden = !$('sd-novo').hidden; if (!$('sd-novo').hidden) $('sd-novo').nome.focus(); });
+      $('sd-novo').addEventListener('submit', function () {
+        var f = this;
+        if (!P.normalizarFone(f.telefone.value)) return avisar('Informe um telefone válido, com DDD.');
+        post('/sdr/contato', { nome: f.nome.value, telefone: f.telefone.value }).then(function (j) {
+          if (!j.ok) return avisar(j.erro || 'Não consegui cadastrar.');
+          f.reset(); f.hidden = true; reencaminharDe = null;
+          abrir(j.contato);
+        });
+      });
+
+      // ---- Ficha ----
+      var fichaForm = $('sd-ficha'), ficha = {};
+      function marcar(campo, v) {
+        ficha[campo] = v;
+        fichaForm.querySelectorAll('[data-campo="' + campo + '"] .chip').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+      }
+      fichaForm.addEventListener('click', function (e) {
+        var b = e.target.closest('.chip');
+        if (!b) return;
+        var campo = b.closest('[data-campo]').dataset.campo;
+        marcar(campo, ficha[campo] === b.dataset.v ? '' : b.dataset.v);
+        atualizarClasse();
+      });
+      fichaForm.autorizou.addEventListener('change', renderPlantao);
+      function lerFicha() {
+        var f = Object.assign({}, ficha);
+        f.obs = fichaForm.obs.value.trim(); f.autorizou = fichaForm.autorizou.checked;
+        return f;
+      }
+      function classe(f) {
+        if (!f.interesse) return null;
+        if (f.interesse === 'Não') return 'frio';
+        var breve = f.prazo === 'Imediato' || f.prazo === 'Próximos 3 meses';
+        return breve && f.faixa && f.faixa !== 'A definir' ? 'quente' : 'morno';
+      }
+      function atualizarClasse() {
+        var c = classe(lerFicha()), el = $('sd-classe');
+        el.hidden = !c;
+        if (c) { el.className = 'sd-classe sd-tag sd-' + c; el.textContent = 'Lead ' + c; }
+        renderPlantao();
+      }
+      function limparFicha() {
+        fichaForm.reset(); ficha = {};
+        fichaForm.querySelectorAll('.chip.on').forEach(function (b) { b.classList.remove('on'); });
+        atualizarClasse();
+      }
+      function preencherFicha(f) {
+        ['interesse', 'objetivo', 'faixa', 'pagamento', 'prazo'].forEach(function (k) { if (f[k]) marcar(k, f[k]); });
+        if (f.obs) fichaForm.obs.value = f.obs;
+        if (f.autorizou) fichaForm.autorizou.checked = true;
+        atualizarClasse();
+      }
+
+      // ---- Resultado sem envio ----
+      var retBox = $('sd-retornar');
+      document.querySelector('.sd-res').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-res]');
+        if (!b || !contato) return;
+        if (b.dataset.res === 'retornar') { retBox.hidden = !retBox.hidden; return; }
+        if (b.dataset.res === 'nao_ligar' && !confirm('O cliente pediu para não receber mais ligações? Ele sai da lista.')) return;
+        registrar(b.dataset.res);
+      });
+      function paraInput(d) { var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 16); }
+      $('sd-ret-rapido').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-ret]');
+        if (!b) return;
+        var d = new Date(), k = b.dataset.ret;
+        if (k === 'h2') d = new Date(Date.now() + 2 * 3600000);
+        if (k === 'a10' || k === 'a15') { d.setDate(d.getDate() + 1); d.setHours(k === 'a10' ? 10 : 15, 0, 0, 0); }
+        if (k === 'd7') { d.setDate(d.getDate() + 7); d.setHours(10, 0, 0, 0); }
+        $('sd-ret-data').value = paraInput(d);
+      });
+      $('sd-ret-ok').addEventListener('click', function () {
+        var v = $('sd-ret-data').value;
+        if (!v) return avisar('Escolha o dia e a hora do retorno.');
+        registrar('retornar', new Date(v).toISOString());
+      });
+      function registrar(resultado, retornarEm) {
+        var c = contato, f = lerFicha();
+        var temFicha = ['interesse', 'objetivo', 'faixa', 'pagamento', 'prazo'].some(function (k) { return f[k]; }) || f.obs;
+        post('/sdr/contato/' + c.id + '/resultado', { resultado: resultado, retornar_em: retornarEm, ficha: temFicha ? f : null }).then(function (j) {
+          if (!j.ok) return avisar(j.erro || 'Não consegui registrar. Tente de novo.');
+          linhaRecente(c, S.rotulos[resultado], null);
+          numeros(j.hoje);
+          retBox.hidden = true; $('sd-ret-data').value = '';
+          avisar(S.rotulos[resultado] + ': registrado.');
+          proximo();
+        });
+      }
+
+      // ---- Plantão ----
+      var boxPlantao = $('sd-plantao');
+      function renderPlantao() {
+        var f = lerFicha(), c = classe(f);
+        // Reencaminhando: pula quem não confirmou.
+        var fila = reencaminharDe ? plantao.filter(function (p) { return p.telefone !== reencFone; }) : plantao;
+        var prox = fila[0];
+        var h = '';
+        if (reencaminharDe) h += '<div class="rc-atual">Reencaminhando: o corretor anterior não confirmou. Envie para o próximo da vez. <button type="button" id="sd-reenc-x">cancelar</button></div>';
+        if (!prox) h += '<div class="warn-box">Nenhum corretor no plantão. O administrador cadastra em Painel → SDR.</div>';
+        else {
+          var falta = !contato ? 'Abra um cliente primeiro.' : !f.interesse ? 'Marque o interesse do cliente na ficha.'
+            : c === 'frio' ? 'Cliente sem interesse: registre “Sem interesse” acima.'
+            : !f.autorizou ? 'Marque que o cliente autorizou o contato pelo WhatsApp.' : '';
+          h += '<div class="rc-prox-lbl">Próximo da vez</div>'
+            + '<a class="rc-item rc-prox' + (falta ? ' sd-bloq' : '') + '" href="https://wa.me/' + prox.telefone + '" target="_blank" rel="noopener" data-id="' + prox.id + '" data-nome="' + esc(prox.nome) + '" data-fone="' + prox.telefone + '">'
+            + '<span class="rc-av">' + esc(iniciais(prox.nome)) + '</span><span class="rc-nm">Enviar para ' + esc(prox.nome) + '</span>'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'
+            + (falta ? '<p class="sd-falta">' + esc(falta) + '</p>' : '')
+            + '<div class="rc-fila"><div class="rc-prox-lbl">Fila do plantão</div><ol>' + fila.map(function (p, i) {
+              return '<li class="' + (i === 0 ? 'vez' : '') + '"><span>' + esc(p.nome) + '</span><small>' + (i === 0 ? 'é a vez' : p.ultima ? '✓ recebeu ' + quando(p.ultima) : 'ainda não recebeu') + ' · ' + p.atribuicoes + (p.atribuicoes === 1 ? ' lead' : ' leads') + '</small></li>';
+            }).join('') + '</ol></div>';
+        }
+        boxPlantao.innerHTML = h;
+        var x = $('sd-reenc-x'); if (x) x.onclick = function () { reencaminharDe = null; proximo(); };
+      }
+      function mensagem(c, f, linkOk) {
+        var cl = classe(f);
+        var l = ['*Novo lead · SDR Auxiliadora*' + (cl ? ' · lead ' + cl : ''), ''];
+        l.push('*Nome:* ' + (fichaForm.nome.value.trim() || c.nome || '-'));
+        l.push('*Telefone:* ' + P.formatarFone(c.telefone) + '  wa.me/' + c.telefone);
+        if (c.telefone2) l.push('*Outro telefone:* ' + P.formatarFone(c.telefone2));
+        l.push('*Interesse em investir:* ' + f.interesse);
+        if (f.objetivo) l.push('*Objetivo:* ' + f.objetivo);
+        if (f.faixa) l.push('*Faixa de investimento:* ' + f.faixa);
+        if (f.pagamento) l.push('*Pagamento:* ' + f.pagamento);
+        if (f.prazo) l.push('*Prazo de compra:* ' + f.prazo);
+        if (f.obs) l.push('', '*Observações:* ' + f.obs);
+        l.push('', 'O cliente autorizou o contato pelo WhatsApp.');
+        l.push('', '✅ *Confirme que recebeu:* ' + linkOk);
+        return l.join('\n');
+      }
+      boxPlantao.addEventListener('click', function (e) {
+        var a = e.target.closest('.rc-item');
+        if (!a) return;
+        var f = lerFicha();
+        if (a.classList.contains('sd-bloq') || !contato) { e.preventDefault(); var p = boxPlantao.querySelector('.sd-falta'); if (p) avisar(p.textContent); return; }
+        var tk = Array.from(crypto.getRandomValues(new Uint8Array(18))).map(function (b) { return 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 56]; }).join('');
+        var c = contato;
+        a.href = linkWhats(a.dataset.fone, mensagem(c, f, location.origin + '/ok/' + tk));
+        a.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+        a.rel = modo === 'web' ? '' : 'noopener';
+        var de = reencaminharDe;
+        post('/sdr/contato/' + c.id + '/enviar', { corretor_id: a.dataset.id, token: tk, ficha: f, nome: fichaForm.nome.value.trim(), reencaminhar_de: de }).then(function (j) {
+          if (!j.ok) { avisar('O WhatsApp abriu, mas o envio não foi registrado. Recarregue a página.'); return; }
+          plantao = j.plantao; numeros(j.hoje); renderPlantao();
+        });
+        if (de) { pend = pend.filter(function (x) { return x.id !== de; }); renderPend(); }
+        else linhaRecente(Object.assign({}, c, { nome: fichaForm.nome.value.trim() || c.nome }), 'Qualificado (enviado ao corretor)', classe(f));
+        avisar('Lead de ' + (fichaForm.nome.value.trim() || c.nome || 'cliente') + ' enviado para ' + a.dataset.nome + '.');
+        setTimeout(function () { proximo(); }, 400);
+      });
+      setInterval(function () { get('/sdr/plantao').then(function (j) { if (j.ok) { plantao = j.plantao; renderPlantao(); } }).catch(function () {}); }, 30000);
+
+      // ---- Pendências: lembrar ou reencaminhar ----
+      function renderPend() {
+        $('sd-pend').hidden = !pend.length;
+        $('sd-pend-cont').textContent = pend.length;
+        $('sd-pend-lista').innerHTML = pend.map(function (p) {
+          return '<div class="rc-ent"><div class="rc-ent-q">' + ha(p.quando) + '</div>'
+            + '<div class="rc-ent-d"><b>' + esc(p.lead.nome || '(sem nome)') + '</b> → ' + esc(p.corretor)
+            + '<small>' + (p.cobrancas ? 'lembrado ' + p.cobrancas + 'x' : 'ainda não foi lembrado') + '</small></div>'
+            + '<div class="rc-ent-a"><a class="btn btn-ghost btn-sm" href="#" data-lembrar="' + p.id + '">Lembrar corretor</a>'
+            + (p.contatoId ? '<button type="button" class="btn btn-ghost btn-sm" data-reenc="' + p.id + '">Reencaminhar</button>' : '') + '</div></div>';
+        }).join('');
+      }
+      $('sd-pend-lista').addEventListener('click', function (e) {
+        var l = e.target.closest('[data-lembrar]'), r = e.target.closest('[data-reenc]');
+        if (l) {
+          var p = pend.filter(function (x) { return x.id === Number(l.dataset.lembrar); })[0];
+          if (!p) return;
+          var txt = '⏰ *Lembrete do SDR*\n\nVocê recebeu o lead de *' + (p.lead.nome || 'cliente') + '*'
+            + (p.lead.telefone ? ' (' + P.formatarFone(p.lead.telefone) + ')' : '') + ' em ' + quando(p.quando) + ' e ainda não confirmou.'
+            + (p.lead.telefone ? '\nCliente: wa.me/' + p.lead.telefone : '')
+            + '\n\n✅ *Se já falou com o cliente, confirme:* ' + location.origin + '/ok/' + p.token;
+          l.href = linkWhats(p.corretorFone, txt);
+          l.target = modo === 'web' ? 'rc-whatsapp' : '_blank';
+          post('/sdr/envio/' + p.id + '/cobrar');
+          p.cobrancas += 1;
+          setTimeout(renderPend, 50);
+          return;
+        }
+        if (r) {
+          var q = pend.filter(function (x) { return x.id === Number(r.dataset.reenc); })[0];
+          if (!q) return;
+          reencaminharDe = q.id; reencFone = q.corretorFone;
+          abrirPorId(q.contatoId);
+          renderPlantao();
+        }
+      });
+      setInterval(function () { get('/sdr/pendencias').then(function (j) { if (j.ok) { pend = j.pendencias; renderPend(); } }).catch(function () {}); }, 60000);
+
+      // ---- Números e histórico ----
+      function numeros(h) {
+        if (!h) return;
+        $('k-lig').textContent = h.ligacoes; $('k-at').textContent = h.atendidas;
+        $('k-q').textContent = h.qualificados; $('k-qt').textContent = h.quente; $('k-mo').textContent = h.morno;
+      }
+      function linhaRecente(c, rotulo, cl) {
+        var tb = $('sd-recentes'); var v = tb.querySelector('.rc-vazio'); if (v) v.remove();
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td class="sub">' + esc(quando(new Date())) + '</td><td>' + esc(c.nome || '—') + '<span class="sub mono">' + esc(P.formatarFone(c.telefone)) + '</span></td><td>'
+          + esc(rotulo) + (cl ? ' <span class="sd-tag sd-' + cl + '">' + esc(cl) + '</span>' : '') + '</td>';
+        tb.insertBefore(tr, tb.firstChild);
+      }
+
+      renderPend();
+      renderPlantao();
+      proximo();
+    })();
+  </script>
+</body>
+</html>

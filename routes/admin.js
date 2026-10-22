@@ -402,7 +402,7 @@ router.post('/equipes/gestor', async (req, res, next) => {
     const outro = await db.getGestorPorUsuario(usuario);
     if (outro && outro.id !== id) return res.redirect('/admin/equipes?erro=usuario');
     const senha_hash = senha ? equipes.hashSenha(senha) : null;
-    const papel = b.papel === 'recepcao' ? 'recepcao' : 'gestor';
+    const papel = ['recepcao', 'sdr'].includes(b.papel) ? b.papel : 'gestor';
     // Senha definida pelo administrador é temporária: a pessoa troca no próximo acesso.
     const trocar_senha = senha ? true : undefined;
     if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel, trocar_senha });
@@ -495,6 +495,9 @@ router.get('/recepcao', async (req, res, next) => {
     });
   } catch (e) { next(e); }
 });
+
+// ---- SDR: lista, plantão e roteiro (routes/admin-sdr.js) ----
+router.use('/sdr', soAdmin, require('./admin-sdr'));
 
 // ---- Auditoria: linha do tempo de cada lead ----
 router.use('/auditoria', soAdmin);

@@ -261,6 +261,45 @@ A recepção entra pelo mesmo login dos gestores (`/gestor`) e cai na tela
 - O leitor da mensagem fica em `public/js/lead-parser.js` (roda no navegador e
   no servidor). Um formato novo de mensagem se ensina por ali.
 
+### SDR (ligações para a lista de clientes)
+O SDR entra pelo mesmo login (`/gestor`) e cai em `/sdr`. A tela traz o
+**cliente da vez** da lista, o **roteiro da ligação** ao lado e a **ficha de
+qualificação**:
+
+1. **Liga** (botão *Ligar* abre o discador; *WhatsApp* abre a conversa).
+2. **Registra o resultado:** *Não atendeu* (volta para a fila depois de 3 h, até
+   3 tentativas), *Ligar depois* (dia e hora; volta na frente quando vencer),
+   *Sem interesse*, *Número errado* ou *Pediu para não ligar* (sai da lista e
+   não volta numa nova importação).
+3. **Interessado:** preenche a ficha (interesse, objetivo, faixa, pagamento,
+   prazo, observações). O sistema classifica: **quente** (até 3 meses e faixa
+   definida), **morno** (interesse sem prazo curto ou sem faixa) ou **frio**.
+   Com a autorização do cliente marcada, toca no **próximo da vez do plantão**:
+   o WhatsApp do corretor abre com a ficha e o link "Recebi".
+
+- **Lista:** em `/admin/sdr` → *Importar contatos*, envie a planilha exportada
+  do CRM (`.xlsx` ou `.csv`) ou cole a lista. As colunas de nome, telefone/
+  celular e e-mail são achadas pelo cabeçalho (ou pelo conteúdo, sem
+  cabeçalho); as outras colunas aparecem para o SDR na ligação. Telefone
+  repetido não entra duas vezes. *Tirar não ligados* remove o que sobrou de
+  uma importação.
+- **Plantão:** rodízio próprio do SDR (começa com as equipes do Fabrício e do
+  Alberto). O lead vai para quem recebeu menos; pausar e voltar não gera
+  vários seguidos.
+- **Sem confirmação:** envios do SDR sem "Recebi" depois de
+  `RECEPCAO_COBRAR_MIN` aparecem na tela dele para *Lembrar* ou *Reencaminhar*
+  (vai para o próximo do plantão, pulando quem não confirmou). Esses envios não
+  aparecem na fila de cobrança da recepção.
+- **Roteiro:** editável em `/admin/sdr` (`## Título`, `**negrito**`, `- item`;
+  `[NOME]` e `[NOME DO CLIENTE]` são trocados na tela).
+- **Números:** `/admin/sdr` mostra ligações, atendidas, qualificados e a taxa
+  de qualificação por período, com exportação das ligações e da lista em CSV.
+  Cada ligação entra na auditoria do lead. Os leads enviados aparecem também
+  no painel do gestor do corretor (origem "Ligação SDR").
+- **LGPD:** contatos sem ligação há mais de `LGPD_MESES` perdem nome, e-mail,
+  colunas extras e telefone (quem pediu para não ligar mantém o telefone, para
+  não ser chamado de novo).
+
 ### Fila "A encaminhar" (leads que chegam por e-mail)
 Os e-mails de lead entram sozinhos numa fila no topo da tela da recepção, já
 lidos pelo mesmo leitor da colagem. Ela clica em **Encaminhar** (os campos já
