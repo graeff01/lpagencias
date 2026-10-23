@@ -238,13 +238,15 @@ document.getElementById('ajustes').addEventListener('click', () => document.getE
 
 // ---- Andar (primeira pessoa) ----
 const OLHO = 1.6, RAIO = 0.22;
-const eu = { x: mx(335), z: mz(655), yaw: -0.22, pitch: -0.06 };   // logo depois da porta de entrada, olhando para a sala e a sacada
+const eu = { x: mx(255), z: mz(640), yaw: 0.05, pitch: -0.06 };   // logo depois da porta de entrada, olhando para a sala e a sacada
 function livre(x, z) {
   if (!AMBIENTES.some(a => x > mx(a.r[0]) - 0.05 && x < mx(a.r[2]) + 0.05 && z > mz(a.r[1]) - 0.05 && z < mz(a.r[3]) + 0.05)
       && !PAREDES.some(p => p[4] === 'd' && x > mx(p[0]) && x < mx(p[2]) && z > mz(p[1]) - 0.1 && z < mz(p[3]) + 0.1)) return false;
   return !solidos.some(([a, b, c, d]) => x + RAIO > a && x - RAIO < c && z + RAIO > b && z - RAIO < d);
 }
 function mover(dx, dz) {
+  // Se a pessoa já está encostada num móvel, deixa sair (senão fica presa).
+  if (!livre(eu.x, eu.z)) { eu.x += dx; eu.z += dz; return; }
   if (livre(eu.x + dx, eu.z + dz)) { eu.x += dx; eu.z += dz; }
   else if (livre(eu.x + dx, eu.z)) eu.x += dx;
   else if (livre(eu.x, eu.z + dz)) eu.z += dz;
