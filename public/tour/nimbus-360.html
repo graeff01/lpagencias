@@ -103,7 +103,7 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 100);
 const max = renderer.capabilities.getMaxAnisotropy();
 
 const cache = {};
@@ -116,7 +116,7 @@ function carregar(id) {
 }
 
 // ---- Olhar em volta ----
-let lon = 0, lat = 0, fov = 75, atual = null;
+let lon = 0, lat = -4, fov = 90, atual = null;
 let arrasto = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { arrasto = { x: e.clientX, y: e.clientY, lon, lat }; renderer.domElement.setPointerCapture(e.pointerId); esconderDica(); });
 renderer.domElement.addEventListener('pointermove', (e) => {
@@ -125,7 +125,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   lon = arrasto.lon - (e.clientX - arrasto.x) * k; lat = Math.max(-85, Math.min(85, arrasto.lat + (e.clientY - arrasto.y) * k));
 });
 renderer.domElement.addEventListener('pointerup', () => { arrasto = null; });
-renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); fov = Math.max(35, Math.min(95, fov + e.deltaY * 0.04)); camera.fov = fov; camera.updateProjectionMatrix(); }, { passive: false });
+renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); fov = Math.max(40, Math.min(110, fov + e.deltaY * 0.04)); camera.fov = fov; camera.updateProjectionMatrix(); }, { passive: false });
 addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') lon -= 5; if (e.key === 'ArrowRight') lon += 5; if (e.key === 'ArrowUp') lat = Math.min(85, lat + 5); if (e.key === 'ArrowDown') lat = Math.max(-85, lat - 5); });
 const dica = document.getElementById('dica');
 function esconderDica() { dica.style.opacity = 0; }
@@ -156,7 +156,7 @@ async function ir(id, primeira) {
   scene.background = await carregar(id);
   // olha na direção em que a pessoa estava andando (ou no ângulo do cômodo)
   lon = atual && !primeira ? Math.atan2(c.y - atual.y, c.x - atual.x) * 180 / Math.PI : c.olhar;
-  lat = 0;
+  lat = -4;
   atual = c; montarSetas(c); marcar();
   veu.classList.remove('on');
   c.viz.forEach(v => carregar(v));   // já busca os vizinhos
