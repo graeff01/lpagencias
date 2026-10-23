@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<title>Tour 360° · Nimbus Place Life · 2 dorm. com suíte</title>
+<style>
+  :root{--g:#0E9E4A;--o:#E4610F;--ink:#152219}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0b1a12;font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif;color:#fff;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+  canvas{display:block;cursor:grab;touch-action:none}
+  canvas:active{cursor:grabbing}
+  .ui{position:fixed;z-index:5}
+  .vidro{background:rgba(12,28,19,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:14px}
+  .topo{left:16px;top:16px;padding:10px 14px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px)}
+  .topo .m{width:32px;height:32px;border-radius:9px;background:var(--g);display:grid;place-items:center;flex:none}
+  .topo b{display:block;font-size:14px}.topo small{display:block;font-size:11.5px;color:#b9cdbf}
+  .modos{right:16px;top:16px;display:flex;padding:4px;gap:4px}
+  button{font:inherit;cursor:pointer}
+  .modos button{font-size:13px;font-weight:650;color:#d6e4da;background:none;border:none;border-radius:10px;padding:8px 13px}
+  .modos button.on{background:#fff;color:var(--ink)}
+  .comodos{left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:4px;padding:5px;max-width:calc(100% - 360px);overflow-x:auto;scrollbar-width:none}
+  .comodos::-webkit-scrollbar{display:none}
+  .comodos button{flex:none;font-size:13px;font-weight:650;color:#d6e4da;background:none;border:none;border-radius:10px;padding:9px 13px;white-space:nowrap}
+  .comodos button.on{background:#fff;color:var(--ink)}
+  .comodos button:hover:not(.on){background:rgba(255,255,255,.1)}
+  .mapa{left:16px;bottom:16px;width:290px;padding:8px}
+  .mapa .pl{position:relative}
+  .mapa img{display:block;width:100%;border-radius:8px;opacity:.95}
+  .ponto{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#fff;border:3px solid var(--g);cursor:pointer;padding:0}
+  .ponto.on{background:var(--o);border-color:#fff;box-shadow:0 0 0 5px rgba(228,97,15,.35)}
+  .cone{position:absolute;width:0;height:0;margin:-34px 0 0 -20px;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:34px solid rgba(228,97,15,.38);transform-origin:20px 34px;pointer-events:none}
+  .seta{position:fixed;z-index:4;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:#fff;pointer-events:auto}
+  .seta i{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.88);display:grid;place-items:center;transition:transform .15s,background .15s}
+  .seta i svg{width:26px;height:26px;color:var(--ink)}
+  .seta span{font-size:12.5px;font-weight:700;background:rgba(12,28,19,.72);padding:5px 10px;border-radius:9px;white-space:nowrap}
+  .seta:hover i{transform:scale(1.1);background:#fff}
+  .cima{inset:0;z-index:3;background:#e9edeb;display:none}
+  .cima.on{display:block}
+  .cima img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  .cima .rot{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:700;color:#fff;background:var(--ink);border:2px solid #fff;border-radius:20px;padding:7px 13px;white-space:nowrap;box-shadow:0 6px 18px -6px rgba(0,0,0,.45)}
+  .cima .rot:hover{background:var(--o)}
+  .aviso{right:16px;bottom:18px;font-size:11px;color:rgba(255,255,255,.8);text-shadow:0 1px 3px rgba(0,0,0,.7);text-align:right}
+  .cta{right:16px;top:70px;display:block;background:var(--o);color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;border-radius:11px;padding:10px 14px}
+  .dica{left:50%;top:20px;transform:translateX(-50%);padding:8px 14px;font-size:12.5px;color:#d6e4da;white-space:nowrap;transition:opacity .6s}
+  .veu{inset:0;z-index:6;background:#0b1a12;opacity:0;pointer-events:none;transition:opacity .35s}
+  .veu.on{opacity:1}
+  .carregando{inset:0;display:grid;place-items:center;background:#0b1a12;font-size:14px;color:#b9cdbf;z-index:20}
+  @media (max-width:900px){
+    .mapa{width:170px;top:70px;bottom:auto;left:auto;right:12px;padding:5px}
+    .comodos{max-width:calc(100% - 24px);bottom:12px}
+    .cta{top:auto;bottom:72px}
+    .aviso{bottom:auto;top:auto;display:none}
+    .dica{display:none}
+    .topo{left:12px;top:12px}.modos{right:12px;top:auto;bottom:72px;left:12px;right:auto}
+  }
+</style>
+<script type="importmap">{ "imports": { "three": "/vendor/three/three.module.min.js" } }</script>
+</head>
+<body>
+<div class="ui carregando" id="carregando">Carregando o apartamento…</div>
+<div class="ui veu" id="veu"></div>
+
+<div class="ui vidro topo">
+  <span class="m"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span>
+  <span><b>Nimbus Place Life · 2 dorm. com suíte</b><small>Tour 360° · Auxiliadora Predial</small></span>
+</div>
+<div class="ui vidro dica" id="dica">Arraste para olhar em volta · clique nas setas para mudar de cômodo</div>
+
+<div class="ui vidro modos" id="modos">
+  <button type="button" data-modo="dentro" class="on">Por dentro</button>
+  <button type="button" data-modo="cima">Vista de cima</button>
+</div>
+<a class="ui cta" href="/nimbus-place-life">Quero conhecer o Nimbus</a>
+
+<div class="ui cima" id="cima"><img id="cimaImg" alt="Vista de cima do apartamento"></div>
+
+<div class="ui vidro mapa" id="mapa"><div class="pl" id="pl"><img src="/img/nimbus/planta-2d-a-sm.webp" alt="Planta"><span class="cone" id="cone"></span></div></div>
+<div class="ui vidro comodos" id="comodos"></div>
+<div class="ui aviso">Imagem ilustrativa · móveis e decoração não inclusos</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// Fotos 360° renderizadas no Blender, uma por cômodo. x/y = posição na planta
+// (pixels da imagem 1266 × 711); olhar = para onde a câmera começa (graus,
+// 0 = direita da planta, 90 = para baixo, -90 = para cima).
+const BASE = '/tour/360/';
+const IMG_W = 1266, IMG_H = 711;
+const COMODOS = [
+  { id: 'sala', nome: 'Sala de estar', x: 330, y: 300, olhar: -60, viz: ['sacada', 'jantar', 'circulacao'] },
+  { id: 'jantar', nome: 'Jantar e cozinha', x: 230, y: 560, olhar: 180, viz: ['sala', 'circulacao'] },
+  { id: 'sacada', nome: 'Sacada', x: 330, y: 120, olhar: 90, viz: ['sala'] },
+  { id: 'circulacao', nome: 'Circulação', x: 720, y: 455, olhar: 0, viz: ['sala', 'jantar', 'dormitorio', 'suite', 'banho'] },
+  { id: 'dormitorio', nome: 'Dormitório', x: 620, y: 300, olhar: -30, viz: ['circulacao'] },
+  { id: 'suite', nome: 'Suíte', x: 1000, y: 420, olhar: -40, viz: ['circulacao', 'banhosuite'] },
+  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 0, viz: ['circulacao'] },
+  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 0, viz: ['suite'] },
+];
+const porId = Object.fromEntries(COMODOS.map(c => [c.id, c]));
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 100);
+const max = renderer.capabilities.getMaxAnisotropy();
+
+const cache = {};
+function carregar(id) {
+  if (!cache[id]) cache[id] = new Promise((ok, erro) => new THREE.TextureLoader().load(BASE + id + '.jpg', (t) => {
+    t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = max;
+    t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; ok(t);
+  }, undefined, erro));
+  return cache[id];
+}
+
+// ---- Olhar em volta ----
+let lon = 0, lat = 0, fov = 75, atual = null;
+let arrasto = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { arrasto = { x: e.clientX, y: e.clientY, lon, lat }; renderer.domElement.setPointerCapture(e.pointerId); esconderDica(); });
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (!arrasto) return;
+  const k = fov / innerHeight;
+  lon = arrasto.lon - (e.clientX - arrasto.x) * k; lat = Math.max(-85, Math.min(85, arrasto.lat + (e.clientY - arrasto.y) * k));
+});
+renderer.domElement.addEventListener('pointerup', () => { arrasto = null; });
+renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); fov = Math.max(35, Math.min(95, fov + e.deltaY * 0.04)); camera.fov = fov; camera.updateProjectionMatrix(); }, { passive: false });
+addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') lon -= 5; if (e.key === 'ArrowRight') lon += 5; if (e.key === 'ArrowUp') lat = Math.min(85, lat + 5); if (e.key === 'ArrowDown') lat = Math.max(-85, lat - 5); });
+const dica = document.getElementById('dica');
+function esconderDica() { dica.style.opacity = 0; }
+setTimeout(esconderDica, 7000);
+
+// ---- Setas para os cômodos vizinhos (na direção real de cada um) ----
+const setas = [];
+function montarSetas(c) {
+  setas.forEach(s => s.el.remove()); setas.length = 0;
+  for (const v of c.viz) {
+    const t = porId[v];
+    const dir = new THREE.Vector3(t.x - c.x, 0, t.y - c.y).normalize();
+    dir.y = -0.32; dir.normalize();
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'seta';
+    el.innerHTML = '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></i><span>' + t.nome + '</span>';
+    el.addEventListener('click', () => ir(t.id));
+    document.body.appendChild(el);
+    setas.push({ el, dir });
+  }
+}
+
+// ---- Mudar de cômodo ----
+const veu = document.getElementById('veu');
+async function ir(id, primeira) {
+  const c = porId[id]; if (!c || (atual && atual.id === id)) return;
+  if (!primeira) { veu.classList.add('on'); await new Promise(r => setTimeout(r, 320)); }
+  scene.background = await carregar(id);
+  // olha na direção em que a pessoa estava andando (ou no ângulo do cômodo)
+  lon = atual && !primeira ? Math.atan2(c.y - atual.y, c.x - atual.x) * 180 / Math.PI : c.olhar;
+  lat = 0;
+  atual = c; montarSetas(c); marcar();
+  veu.classList.remove('on');
+  c.viz.forEach(v => carregar(v));   // já busca os vizinhos
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+}
+
+// ---- Barra de cômodos e planta ----
+const barra = document.getElementById('comodos'), pl = document.getElementById('pl'), cone = document.getElementById('cone');
+COMODOS.forEach((c) => {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = c.nome; b.dataset.id = c.id;
+  b.addEventListener('click', () => { sairCima(); ir(c.id); }); barra.appendChild(b);
+  const p = document.createElement('button'); p.type = 'button'; p.className = 'ponto'; p.title = c.nome; p.dataset.id = c.id;
+  p.style.left = (c.x / IMG_W * 100) + '%'; p.style.top = (c.y / IMG_H * 100) + '%';
+  p.addEventListener('click', () => { sairCima(); ir(c.id); }); pl.appendChild(p);
+});
+function marcar() {
+  document.querySelectorAll('[data-id]').forEach(b => b.classList.toggle('on', b.dataset.id === atual.id));
+  cone.style.left = (atual.x / IMG_W * 100) + '%'; cone.style.top = (atual.y / IMG_H * 100) + '%';
+  const sel = barra.querySelector('.on'); if (sel) sel.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+}
+
+// ---- Vista de cima (imagem renderizada, cômodos clicáveis) ----
+const cima = document.getElementById('cima'), cimaImg = document.getElementById('cimaImg');
+let rotulos = null;
+async function entrarCima() {
+  if (!rotulos) {
+    const pos = await fetch(BASE + 'cima.json').then(r => r.json()).catch(() => ({}));
+    cimaImg.src = BASE + 'cima.jpg';
+    await cimaImg.decode().catch(() => {});
+    rotulos = COMODOS.filter(c => pos[c.id]).map((c) => {
+      const el = document.createElement('button'); el.type = 'button'; el.className = 'rot'; el.textContent = c.nome;
+      el.addEventListener('click', () => { sairCima(); ir(c.id); });
+      cima.appendChild(el); return { el, p: pos[c.id] };
+    });
+    addEventListener('resize', posicionarRotulos);
+  }
+  cima.classList.add('on'); posicionarRotulos();
+  document.querySelectorAll('#modos button').forEach(b => b.classList.toggle('on', b.dataset.modo === 'cima'));
+  setas.forEach(s => s.el.style.display = 'none');
+}
+function sairCima() {
+  cima.classList.remove('on');
+  document.querySelectorAll('#modos button').forEach(b => b.classList.toggle('on', b.dataset.modo === 'dentro'));
+}
+function posicionarRotulos() {
+  // a imagem fica "contida" na tela: calcula onde ela caiu para pôr os rótulos certo
+  const iw = cimaImg.naturalWidth, ih = cimaImg.naturalHeight; if (!iw) return;
+  const k = Math.min(innerWidth / iw, innerHeight / ih), ox = (innerWidth - iw * k) / 2, oy = (innerHeight - ih * k) / 2;
+  rotulos.forEach(({ el, p }) => { el.style.left = (ox + p[0] * iw * k) + 'px'; el.style.top = (oy + p[1] * ih * k) + 'px'; });
+}
+document.getElementById('modos').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-modo]'); if (!b) return;
+  if (b.dataset.modo === 'cima') entrarCima(); else sairCima();
+});
+
+// ---- Laço ----
+const v = new THREE.Vector3();
+function quadro() {
+  const phi = THREE.MathUtils.degToRad(90 - lat), theta = THREE.MathUtils.degToRad(lon);
+  camera.lookAt(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
+  cone.style.transform = `rotate(${lon + 90}deg)`;
+  const fora = cima.classList.contains('on');
+  for (const s of setas) {
+    v.copy(s.dir).project(camera);
+    const visivel = !fora && v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
+    s.el.style.display = visivel ? '' : 'none';
+    if (visivel) { s.el.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; s.el.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; }
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(quadro);
+}
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+const inicio = porId[location.hash.slice(1)] ? location.hash.slice(1) : 'sala';
+ir(inicio, true).then(() => { document.getElementById('carregando').remove(); quadro(); })
+  .catch(() => { document.getElementById('carregando').textContent = 'Não foi possível carregar o tour. Recarregue a página.'; });
+window.__tour = { ir, get atual() { return atual; } };
+</script>
+</body>
+</html>
