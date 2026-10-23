@@ -321,6 +321,10 @@ function ok(cond, msg) {
   ok((await db.eventosDoLead({ telefone: sc1.telefone })).some(e => e.tipo === 'sdr_ligacao'), 'ligação entra na auditoria');
   ok((await sdr.buscarContatos('bruno')).length === 1 && (await sdr.buscarContatos('97777')).length === 2, 'busca por nome e telefone');
 
+  ok(sdr.foneDaLista('51 9831.7728') === '5551998317728' && sdr.foneDaLista('51 3477.1996') === '555134771996', 'celular antigo de 8 dígitos ganha o 9; fixo fica igual');
+  const dois = sdr.contatosDaPlanilha([['Nome', 'Contato 1', 'Contato 2', 'Contato 3'], ['Duas Linhas', '51 99974.0501\r\n51 3477.1996', '', ''], ['Terceiro', '', '', '51 99111-0000']]).contatos;
+  ok(dois[0].telefone === '5551999740501' && dois[0].telefone2 === '555134771996' && dois[1].telefone === '5551991110000', 'dois telefones na mesma célula e coluna Contato 3');
+
   console.log('\n18) SDR: cronômetro, agenda, retorno do corretor, metas');
   ok(sdr.duracaoValida(95) === 95 && sdr.duracaoValida(0) === null && sdr.duracaoValida(99999) === null && sdr.minSeg(95) === '1:35', 'duração da ligação validada e formatada');
   const cT = await sdr.criarContato({ nome: 'Teo Tempo', telefone: '51 95555-1010' });
