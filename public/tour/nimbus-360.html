@@ -69,9 +69,8 @@
 </div>
 <div class="ui vidro dica" id="dica">Arraste para olhar em volta · clique nas setas para mudar de cômodo</div>
 
-<div class="ui vidro modos" id="modos">
+<div class="ui vidro modos" id="modos" hidden>
   <button type="button" data-modo="dentro" class="on">Por dentro</button>
-  <button type="button" data-modo="cima">Vista de cima</button>
 </div>
 <a class="ui cta" href="/nimbus-place-life">Quero conhecer o Nimbus</a>
 
@@ -90,14 +89,11 @@ import * as THREE from 'three';
 const BASE = '/tour/360/';
 const IMG_W = 1266, IMG_H = 711;
 const COMODOS = [
-  { id: 'sala', nome: 'Sala de estar', x: 330, y: 300, olhar: -60, viz: ['sacada', 'jantar', 'circulacao'] },
+  { id: 'sala', nome: 'Sala de estar', x: 330, y: 300, olhar: 15, viz: ['sacada', 'jantar', 'circulacao'] },
   { id: 'jantar', nome: 'Jantar e cozinha', x: 230, y: 560, olhar: 180, viz: ['sala', 'circulacao'] },
   { id: 'sacada', nome: 'Sacada', x: 330, y: 120, olhar: 90, viz: ['sala'] },
-  { id: 'circulacao', nome: 'Circulação', x: 720, y: 455, olhar: 0, viz: ['sala', 'jantar', 'dormitorio', 'suite', 'banho'] },
-  { id: 'dormitorio', nome: 'Dormitório', x: 620, y: 300, olhar: -30, viz: ['circulacao'] },
-  { id: 'suite', nome: 'Suíte', x: 1000, y: 420, olhar: -40, viz: ['circulacao', 'banhosuite'] },
-  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 0, viz: ['circulacao'] },
-  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 0, viz: ['suite'] },
+  { id: 'circulacao', nome: 'Circulação', x: 720, y: 455, olhar: 0, viz: ['sala', 'jantar', 'dormitorio'] },
+  { id: 'dormitorio', nome: 'Dormitório', x: 620, y: 300, olhar: 5, viz: ['circulacao'] },
 ];
 const porId = Object.fromEntries(COMODOS.map(c => [c.id, c]));
 
