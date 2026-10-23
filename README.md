@@ -426,3 +426,14 @@ npm run test:roleta
 Prova a distribuição igualitária (100 leads ÷ 10 corretores = 10 para cada), o
 peso, o comportamento de pausa/reativação, 50 cliques simultâneos sem duplicar,
 a validação de telefone e a detecção de robôs.
+
+## Tour 3D a partir da planta (protótipo)
+`/tour/nimbus-2d-a.html` monta o apartamento 2 dorm. com suíte do Nimbus em 3D,
+no navegador, a partir das medidas da planta (`public/img/nimbus/planta-2d-a.jpg`,
+125 px = 1 m). Paredes, portas e janelas estão em `PAREDES` e os ambientes em
+`AMBIENTES`, em pixels da imagem; os móveis são peças simples posicionadas pela
+planta. O cliente caminha (setas/WASD, arrastar para olhar, joystick no
+celular), vê a maquete de cima, troca o horário (manhã, tarde, pôr do sol,
+noite) e os acabamentos (piso, marcenaria, paredes). Usa three.js servido pelo
+próprio site (`public/vendor/three`), sem serviço externo. É ilustrativo.
+
