@@ -851,8 +851,10 @@
 <% if (e._filme) { %>
 <div class="fm-ov" id="fmOv" hidden>
   <button type="button" class="fm-x" id="fmX" aria-label="Fechar o vídeo">×</button>
-  <video id="fmV" controls playsinline preload="none" <% var qf = "?v=" + v; %>data-src="<%= e._filme.src + qf %>" data-src-sm="<%= e._filme.sm && e._filme.sm + qf %>" data-webm="<%= e._filme.webm && e._filme.webm + qf %>"
+  <video id="fmV" playsinline preload="none" <% var qf = "?v=" + v; %>data-src="<%= e._filme.src + qf %>" data-src-sm="<%= e._filme.sm && e._filme.sm + qf %>" data-webm="<%= e._filme.webm && e._filme.webm + qf %>"
     data-v="<%= e._filme.v && e._filme.v + qf %>" data-v-webm="<%= e._filme.vWebm && e._filme.vWebm + qf %>"></video>
+  <div class="fm-ic" id="fmIc" aria-hidden="true"></div>
+  <div class="fm-bar"><button type="button" class="fm-som" id="fmSom" aria-label="Tirar o som"></button><div class="fm-trilho" id="fmTr"><span id="fmProg"></span></div></div>
   <div class="fm-cta">
     <span>Gostou do que viu?</span>
     <a href="<%= wa %>?src=filme" target="_blank" rel="noopener nofollow" class="btn wa"><%- waSvg %>Agendar visita ao decorado</a>
@@ -883,6 +885,18 @@
     // Terminou: fica a chamada para agendar a visita.
     v.addEventListener('ended',function(){ ov.classList.add('fim'); });
     v.addEventListener('play',function(){ ov.classList.remove('fim'); });
+    // Controles próprios e discretos: toque pausa/continua, barra de progresso e som.
+    var ic=document.getElementById('fmIc'), prog=document.getElementById('fmProg'), tr=document.getElementById('fmTr'), som=document.getElementById('fmSom');
+    var IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5-13-7.5Z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
+      on:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M19 6a9 9 0 0 1 0 12"/></svg>',
+      off:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'};
+    function pisca(q){ ic.innerHTML=IC[q]; ic.classList.remove('on'); void ic.offsetWidth; ic.classList.add('on'); }
+    function pintaSom(){ som.innerHTML=v.muted?IC.off:IC.on; som.setAttribute('aria-label',v.muted?'Ligar o som':'Tirar o som'); }
+    v.addEventListener('click',function(){ if(v.paused){ v.play(); pisca('play'); } else { v.pause(); pisca('pause'); } });
+    v.addEventListener('timeupdate',function(){ if(v.duration) prog.style.width=(v.currentTime/v.duration*100)+'%'; });
+    v.addEventListener('volumechange',pintaSom); pintaSom();
+    som.addEventListener('click',function(){ v.muted=!v.muted; });
+    tr.addEventListener('click',function(e){ var r=tr.getBoundingClientRect(); if(v.duration) v.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*v.duration; });
   })();
 </script>
 <% } %>
