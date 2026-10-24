@@ -659,3 +659,9 @@ button.poi-chip:hover,button.poi-chip.on{border-color:var(--green);background:co
   .hero-grid{gap:20px}
 }
 @media(max-width:760px){.hero{min-height:88vh;min-height:88svh}}
+/* Celular: selo e título no alto, quadro de informações embaixo, com o vídeo aparecendo no meio */
+@media(max-width:760px){
+  .hero{align-items:stretch}
+  .hero-inner{display:flex;flex-direction:column;padding-top:104px}
+  .hero-grid{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:28px}
+}
