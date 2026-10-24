@@ -59,15 +59,6 @@
 .hero .bg .hero-vid.on{opacity:1}
 .hero .bg.com-video::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,rgba(6,20,12,.88) 0%,rgba(6,20,12,.5) 42%,rgba(6,20,12,.15) 100%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 40%)}
 @media(prefers-reduced-motion:reduce){.pi-mundo,.pi-fotov img,.pi-dica .pt{transition:none;animation:none}}
-/* Botão "Assistir ao filme" na abertura */
-.hero-filme{display:inline-flex;align-items:center;gap:14px;margin-top:22px;border:0;background:none;color:#fff;font:inherit;cursor:pointer;padding:0;text-align:left}
-.hero-filme .pl{position:relative;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(8px);transition:transform .25s,background .25s}
-.hero-filme .pl::after{content:'';position:absolute;inset:-7px;border-radius:50%;border:1px solid rgba(255,255,255,.35);animation:fmPulso 2.2s ease-out infinite}
-.hero-filme .pl svg{width:20px;height:20px;margin-left:3px}
-.hero-filme:hover .pl{transform:scale(1.08);background:rgba(255,255,255,.26)}
-.hero-filme b{display:block;font-size:15.5px;font-weight:700}
-.hero-filme small{display:block;font-size:12.5px;opacity:.78;margin-top:1px}
-@keyframes fmPulso{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 /* Vídeo em tela cheia: ocupa a tela toda, no formato do aparelho */
 .fm-ov{position:fixed;inset:0;z-index:9998;background:#000;display:grid;place-items:center;animation:fmEntra .35s ease}
 .fm-ov[hidden]{display:none}

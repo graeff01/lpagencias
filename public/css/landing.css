@@ -632,3 +632,30 @@ button.poi-chip:hover,button.poi-chip.on{border-color:var(--green);background:co
   .map:has(.map-leaf) .card .rota{margin-top:5px;font-size:12.5px}
   .mk-emp-nome{font-size:12px;padding:5px 9px}
 }
+
+/* =========================================================
+   Abertura sem botões: título, localização e quadro de informações
+   ========================================================= */
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(4,10,8,.72),transparent);pointer-events:none}
+.hero-inner{z-index:1}
+.hero h1{letter-spacing:-.035em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+.hero .sub-h1{text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.hero .loc{display:inline-flex;margin:18px 0 0;padding:9px 16px 9px 12px;border-radius:30px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-weight:560;opacity:1}
+.hero .loc svg{color:var(--orange)}
+.hero-card{background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border-color:rgba(255,255,255,.26);-webkit-backdrop-filter:blur(16px)}
+.hero-card .pl{text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;font-weight:700;color:var(--orange);opacity:1}
+.hero-card .g4 .st .ic{background:rgba(255,255,255,.12)}
+/* entrada em sequência (só com JS ativo; sem JS tudo aparece direto) */
+@keyframes heroSobe{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.js .hero .badge,.js .hero h1,.js .hero .sub-h1,.js .hero .loc,.js .hero-card{animation:heroSobe .9s cubic-bezier(.2,.7,.2,1) both}
+.js .hero h1{animation-delay:.12s}
+.js .hero .sub-h1{animation-delay:.24s}
+.js .hero .loc{animation-delay:.36s}
+.js .hero-card{animation-delay:.5s}
+@media(max-width:600px){
+  .hero{align-items:flex-end}
+  .hero-inner{padding:110px 18px 34px}
+  .hero .loc{font-size:12.5px;margin-top:14px;padding:8px 13px 8px 10px}
+  .hero-grid{gap:20px}
+}
+@media(max-width:760px){.hero{min-height:88vh;min-height:88svh}}
