@@ -2,9 +2,9 @@
 .pi-tipos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .pi-tipo{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:99px;padding:10px 18px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:.2s}
 .pi-tipo[aria-pressed="true"]{background:var(--green-ink);color:#fff;border-color:var(--green-ink)}
-.pi-palco{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
-@media(max-width:900px){.pi-palco{grid-template-columns:1fr}}
-.pi-quadro{position:relative;width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 60px -34px rgba(0,0,0,.3);overflow:hidden;aspect-ratio:1266/760}
+.pi-palco{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:stretch}
+@media(max-width:1100px){.pi-palco{grid-template-columns:1fr}}
+.pi-quadro{position:relative;width:100%;align-self:start;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 60px -34px rgba(0,0,0,.3);overflow:hidden;aspect-ratio:1266/760}
 .pi-mundo{position:absolute;left:0;top:0;width:100%;transform-origin:0 0;transition:transform .9s cubic-bezier(.65,0,.2,1);will-change:transform}
 .pi-mundo img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;transition:opacity .35s}
 .pi-mundo svg{position:absolute;inset:0;width:100%;height:100%}
@@ -20,25 +20,31 @@
 .pi-dica .pt{width:8px;height:8px;border-radius:50%;background:var(--orange);animation:piPulsa 1.6s infinite}
 @keyframes piPulsa{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--orange) 70%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
 .pi-acoes{position:absolute;right:12px;top:12px;z-index:3;display:flex;gap:8px}
-.pi-acoes button{border:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:99px;padding:9px 14px;font:inherit;font-size:12px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.14);cursor:pointer}
+.pi-acoes button{display:inline-flex;align-items:center;white-space:nowrap;border:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:99px;padding:9px 14px;font:inherit;font-size:12px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.14);cursor:pointer}
 .pi-acoes button[hidden]{display:none}
 @media(max-width:640px){.pi-acoes{right:8px;top:8px;gap:6px}.pi-acoes button{padding:7px 11px;font-size:11px}.pi-dica{display:none}}
 .pi-rotulo{position:absolute;z-index:3;pointer-events:none;background:var(--green-ink);color:#fff;font-size:12px;font-weight:700;padding:6px 11px;border-radius:8px;transform:translate(-50%,calc(-100% - 12px));opacity:0;transition:opacity .15s;white-space:nowrap}
 .pi-rotulo.on{opacity:1}
-.pi-ficha{background:var(--green-ink);color:#fff;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:13px;position:relative;overflow:hidden}
+.pi-ficha{background:var(--green-ink);color:#fff;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;height:0;min-height:100%}
+@media(max-width:1100px){.pi-ficha{height:auto;min-height:300px}}
 .pi-ficha .n{position:absolute;right:18px;top:0;font:italic 700 104px/1 Georgia,serif;color:rgba(255,255,255,.07)}
 .pi-ficha .k{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
 .pi-ficha h3{margin:0;font-size:26px;font-weight:720;color:#fff}
 .pi-ficha .ar{display:flex;align-items:baseline;gap:8px}
 .pi-ficha .ar b{font-size:38px;font-weight:300;color:var(--orange);letter-spacing:-.02em}
 .pi-ficha .ar span{font-size:12px;opacity:.7}
-.pi-ficha p{margin:0;font-size:14.5px;line-height:1.6;opacity:.9}
+.pi-ficha p{margin:0;font-size:14px;line-height:1.55;opacity:.9;display:-webkit-box;-webkit-line-clamp:4;flex:none;-webkit-box-orient:vertical;overflow:hidden}
 .pi-chips{display:flex;flex-wrap:wrap;gap:6px}
 .pi-chips span{font-size:11.5px;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
-.pi-foto{border-radius:12px;overflow:hidden;aspect-ratio:16/10;position:relative;background:rgba(0,0,0,.2)}
-.pi-foto img{width:100%;height:100%;object-fit:cover;animation:piKb 14s ease-in-out infinite alternate}
-@keyframes piKb{from{transform:scale(1.02)}to{transform:scale(1.14) translate(-2%,-1%)}}
-.pi-foto small{position:absolute;left:10px;bottom:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:6px}
+.pi-acoes svg{width:15px;height:15px;vertical-align:-3px;margin-right:4px;color:var(--orange)}
+/* foto do decorado aberta por cima da planta */
+.pi-fotov{position:absolute;inset:0;z-index:4;background:#0b0f14;opacity:0;visibility:hidden;transition:opacity .45s,visibility .45s}
+.pi-fotov.on{opacity:1;visibility:visible}
+.pi-fotov img{width:100%;height:100%;object-fit:cover}
+.pi-fotov.on img{animation:piKb 16s ease-in-out infinite alternate}
+@keyframes piKb{from{transform:scale(1.02)}to{transform:scale(1.12) translate(-2%,-1%)}}
+.pi-fotov small{position:absolute;left:14px;bottom:14px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.5);padding:6px 10px;border-radius:8px}
+.pi-fotov button{position:absolute;right:12px;top:12px;border:0;background:rgba(255,255,255,.95);color:var(--ink);border-radius:99px;padding:9px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 .pi-nav{display:flex;gap:8px;margin-top:auto}
 .pi-nav button{flex:1;border:1px solid rgba(255,255,255,.22);background:transparent;color:#fff;border-radius:12px;padding:12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .pi-nav button:hover{background:rgba(255,255,255,.08)}
@@ -52,4 +58,4 @@
 .hero .bg .hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s}
 .hero .bg .hero-vid.on{opacity:1}
 .hero .bg.com-video::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,rgba(6,20,12,.88) 0%,rgba(6,20,12,.5) 42%,rgba(6,20,12,.15) 100%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 40%)}
-@media(prefers-reduced-motion:reduce){.pi-mundo,.pi-foto img,.pi-dica .pt{transition:none;animation:none}}
+@media(prefers-reduced-motion:reduce){.pi-mundo,.pi-fotov img,.pi-dica .pt{transition:none;animation:none}}

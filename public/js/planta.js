@@ -14,8 +14,17 @@
   var fmt = function (n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); };
   var area = function (r) { return D.escala ? ((r[2] - r[0]) / D.escala) * ((r[3] - r[1]) / D.escala) : 0; };
   var chips = function (l) { return (l && l.length) ? '<div class="pi-chips">' + l.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : ''; };
-  var foto = function (u, leg) { return u ? '<div class="pi-foto"><img src="' + esc(u) + '" alt="" loading="lazy">' + (leg ? '<small>' + esc(leg) + '</small>' : '') + '</div>' : ''; };
-  function animar() { ficha.classList.remove('pi-entra'); void ficha.offsetWidth; ficha.classList.add('pi-entra'); }
+  var fotov = q('[data-fotov]'), fotovImg = q('[data-fotov-img]'), fotovLeg = q('[data-fotov-leg]');
+  // A foto do decorado abre por cima da planta, pelo botão na barra da planta (o card mantém sempre o mesmo tamanho).
+  var btFoto = q('[data-vfoto]'), fotoAtual = null;
+  function foto(u, leg) { fotoAtual = u ? { u: u, leg: leg } : null; btFoto.hidden = !u; return ''; }
+  btFoto.addEventListener('click', function () { if (fotoAtual) { parar(); abrirFoto(fotoAtual.u, fotoAtual.leg); } });
+  function abrirFoto(u, leg) { fotovImg.src = u; fotovLeg.textContent = leg || ''; fotovLeg.hidden = !leg; fotov.classList.add('on'); fotov.setAttribute('aria-hidden', 'false'); }
+  function fecharFoto() { fotov.classList.remove('on'); fotov.setAttribute('aria-hidden', 'true'); }
+  q('[data-fotov-fechar]').addEventListener('click', fecharFoto);
+  function animar() {
+    ficha.classList.remove('pi-entra'); void ficha.offsetWidth; ficha.classList.add('pi-entra');
+  }
 
   function centralizar() {
     var H = quadro.offsetHeight, h = mundo.offsetHeight;
@@ -39,7 +48,7 @@
   }
 
   function abrir(i) {
-    var c = tipo.comodos[i]; atual = i; rotulo.classList.remove('on');
+    var c = tipo.comodos[i]; atual = i; rotulo.classList.remove('on'); fecharFoto();
     mundo.classList.add('zoom');
     mapa.querySelectorAll('.pi-cm').forEach(function (el, j) { el.classList.toggle('ativo', j === i); });
     lista.querySelectorAll('button').forEach(function (el, j) { el.classList.toggle('ativo', j === i); });
@@ -54,7 +63,7 @@
   }
   function passo(n) { var t = tipo.comodos.length; abrir(((atual == null ? -1 : atual) + n + t) % t); }
   function voltar() {
-    atual = null; parar(); mundo.classList.remove('zoom');
+    atual = null; parar(); fecharFoto(); mundo.classList.remove('zoom');
     mapa.querySelectorAll('.pi-cm').forEach(function (el) { el.classList.remove('ativo'); });
     lista.querySelectorAll('button').forEach(function (el) { el.classList.remove('ativo'); });
     centralizar(); btVoltar.hidden = true; dica.style.opacity = 1; fichaGeral();
@@ -91,6 +100,7 @@
       b.addEventListener('click', function () { parar(); abrir(i); quadro.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
       lista.appendChild(b);
     });
+    fecharFoto();
     var tem = tipo.comodos.length > 0;
     btTour.hidden = !tem; lista.hidden = !tem;
     dicaTxt.textContent = tem ? 'Toque em um cômodo' : 'Planta ' + tipo.titulo;
@@ -115,6 +125,7 @@
   btTour.addEventListener('click', function () { timer ? parar() : iniciarTour(); });
   btVoltar.addEventListener('click', voltar);
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && fotov.classList.contains('on')) { fecharFoto(); return; }
     if (atual == null) return;
     if (e.key === 'Escape') voltar();
     else if (e.key === 'ArrowRight') { parar(); passo(1); }
