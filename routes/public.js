@@ -58,6 +58,8 @@ function prep(e) {
       src: e.video_url,
       sm: varianteVideo(e.video_url, '-sm.mp4'),
       webm: varianteVideo(e.video_url, '.webm'),
+      v: varianteVideo(e.video_url, '-v.mp4'),          // versão vertical (celular em pé)
+      vWebm: varianteVideo(e.video_url, '-v.webm'),
       capa: varianteVideo(e.video_url, '.jpg') || e.hero_image || '',
     } : null,
     _heroVideo: {

@@ -171,9 +171,9 @@
           <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="btn wa"><%- waSvg %>Falar no WhatsApp</a>
         </div>
         <% if (e._filme) { %>
-        <button type="button" class="hero-filme" data-filme aria-label="Assistir ao filme do <%= e.nome %> com som">
+        <button type="button" class="hero-filme" data-filme aria-label="Ver o vídeo do <%= e.nome %>">
           <span class="pl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5-13-7.5Z"/></svg></span>
-          <span><b>Assistir ao filme</b><small>com som · <%= e.nome %></small></span>
+          <span><b>Ver vídeo</b><small>Conheça o <%= e.nome %> em 1 minuto</small></span>
         </button>
         <% } %>
       </div>
@@ -235,7 +235,7 @@
       <% if (vposter) { %><img src="<%= vposter %>" alt="Vídeo"/><% } %><div class="shade"></div>
       <% if (e.tour_url) { %><div class="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20"/></svg>Tour 360°</div><% } %>
       <div class="play"><div class="pb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg></div></div>
-      <div class="cap"><b><%= e.nome %> · O filme</b><span>Clique para assistir</span></div>
+      <div class="cap"><b><%= e.nome %> · Vídeo</b><span><%= e._filme ? 'Toque para ver com som' : 'Clique para assistir' %></span></div>
     </a>
   </div>
 </section>
@@ -860,27 +860,30 @@
 <% if (e.planta_interativa) { %><script src="/js/planta.js?v=<%= v %>" defer></script><% } %>
 <% if (e._filme) { %>
 <div class="fm-ov" id="fmOv" hidden>
-  <button type="button" class="fm-x" id="fmX" aria-label="Fechar o filme">×</button>
-  <video id="fmV" controls playsinline preload="none" poster="<%= e._filme.capa %>" data-src="<%= e._filme.src %>" data-src-sm="<%= e._filme.sm %>" data-webm="<%= e._filme.webm %>"></video>
+  <button type="button" class="fm-x" id="fmX" aria-label="Fechar o vídeo">×</button>
+  <video id="fmV" controls playsinline preload="none" data-src="<%= e._filme.src %>" data-src-sm="<%= e._filme.sm %>" data-webm="<%= e._filme.webm %>"
+    data-v="<%= e._filme.v %>" data-v-webm="<%= e._filme.vWebm %>"></video>
   <div class="fm-cta">
     <span>Gostou do que viu?</span>
     <a href="<%= wa %>?src=filme" target="_blank" rel="noopener nofollow" class="btn wa"><%- waSvg %>Agendar visita ao decorado</a>
   </div>
 </div>
 <script>
-  // Filme em tela cheia com som (aberto pelo botão da abertura e pela seção de vídeo).
+  // Vídeo em tela cheia com som: vertical no celular em pé, horizontal no computador.
   (function(){
     var ov=document.getElementById('fmOv'), v=document.getElementById('fmV'); if(!ov) return;
     function abrir(ev){
       if(ev) ev.preventDefault();
-      if(!v.src){
-        var sm=v.getAttribute('data-src-sm'), wb=v.getAttribute('data-webm');
-        if(!v.canPlayType('video/mp4; codecs="avc1.640028"')&&wb) v.src=wb;
-        else v.src=(sm&&matchMedia('(max-width:760px)').matches)?sm:v.getAttribute('data-src');
-      }
+      var a=function(n){return v.getAttribute(n)||'';};
+      var emPe=matchMedia('(orientation: portrait) and (max-width: 900px)').matches&&a('data-v');
+      var h264=v.canPlayType('video/mp4; codecs="avc1.640028"');
+      var src=emPe?((!h264&&a('data-v-webm'))||a('data-v'))
+        :((!h264&&a('data-webm'))||(matchMedia('(max-width:900px)').matches&&a('data-src-sm'))||a('data-src'));
+      ov.classList.toggle('vert',!!emPe);
+      if(v.getAttribute('src')!==src) v.src=src;
       ov.hidden=false; document.documentElement.style.overflow='hidden';
       v.currentTime=0; v.muted=false; var p=v.play(); if(p&&p.catch) p.catch(function(){});
-      if(window.gtag) gtag('event','assistiu_filme',{empreendimento:EMP});
+      if(window.gtag) gtag('event','assistiu_video',{empreendimento:EMP});
     }
     function fechar(){ v.pause(); ov.hidden=true; document.documentElement.style.overflow=''; }
     document.querySelectorAll('[data-filme]').forEach(function(b){ b.addEventListener('click',abrir); });
