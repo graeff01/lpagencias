@@ -1,0 +1,32 @@
+<%# Planta interativa: cômodos clicáveis com zoom, ficha de cada ambiente e tour guiado.
+    Recebe pi = e.planta_interativa (já validada em routes/public.js). %>
+<section class="sec" id="plantas">
+  <div class="wrap">
+    <div class="sec-head rv"><div class="kick">Planta interativa</div><h2 class="sec-h2">Entre em cada ambiente</h2><p class="lead">Toque em um cômodo para ver o tamanho, o que cabe nele e como foi pensado. Ou deixe a gente te guiar pelo apartamento.</p></div>
+    <div class="pi" data-pi>
+      <% if (pi.tipos.length > 1) { %>
+      <div class="pi-tipos" role="group" aria-label="Tipo de planta">
+        <% pi.tipos.forEach(function(t, i){ %><button type="button" class="pi-tipo" data-tipo="<%= i %>" aria-pressed="<%= i === 0 %>"><%= t.titulo %></button><% }); %>
+      </div>
+      <% } %>
+      <div class="pi-palco">
+        <div class="pi-quadro" data-quadro>
+          <div class="pi-mundo" data-mundo>
+            <img data-img src="<%= pi.tipos[0].imagem %>" width="<%= pi.tipos[0].w %>" height="<%= pi.tipos[0].h %>" alt="Planta humanizada — <%= pi.tipos[0].titulo %>" draggable="false">
+            <svg data-mapa viewBox="0 0 <%= pi.tipos[0].w %> <%= pi.tipos[0].h %>" aria-label="Cômodos"></svg>
+          </div>
+          <div class="pi-rotulo" data-rotulo></div>
+          <div class="pi-acoes">
+            <button type="button" data-tour>▶ Tour guiado</button>
+            <button type="button" data-voltar hidden>⤢ Planta inteira</button>
+          </div>
+          <div class="pi-dica" data-dica><span class="pt"></span><span data-dica-txt>Toque em um cômodo</span></div>
+        </div>
+        <aside class="pi-ficha" data-ficha aria-live="polite"></aside>
+      </div>
+      <div class="pi-lista" data-lista></div>
+      <% if (pi.nota) { %><p class="pi-nota"><%= pi.nota %></p><% } %>
+    </div>
+  </div>
+  <script type="application/json" data-pi-dados><%- JSON.stringify(pi).replace(/</g, '\\u003c') %></script>
+</section>

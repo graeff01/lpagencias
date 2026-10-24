@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const db = require('../lib/db');
 const { asArray, fmtPreco, shade, tituloBusca, slugify, dormsLista, linhaTipologia, imgVar } = require('../lib/helpers');
@@ -11,6 +13,26 @@ const dominios = require('../lib/dominios');
 // do empreendimento quando a visita chega por ele.
 function baseUrl(req) {
   return req.siteBase || `${req.protocol}://${req.get('host')}`;
+}
+
+// Planta interativa: só vale com pelo menos uma planta com imagem.
+function plantaInterativa(v) {
+  let p = v;
+  if (typeof p === 'string') { try { p = JSON.parse(p); } catch { return null; } }
+  if (!p || typeof p !== 'object' || !Array.isArray(p.tipos)) return null;
+  const tipos = p.tipos.filter(t => t && t.imagem && Number(t.w) > 0 && Number(t.h) > 0)
+    .map(t => ({ ...t, comodos: Array.isArray(t.comodos) ? t.comodos.filter(c => c && c.nome && Array.isArray(c.r) && c.r.length === 4) : [] }));
+  return tipos.length ? { escala: Number(p.escala) || 0, nota: p.nota || '', tipos } : null;
+}
+
+// Variantes do filme da abertura, se existirem ao lado do arquivo principal:
+// "-sm.mp4" (celular) e ".webm" (navegadores sem H.264).
+const PUBLICO = path.join(__dirname, '..', 'public');
+function varianteVideo(url, fim) {
+  if (!url || !/^\/[^?#]+\.mp4$/i.test(url)) return '';
+  const alt = url.replace(/\.mp4$/i, fim);
+  const arq = path.join(PUBLICO, path.normalize(alt));
+  return arq.startsWith(PUBLICO) && fs.existsSync(arq) ? alt : '';
 }
 
 // Prepara o objeto do empreendimento para a view (parse dos jsonb + cores derivadas)
@@ -29,6 +51,12 @@ function prep(e) {
     pois: asArray(e.pois),
     construtora_stats: asArray(e.construtora_stats),
     acabamentos: asArray(e.acabamentos),
+    planta_interativa: plantaInterativa(e.planta_interativa),
+    _heroVideo: {
+      sm: varianteVideo(e.hero_video, '-sm.mp4'),
+      webm: varianteVideo(e.hero_video, '.webm'),
+      webmSm: varianteVideo(e.hero_video, '-sm.webm'),
+    },
     _green: green,
     _greenDeep: shade(green, -40),
     _greenBright: green2,

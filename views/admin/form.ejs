@@ -162,6 +162,17 @@
             <div class="field"><label>Vídeo (YouTube/Vimeo)</label><input name="video_url" value="<%= val(v.video_url) %>" placeholder="https://youtube.com/..."></div>
             <div class="field"><label>Tour virtual 360°</label><input name="tour_url" value="<%= val(v.tour_url) %>" placeholder="https://matterport.com/..."></div>
           </div>
+          <div class="frow">
+            <div class="field"><label>Filme de fundo da abertura (.mp4)</label><input name="hero_video" value="<%= val(v.hero_video) %>" placeholder="/midia/empreendimento/filme.mp4"><div class="hint">Toca sem som atrás do título. Se existir um arquivo com "-sm" no nome (ex.: filme-sm.mp4), ele é usado no celular; um .webm com o mesmo nome serve aos navegadores sem H.264.</div></div>
+          </div>
+          <% var piTxt = v.planta_interativa ? (typeof v.planta_interativa === 'string' ? v.planta_interativa : JSON.stringify(v.planta_interativa, null, 2)) : ''; %>
+          <details style="margin-top:10px"<%= piTxt ? ' open' : '' %>>
+            <summary style="cursor:pointer;font-weight:600">Planta interativa (avançado)</summary>
+            <div class="field" style="margin-top:8px"><label>Configuração (JSON)</label>
+              <textarea name="planta_interativa" rows="10" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:12px"><%= piTxt %></textarea>
+              <div class="hint">Quando preenchida, substitui o carrossel de plantas por plantas com cômodos clicáveis e tour guiado. Deixe vazio para usar as plantas normais.</div>
+            </div>
+          </details>
         </div>
 
         <!-- INFRA (repetível) -->

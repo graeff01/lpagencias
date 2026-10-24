@@ -122,6 +122,14 @@ function parseBody(body) {
     try { data[f] = body[f] ? JSON.parse(body[f]) : []; }
     catch { data[f] = []; }
   }
+  // Planta interativa: objeto JSON opcional (vazio = desligada; inválido = erro, para não apagar sem querer).
+  const pi = String(body.planta_interativa || '').trim();
+  data.planta_interativa = null;
+  if (pi) {
+    try { data.planta_interativa = JSON.parse(pi); }
+    catch { data._erroPlanta = true; }
+    if (!data._erroPlanta && (typeof data.planta_interativa !== 'object' || Array.isArray(data.planta_interativa))) data._erroPlanta = true;
+  }
   data.published = body.published === 'on' || body.published === 'true' || body.published === true;
   return data;
 }
@@ -131,6 +139,9 @@ router.post('/salvar', async (req, res, next) => {
   try {
     const data = parseBody(req.body);
     const id = req.body.id ? Number(req.body.id) : null;
+    if (data._erroPlanta) {
+      return res.status(400).send('O campo "Planta interativa" não é um JSON válido (deve ser um objeto { ... }). Volte, corrija e salve de novo.');
+    }
 
     // slug: usa o informado ou gera do nome; garante unicidade
     let slug = slugify(data.slug || data.nome);
