@@ -133,8 +133,8 @@ const COMODOS = [
   { id: 'circulacao', nome: 'Circulação', x: 720, y: 455, olhar: 0, viz: ['sala', 'jantar', 'dormitorio', 'suite', 'banho'] },
   { id: 'dormitorio', nome: 'Dormitório', x: 620, y: 300, olhar: 5, viz: ['circulacao'] },
   { id: 'suite', nome: 'Suíte', x: 1000, y: 420, olhar: -50, viz: ['circulacao', 'banhosuite'] },
-  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 10, viz: ['circulacao'] },
-  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 10, viz: ['suite'] },
+  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 95, inclina: -28, viz: ['circulacao'] },
+  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 95, inclina: -28, viz: ['suite'] },
 ];
 // Só entram no tour os cômodos que já têm foto publicada.
 const existe = (u) => fetch(u, { method: 'HEAD' }).then(r => r.ok).catch(() => false);
@@ -249,10 +249,11 @@ async function ir(id, op = {}) {
   trocarTitulo(c);
   if (!atual) {
     atualEsf.material.map = tex; atualEsf.material.needsUpdate = true;
-    lon = c.olhar; lat = -4; fov = 90;
+    lon = c.olhar; lat = c.inclina ?? -4; fov = 90;
   } else {
     proxEsf.material.map = tex; proxEsf.material.opacity = 0; proxEsf.material.needsUpdate = true; proxEsf.visible = true;
     if (!op.andando) lon = c.olhar;
+    if (c.inclina != null) lat = c.inclina;
     const f0 = fov;
     await animar(620, (k) => { proxEsf.material.opacity = k; fov = f0 + (90 - f0) * k; });
     atualEsf.material.map = tex; atualEsf.material.needsUpdate = true; proxEsf.visible = false;
