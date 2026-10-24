@@ -12,7 +12,8 @@
   var tipo = D.tipos[0], atual = null, timer = null;
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var fmt = function (n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); };
-  var area = function (r) { return D.escala ? ((r[2] - r[0]) / D.escala) * ((r[3] - r[1]) / D.escala) : 0; };
+  var esc1 = function () { return Number(tipo.escala) || D.escala; };
+  var area = function (r) { return esc1() ? ((r[2] - r[0]) / esc1()) * ((r[3] - r[1]) / esc1()) : 0; };
   var chips = function (l) { return (l && l.length) ? '<div class="pi-chips">' + l.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : ''; };
   var fotov = q('[data-fotov]'), fotovImg = q('[data-fotov-img]'), fotovLeg = q('[data-fotov-leg]');
   // A foto do decorado abre por cima da planta, pelo botão na barra da planta (o card mantém sempre o mesmo tamanho).
@@ -53,7 +54,7 @@
     mapa.querySelectorAll('.pi-cm').forEach(function (el, j) { el.classList.toggle('ativo', j === i); });
     lista.querySelectorAll('button').forEach(function (el, j) { el.classList.toggle('ativo', j === i); });
     zoomPara(c.r); btVoltar.hidden = false; dica.style.opacity = 0;
-    var a = area(c.r), med = D.escala ? fmt((c.r[2] - c.r[0]) / D.escala) + ' × ' + fmt((c.r[3] - c.r[1]) / D.escala) + ' m' : '';
+    var a = area(c.r), med = esc1() ? fmt((c.r[2] - c.r[0]) / esc1()) + ' × ' + fmt((c.r[3] - c.r[1]) / esc1()) + ' m' : '';
     ficha.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="k">Ambiente ' + (i + 1) + ' de ' + tipo.comodos.length + '</span><h3>' + esc(c.nome) + '</h3>' +
       (a ? '<div class="ar"><b>≈ ' + fmt(a) + '</b><span>m² · ' + med + '</span></div>' : '') +
       (c.txt ? '<p>' + esc(c.txt) + '</p>' : '') + chips(c.chips) + foto(c.foto, c.fotoLeg) +
