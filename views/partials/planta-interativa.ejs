@@ -3,10 +3,11 @@
 <section class="sec" id="plantas">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Planta interativa</div><h2 class="sec-h2">Entre em cada ambiente</h2><p class="lead">Toque em um cômodo para ver o tamanho, o que cabe nele e como foi pensado. Ou deixe a gente te guiar pelo apartamento.</p></div>
-    <div class="pi" data-pi>
+    <div class="pi" data-pi data-wa="<%= wa %>" data-emp="<%= emp %>">
       <% if (pi.tipos.length > 1) { %>
       <div class="pi-tipos" role="group" aria-label="Tipo de planta">
         <% pi.tipos.forEach(function(t, i){ %><button type="button" class="pi-tipo" data-tipo="<%= i %>" aria-pressed="<%= i === 0 %>"><%= t.titulo %></button><% }); %>
+        <button type="button" class="pi-comparar" data-comparar>⇄ Comparar plantas</button>
       </div>
       <% } %>
       <div class="pi-palco">

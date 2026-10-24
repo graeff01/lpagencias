@@ -30,6 +30,7 @@ function plantaInterativa(v) {
 const PUBLICO = path.join(__dirname, '..', 'public');
 function varianteVideo(url, fim) {
   if (!url || !/^\/[^?#]+\.mp4$/i.test(url)) return '';
+  if (typeof fim !== 'string') return '';
   const alt = url.replace(/\.mp4$/i, fim);
   const arq = path.join(PUBLICO, path.normalize(alt));
   return arq.startsWith(PUBLICO) && fs.existsSync(arq) ? alt : '';
@@ -52,6 +53,13 @@ function prep(e) {
     construtora_stats: asArray(e.construtora_stats),
     acabamentos: asArray(e.acabamentos),
     planta_interativa: plantaInterativa(e.planta_interativa),
+    // Filme próprio (.mp4 no site): toca na página, em tela cheia e com som.
+    _filme: /^\/[^?#]+\.mp4$/i.test(e.video_url || '') ? {
+      src: e.video_url,
+      sm: varianteVideo(e.video_url, '-sm.mp4'),
+      webm: varianteVideo(e.video_url, '.webm'),
+      capa: varianteVideo(e.video_url, '.jpg') || e.hero_image || '',
+    } : null,
     _heroVideo: {
       sm: varianteVideo(e.hero_video, '-sm.mp4'),
       webm: varianteVideo(e.hero_video, '.webm'),
@@ -280,7 +288,8 @@ router.get('/wa/:slug', async (req, res) => {
       db.registrarEvento({
         tipo: 'lp_formulario', lead_nome: lead.nome, lead_telefone: lead.telefone, clique_id: r.cliqueId,
         empreendimento_id: alvo.id, corretor_nome: r.corretor && r.corretor.nome, corretor_fone: r.corretor && r.corretor.telefone,
-        detalhe: [doPortal ? 'portal' : (alvo.id !== emp.id ? emp.nome + ' (pela roleta do portal)' : null), lead.interesse, 'botão ' + origem, req.query.utm_source, req.query.utm_campaign,
+        detalhe: [doPortal ? 'portal' : (alvo.id !== emp.id ? emp.nome + ' (pela roleta do portal)' : null), lead.interesse, 'botão ' + origem,
+          vistoNoSite(req) ? 'viu no site: ' + vistoNoSite(req) : null, req.query.utm_source, req.query.utm_campaign,
           'protocolo ' + lead.protocolo, r.motivo === 'mesmo-visitante' ? 'mesmo corretor de antes' : null].filter(Boolean).join(' · '),
       }).catch(() => {});
     }
@@ -309,6 +318,11 @@ function leadDoFormulario(req) {
   return { nome, telefone, interesse, protocolo };
 }
 
+// O que o visitante explorou na planta interativa (montado pelo navegador; só texto, curto).
+function vistoNoSite(req) {
+  return String(req.query.vi || '').replace(/[\u0000-\u001f*_~`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
+}
+
 function foneBonito(d) { return String(d || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); }
 
 function mensagem(req, emp, lead) {
@@ -322,6 +336,8 @@ function mensagem(req, emp, lead) {
     if (!portal && emp) l.push('*Empreendimento:* ' + emp.nome);
     if (lead.interesse) l.push('*Interesse:* ' + lead.interesse);
     if (msg) l.push('*Mensagem:* ' + msg);
+    const visto = vistoNoSite(req);
+    if (visto) l.push('*Viu no site:* ' + visto);
     l.push('*Protocolo:* ' + lead.protocolo);
     return l.join('\n');
   }
