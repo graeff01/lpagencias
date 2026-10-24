@@ -129,12 +129,12 @@ const IMG_W = 1266, IMG_H = 711;
 const COMODOS = [
   { id: 'sala', nome: 'Sala de estar', x: 340, y: 430, olhar: -40, viz: ['sacada', 'jantar', 'circulacao'] },
   { id: 'jantar', nome: 'Jantar e cozinha', x: 230, y: 560, olhar: 0, viz: ['sala', 'circulacao'] },
-  { id: 'sacada', nome: 'Sacada', x: 330, y: 120, olhar: -60, viz: ['sala'] },
+  { id: 'sacada', nome: 'Sacada', x: 330, y: 120, olhar: 100, viz: ['sala'] },
   { id: 'circulacao', nome: 'Circulação', x: 720, y: 455, olhar: 0, viz: ['sala', 'jantar', 'dormitorio', 'suite', 'banho'] },
   { id: 'dormitorio', nome: 'Dormitório', x: 620, y: 300, olhar: 5, viz: ['circulacao'] },
   { id: 'suite', nome: 'Suíte', x: 1000, y: 420, olhar: -50, viz: ['circulacao', 'banhosuite'] },
-  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 135, viz: ['circulacao'] },
-  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 132, viz: ['suite'] },
+  { id: 'banho', nome: 'Banheiro', x: 640, y: 590, olhar: 10, viz: ['circulacao'] },
+  { id: 'banhosuite', nome: 'Banheiro da suíte', x: 1050, y: 590, olhar: 10, viz: ['suite'] },
 ];
 // Só entram no tour os cômodos que já têm foto publicada.
 const existe = (u) => fetch(u, { method: 'HEAD' }).then(r => r.ok).catch(() => false);
