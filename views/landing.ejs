@@ -157,7 +157,7 @@
 <% if (isPreview) { %><div class="ribbon"><span class="d"></span>Pré-visualização · rascunho não publicado</div><% } %>
 
 <header class="hero">
-  <% if (e.hero_video) { %><div class="bg com-video"><video class="hero-vid" muted loop playsinline preload="none" aria-hidden="true" data-src="<%= e.hero_video %>" data-src-sm="<%= e._heroVideo.sm %>" data-webm="<%= e._heroVideo.webm %>" data-webm-sm="<%= e._heroVideo.webmSm %>"></video></div><% } else { %><div class="bg"></div><% } %>
+  <% if (e.hero_video) { %><div class="bg com-video"><video class="hero-vid" muted loop playsinline preload="none" aria-hidden="true" <% var qv = "?v=" + v; %>data-src="<%= e.hero_video + qv %>" data-src-sm="<%= e._heroVideo.sm && e._heroVideo.sm + qv %>" data-webm="<%= e._heroVideo.webm && e._heroVideo.webm + qv %>" data-webm-sm="<%= e._heroVideo.webmSm && e._heroVideo.webmSm + qv %>"></video></div><% } else { %><div class="bg"></div><% } %>
   <div class="hero-inner">
     <div class="hero-grid">
       <div>
@@ -217,7 +217,7 @@
 <% } %>
 
 
-<% if (e.video_url || e.tour_url) { var vposter = (e._filme && e._filme.capa) || (gal[0] && gal[0].url) || e.hero_image; %>
+<% if (e.video_url || e.tour_url) { var vposter = (e._filme && e._filme.capa && e._filme.capa + "?v=" + v) || (gal[0] && gal[0].url) || e.hero_image; %>
 <section class="sec alt" id="video">
   <div class="wrap">
     <div class="sec-head rv"><div class="kick">Vídeo &amp; Tour virtual</div><h2 class="sec-h2">Conheça de onde você estiver</h2><p class="lead">Assista ao filme do empreendimento ou faça um tour imersivo pelo apartamento decorado, sem sair de casa.</p></div>
@@ -851,8 +851,8 @@
 <% if (e._filme) { %>
 <div class="fm-ov" id="fmOv" hidden>
   <button type="button" class="fm-x" id="fmX" aria-label="Fechar o vídeo">×</button>
-  <video id="fmV" controls playsinline preload="none" data-src="<%= e._filme.src %>" data-src-sm="<%= e._filme.sm %>" data-webm="<%= e._filme.webm %>"
-    data-v="<%= e._filme.v %>" data-v-webm="<%= e._filme.vWebm %>"></video>
+  <video id="fmV" controls playsinline preload="none" <% var qf = "?v=" + v; %>data-src="<%= e._filme.src + qf %>" data-src-sm="<%= e._filme.sm && e._filme.sm + qf %>" data-webm="<%= e._filme.webm && e._filme.webm + qf %>"
+    data-v="<%= e._filme.v && e._filme.v + qf %>" data-v-webm="<%= e._filme.vWebm && e._filme.vWebm + qf %>"></video>
   <div class="fm-cta">
     <span>Gostou do que viu?</span>
     <a href="<%= wa %>?src=filme" target="_blank" rel="noopener nofollow" class="btn wa"><%- waSvg %>Agendar visita ao decorado</a>
