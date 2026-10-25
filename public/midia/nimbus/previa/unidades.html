@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Escolha seu apartamento · protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f1a14;--soft:#6d7f74;--line:rgba(0,0,0,.08);--verde:#16a34a;--amar:#f5a524;--cinza:#c9d0cc;--ouro:#c9a275;--navy:#0f1d33}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#f4f6f5;color:var(--ink);-webkit-font-smoothing:antialiased}
+.demo{background:#fff4d6;color:#7a5400;font-size:12px;font-weight:600;text-align:center;padding:8px 14px}
+header{position:relative;height:240px;background:url(/vitrine/nimbus/img/fachada.webp) center 30%/cover;color:#fff}
+header::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,12,10,.85),rgba(6,12,10,.15))}
+header .tx{position:absolute;z-index:1;left:18px;right:18px;bottom:18px}
+header small{letter-spacing:.16em;text-transform:uppercase;font-size:11px;font-weight:700;color:#e8c9a0}
+header h1{margin:6px 0 4px;font-size:28px;line-height:1.05;letter-spacing:-.02em}
+header h1 i{font-family:'Playfair Display',serif;font-weight:400;color:#e8c9a0}
+header p{margin:0;font-size:13.5px;opacity:.88}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.vivo{display:flex;gap:8px;flex-wrap:wrap;margin:-34px 0 14px;position:relative;z-index:2}
+.vivo span{background:#fff;border-radius:99px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:0 10px 24px -14px rgba(0,0,0,.4);display:flex;align-items:center;gap:6px}
+.vivo .pt{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:p 1.4s infinite}
+@keyframes p{50%{opacity:.3}}
+.barra{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.torres{display:flex;background:#fff;border-radius:12px;padding:4px;border:1px solid var(--line)}
+.torres button{border:0;background:none;font:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:9px;cursor:pointer;color:var(--soft)}
+.torres button.on{background:var(--navy);color:#fff}
+.filtros{display:flex;gap:6px;flex-wrap:wrap}
+.filtros button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:8px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.filtros button.on{border-color:var(--navy);background:var(--navy);color:#fff}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--soft);margin:4px 0 12px;flex-wrap:wrap}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.predio{background:linear-gradient(180deg,#fff,#f9faf9);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px;box-shadow:0 30px 60px -40px rgba(0,0,0,.35)}
+.topo{height:10px;margin:0 22px 8px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,#9b5b3c,#c98a63)}
+.andar{display:grid;grid-template-columns:26px repeat(8,minmax(0,1fr));gap:4px;margin-bottom:5px;align-items:center}
+.andar b{font-size:11px;color:var(--soft);text-align:right;padding-right:4px;font-weight:600}
+.u{position:relative;min-width:0;padding:0;aspect-ratio:1/0.82;border:0;border-radius:7px;cursor:pointer;font:inherit;font-size:9.5px;letter-spacing:-.02em;font-weight:700;color:#fff;display:grid;place-items:center;transition:transform .15s,box-shadow .15s,opacity .2s}
+.u.d{background:linear-gradient(160deg,#22c55e,#15803d)}
+.u.r{background:linear-gradient(160deg,#fbbf24,#d97706)}
+.u.v{background:var(--cinza);color:#8a958f;cursor:not-allowed}
+.u.d:hover{transform:scale(1.12);box-shadow:0 8px 18px -6px rgba(22,163,74,.7);z-index:2}
+.u.fora{opacity:.18}
+.u.sel{outline:3px solid var(--navy);outline-offset:2px;transform:scale(1.12);z-index:3}
+.u.novo{animation:novo 1.2s ease}
+@keyframes novo{0%{transform:scale(1)}30%{transform:scale(1.35);box-shadow:0 0 0 8px rgba(245,165,36,.35)}100%{transform:scale(1)}}
+.terreo{display:grid;grid-template-columns:26px 1fr;gap:5px;margin-top:8px}
+.terreo div{grid-column:2;height:22px;border-radius:6px;background:repeating-linear-gradient(90deg,#86b98f 0 14px,#7aad84 14px 28px);font-size:10.5px;font-weight:700;color:#fff;display:grid;place-items:center;letter-spacing:.1em}
+.nota{font-size:11.5px;color:var(--soft);margin-top:10px}
+/* ficha da unidade */
+.ficha{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.25);padding:18px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-width:520px;margin:0 auto}
+.ficha.on{transform:none}
+.ficha .alca{width:40px;height:4px;border-radius:4px;background:#dfe4e1;margin:-6px auto 12px}
+.ficha .k{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--verde)}
+.ficha h2{margin:4px 0 2px;font-size:26px;letter-spacing:-.02em}
+.ficha .sub{color:var(--soft);font-size:13.5px;margin-bottom:12px}
+.ficha .gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.ficha .gr div{background:#f4f6f5;border-radius:12px;padding:10px}
+.ficha .gr b{display:block;font-size:15px}
+.ficha .gr span{font-size:11px;color:var(--soft)}
+.ficha .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ficha .tags span{font-size:12px;font-weight:600;padding:6px 10px;border-radius:99px;background:#eef6f0;color:#166534}
+.ficha .seg{width:100%;border:0;border-radius:14px;padding:16px;font:inherit;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(160deg,#22c55e,#15803d);cursor:pointer;box-shadow:0 14px 30px -12px rgba(22,163,74,.7)}
+.ficha .seg small{display:block;font-size:11.5px;font-weight:500;opacity:.9;margin-top:2px}
+.ficha .x{position:absolute;right:14px;top:12px;border:0;background:#f1f3f2;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}
+.ok{display:none;text-align:center;padding:10px 0 4px}
+.ok.on{display:block}
+.ok .ic{width:56px;height:56px;border-radius:50%;background:#dcfce7;color:#16a34a;display:grid;place-items:center;margin:0 auto 10px;font-size:28px}
+.ok h3{margin:0 0 6px}
+.ok p{margin:0;color:var(--soft);font-size:14px}
+.ok .t{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;margin-top:10px;color:var(--ink)}
+@media(min-width:760px){header{height:300px}header h1{font-size:40px}.u{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="demo">⚠️ PROTÓTIPO · disponibilidade e tipologias fictícias, só para mostrar a ideia</div>
+<header><div class="tx"><small>Nimbus Place Life · Igara</small><h1>Escolha o <i>seu</i> apartamento</h1><p>Toque em um apê verde para ver os detalhes e segurá-lo por 24h.</p></div></header>
+<div class="wrap">
+  <div class="vivo"><span><i class="pt"></i><b id="nDisp">0</b>&nbsp;disponíveis</span><span>🔥 <b>&nbsp;7&nbsp;</b> reservados esta semana</span></div>
+  <div class="barra">
+    <div class="torres"><button class="on" data-t="A">Torre A</button><button data-t="B">Torre B</button></div>
+    <div class="filtros"><button class="on" data-f="todos">Todos</button><button data-f="2">2 dorm</button><button data-f="3">3 dorm</button><button data-f="g">Garden</button></div>
+  </div>
+  <div class="leg"><span><i style="background:#16a34a"></i>Disponível</span><span><i style="background:#f59e0b"></i>Reservado</span><span><i style="background:#c9d0cc"></i>Vendido</span></div>
+  <div class="predio"><div class="topo"></div><div id="andares"></div><div class="terreo"><div>TÉRREO · CLUBE</div></div></div>
+  <p class="nota">No real, o mapa é atualizado pelo espelho de vendas da construtora.</p>
+</div>
+
+<div class="ficha" id="ficha" aria-live="polite">
+  <div class="alca"></div><button class="x" id="fx" aria-label="Fechar">×</button>
+  <div id="fc"></div>
+  <div class="ok" id="ok"><div class="ic">✓</div><h3>Apartamento segurado pra você!</h3><p>Um consultor vai te chamar no WhatsApp para confirmar.</p><div class="t" id="tmr">23:59:59</div></div>
+</div>
+
+<script>
+// Dados fictícios: 2 torres × 13 andares × 8 finais.
+var FINAIS = { 1: '3', 2: '2', 3: '2', 4: '3', 5: '3', 6: '2', 7: '2', 8: '3' };   // final -> dormitórios (exemplo)
+var SOL = { 1: 'manhã', 2: 'manhã', 3: 'manhã', 4: 'manhã', 5: 'tarde', 6: 'tarde', 7: 'tarde', 8: 'tarde' };
+var VISTA = { 1: 'clube', 2: 'clube', 3: 'rua', 4: 'rua', 5: 'jardim', 6: 'jardim', 7: 'clube', 8: 'clube' };
+function rnd(s){ return function(){ s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+var dados = {};
+['A','B'].forEach(function(t, ti){
+  var r = rnd(ti ? 77 : 13);
+  for (var a = 1; a <= 13; a++) for (var f = 1; f <= 8; f++) {
+    var x = r(), alto = a / 13;
+    var st = x < 0.30 + alto * 0.25 ? 'v' : (x < 0.40 + alto * 0.25 ? 'r' : 'd');
+    dados[t + a + '0' + f] = { torre: t, andar: a, final: f, st: st };
+  }
+});
+var torre = 'A', filtro = 'todos', sel = null;
+var el = document.getElementById('andares'), ficha = document.getElementById('ficha'), fc = document.getElementById('fc'), ok = document.getElementById('ok');
+function tipo(u){ return u.andar === 1 && (u.final === 1 || u.final === 8) ? 'g' : FINAIS[u.final]; }
+function passa(u){ var t = tipo(u); return filtro === 'todos' || (filtro === 'g' ? t === 'g' : (t === filtro || (t === 'g' && FINAIS[u.final] === filtro))); }
+function desenhar(){
+  var h = '';
+  for (var a = 13; a >= 1; a--) {
+    h += '<div class="andar"><b>' + a + 'º</b>';
+    for (var f = 1; f <= 8; f++) {
+      var id = torre + a + '0' + f, u = dados[id];
+      h += '<button class="u ' + u.st + (passa(u) ? '' : ' fora') + (sel === id ? ' sel' : '') + '" data-id="' + id + '" aria-label="Apartamento ' + a + '0' + f + '">' + a + '0' + f + '</button>';
+    }
+    h += '</div>';
+  }
+  el.innerHTML = h;
+  document.getElementById('nDisp').textContent = Object.keys(dados).filter(function(k){ return dados[k].st === 'd'; }).length;
+}
+function abrir(id){
+  var u = dados[id]; sel = id; desenhar();
+  var t = tipo(u), dorms = t === 'g' ? FINAIS[u.final] : t, garden = t === 'g';
+  ok.classList.remove('on'); fc.style.display = '';
+  fc.innerHTML = '<span class="k">Disponível</span><h2>Apto ' + u.andar + '0' + u.final + ' · Torre ' + u.torre + '</h2>' +
+    '<div class="sub">' + dorms + ' dormitórios com suíte' + (garden ? ' · com Garden privativo' : '') + '</div>' +
+    '<div class="gr"><div><b>' + u.andar + 'º</b><span>andar</span></div><div><b>Sol da ' + SOL[u.final] + '</b><span>na sacada</span></div><div><b>' + (dorms === '3' ? '≈ 49' : '≈ 44') + ' m²</b><span>área interna</span></div></div>' +
+    '<div class="tags"><span>Vista para o ' + VISTA[u.final] + '</span>' + (u.andar >= 9 ? '<span>Andar alto</span>' : '') + (garden ? '<span>Garden</span>' : '') + '<span>Sacada com churrasqueira</span></div>' +
+    '<button class="seg" id="seg">Segurar este apê por 24h<small>Grátis e sem compromisso</small></button>';
+  document.getElementById('seg').onclick = function(){ segurar(id); };
+  ficha.classList.add('on');
+}
+function segurar(id){
+  dados[id].st = 'r'; fc.style.display = 'none'; ok.classList.add('on'); desenhar();
+  var b = el.querySelector('[data-id="' + id + '"]'); if (b) b.classList.add('novo');
+  var fim = Date.now() + 864e5;
+  clearInterval(window.__t); window.__t = setInterval(function(){
+    var s = Math.max(0, Math.floor((fim - Date.now()) / 1000)), p = function(n){ return String(n).padStart(2, '0'); };
+    document.getElementById('tmr').textContent = p(Math.floor(s / 3600)) + ':' + p(Math.floor(s % 3600 / 60)) + ':' + p(s % 60);
+  }, 1000);
+}
+el.addEventListener('click', function(e){ var b = e.target.closest('.u'); if (!b) return; var u = dados[b.dataset.id]; if (u.st !== 'd') return; abrir(b.dataset.id); });
+document.getElementById('fx').onclick = function(){ ficha.classList.remove('on'); sel = null; desenhar(); };
+document.querySelectorAll('[data-t]').forEach(function(b){ b.onclick = function(){ torre = b.dataset.t; document.querySelectorAll('[data-t]').forEach(function(x){ x.classList.toggle('on', x === b); }); desenhar(); }; });
+document.querySelectorAll('[data-f]').forEach(function(b){ b.onclick = function(){ filtro = b.dataset.f; document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.toggle('on', x === b); }); desenhar(); }; });
+// "Ao vivo": de vez em quando outro cliente reserva um apê (simulação do protótipo).
+setInterval(function(){
+  var ks = Object.keys(dados).filter(function(k){ return dados[k].st === 'd' && dados[k].torre === torre && k !== sel; });
+  if (!ks.length) return; var k = ks[Math.floor(Math.random() * ks.length)]; dados[k].st = 'r'; desenhar();
+  var b = el.querySelector('[data-id="' + k + '"]'); if (b) b.classList.add('novo');
+}, 9000);
+desenhar();
+</script>
+</body>
+</html>
