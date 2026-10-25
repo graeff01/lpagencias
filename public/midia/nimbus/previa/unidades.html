@@ -129,6 +129,17 @@ header p{margin:0;font-size:13.5px;opacity:.88}
   <div class="ok" id="ok"><div class="ic">✓</div><h3>Apartamento segurado pra você!</h3><p>Um consultor vai te chamar no WhatsApp para confirmar.</p><div class="t" id="tmr">23:59:59</div></div>
 </div>
 
+<script>
+  // Se o 3D não abrir (celular antigo ou sem WebGL), mostra o mapa em grade.
+  setTimeout(function(){
+    if (document.querySelector('#cena canvas')) return;
+    var c = document.getElementById('cena'), m = document.getElementById('mapa');
+    c.hidden = true; m.hidden = false;
+    document.querySelectorAll('[data-v]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-v') === 'mapa'); });
+    var av = document.createElement('p'); av.className = 'nota'; av.textContent = 'O 3D não abriu neste aparelho; mostrando o mapa.';
+    m.parentNode.insertBefore(av, m);
+  }, 5000);
+</script>
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from '/vendor/three/OrbitControls.js';
