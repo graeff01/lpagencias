@@ -45,7 +45,30 @@ header p{margin:0;font-size:13.5px;opacity:.88}
 .cena .ir button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px -8px rgba(0,0,0,.35)}
 /* mapa */
 .predio{background:linear-gradient(180deg,#fff,#f9faf9);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px;box-shadow:0 30px 60px -40px rgba(0,0,0,.35)}
-.predio[hidden],.cena[hidden]{display:none}
+.predio[hidden],.cena[hidden],.fach[hidden]{display:none}
+/* fachada real */
+.fach-img{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 30px 60px -36px rgba(0,0,0,.45);background:#cfd9e2}
+.fach-img img{display:block;width:100%;height:auto}
+.fach-img svg{position:absolute;inset:0;width:100%;height:100%}
+.fach-img .fa{fill:transparent;cursor:pointer;transition:fill .25s}
+.fach-img .fa:hover{fill:rgba(255,255,255,.18)}
+.fach-img .fa.sel{fill:rgba(255,255,255,.12);stroke:#fff;stroke-width:4}
+.fach-img .un{transition:fill .3s,opacity .3s;pointer-events:none;mix-blend-mode:multiply}
+.fach-img .un-b{pointer-events:none;fill:none;stroke-width:3;transition:opacity .3s}
+.fach-img .esc{fill:rgba(8,14,20,.38);pointer-events:none;transition:opacity .35s}
+.fach-tag{position:absolute;left:12px;top:12px;background:rgba(15,29,51,.85);color:#fff;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:99px;backdrop-filter:blur(6px);pointer-events:none}
+.fach-ac{position:absolute;right:10px;top:10px}
+.fach-ac button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.fach-ac button.on{background:#0f1d33;color:#fff}
+.andar-pn{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;display:none}
+.andar-pn.on{display:block;animation:sobe .35s ease}
+@keyframes sobe{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.andar-pn h3{margin:0 0 2px;font-size:18px}.andar-pn p{margin:0 0 10px;font-size:12.5px;color:var(--soft)}
+.andar-pn .ls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.andar-pn .ls button{border:0;border-radius:12px;padding:10px 4px;font:inherit;font-weight:800;font-size:14px;color:#fff;cursor:pointer}
+.andar-pn .ls button small{display:block;font-size:10.5px;font-weight:600;opacity:.92;margin-top:2px}
+.andar-pn .ls .d{background:linear-gradient(160deg,#22c55e,#15803d)}.andar-pn .ls .r{background:linear-gradient(160deg,#fbbf24,#d97706)}.andar-pn .ls .v{background:#e3e7e4;color:#8a958f;cursor:not-allowed}
+.andar-pn .ls .fora{opacity:.3}
 .topo{height:10px;margin:0 22px 8px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,#9b5b3c,#c98a63)}
 .andar{display:grid;grid-template-columns:26px repeat(8,minmax(0,1fr));gap:4px;margin-bottom:4px;align-items:center}
 .andar b{font-size:11px;color:var(--soft);text-align:right;padding-right:4px;font-weight:600}
@@ -99,16 +122,25 @@ header p{margin:0;font-size:13.5px;opacity:.88}
 </head>
 <body>
 <div class="demo">⚠️ PROTÓTIPO · disponibilidade, tipologias, sol e vista são fictícios</div>
-<header><div class="tx"><small>Nimbus Place Life · Igara</small><h1>Escolha o <i>seu</i> apartamento</h1><p>Gire o prédio e toque num apê verde.</p></div></header>
+<header><div class="tx"><small>Nimbus Place Life · Igara</small><h1>Escolha o <i>seu</i> apartamento</h1><p>Toque num andar da fachada e escolha o seu apê.</p></div></header>
 <div class="wrap">
   <div class="vivo"><span><i class="pt"></i><b id="nDisp">0</b>&nbsp;disponíveis</span><span>🔥 <b>&nbsp;7&nbsp;</b> reservados esta semana</span></div>
   <div class="barra">
-    <div class="seg2" id="vis"><button class="on" data-v="3d">🏙️ 3D</button><button data-v="mapa">▦ Mapa</button></div>
+    <div class="seg2" id="vis"><button class="on" data-v="fach">📷 Fachada</button><button data-v="3d">🏙️ 3D</button><button data-v="mapa">▦ Mapa</button></div>
     <div class="filtros"><button class="on" data-f="todos">Todos</button><button data-f="2">2 dorm</button><button data-f="3">3 dorm</button><button data-f="g">Garden</button></div>
   </div>
   <div class="leg"><span><i style="background:#16a34a"></i>Disponível</span><span><i style="background:#f59e0b"></i>Reservado</span><span><i style="background:#c9d0cc"></i>Vendido</span></div>
 
-  <div class="cena" id="cena">
+  <div class="fach" id="fach">
+    <div class="fach-img">
+      <img src="/midia/nimbus/fachada-frente.webp" srcset="/midia/nimbus/fachada-frente-sm.webp 655w, /midia/nimbus/fachada-frente.webp 1190w" sizes="(max-width:700px) 100vw, 900px" alt="Fachada da Torre A do Nimbus Place Life" width="1190" height="1061">
+      <svg id="fachSvg" viewBox="0 0 1190 1061" preserveAspectRatio="none" aria-label="Andares e apartamentos"></svg>
+      <div class="fach-tag" id="fachTag">Toque em um andar</div>
+      <div class="fach-ac"><button type="button" class="on" id="fachCor" title="Mostrar disponibilidade">🎨 Disponibilidade</button></div>
+    </div>
+    <div class="andar-pn" id="andarPn"></div>
+  </div>
+  <div class="cena" id="cena" hidden>
     <div class="ir"><button data-ir="luz" class="on" title="Acender os disponíveis">💡</button><button data-ir="A">Torre A</button><button data-ir="B">Torre B</button><button data-ir="tudo">⤢</button></div>
     <div class="tip" id="tip"></div>
     <div class="dica" id="dica">👆 Arraste para girar · toque num apê</div>
@@ -132,7 +164,7 @@ header p{margin:0;font-size:13.5px;opacity:.88}
 <script>
   // Se o 3D não abrir (celular antigo ou sem WebGL), mostra o mapa em grade.
   setTimeout(function(){
-    if (document.querySelector('#cena canvas')) return;
+    if (document.querySelector('#cena canvas') || document.getElementById('cena').hidden) return;
     var c = document.getElementById('cena'), m = document.getElementById('mapa');
     c.hidden = true; m.hidden = false;
     document.querySelectorAll('[data-v]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-v') === 'mapa'); });
@@ -321,6 +353,44 @@ renderer.setAnimationLoop((t) => {
   controls.update(); renderer.render(scene, camera);
 });
 
+// ---------- fachada real: andares e apartamentos sobre a imagem oficial ----------
+const FY0 = 100, FPASSO = 71, FCOLS = [[35, 275], [275, 515], [625, 865], [865, 1160]];   // pixels da imagem (Torre A, frente)
+const yAndar = (a) => FY0 + (13 - a) * FPASSO;
+const svgF = document.getElementById('fachSvg'), tagF = document.getElementById('fachTag'), pn = document.getElementById('andarPn');
+let andarSel = null, corF = true;
+const CORF = { d: 'rgba(34,197,94,.55)', r: 'rgba(245,158,11,.6)', v: 'rgba(60,64,70,.0)' }, BORDA = { d: '#22c55e', r: '#f59e0b', v: 'transparent' };
+function pintarFachada() {
+  let h = '';
+  for (let a = 13; a >= 1; a--) {
+    const y = yAndar(a);
+    FCOLS.forEach(([x1, x2], i) => {
+      const u = U['A' + (a * 100 + i + 1)], vis = corF && passa(u);
+      h += `<rect class="un" x="${x1 + 8}" y="${y + 6}" width="${x2 - x1 - 16}" height="${FPASSO - 12}" rx="6" fill="${vis ? CORF[u.st] : 'transparent'}"/>`;
+      h += `<rect class="un-b" x="${x1 + 8}" y="${y + 6}" width="${x2 - x1 - 16}" height="${FPASSO - 12}" rx="6" stroke="${vis ? BORDA[u.st] : 'transparent'}" opacity=".9"/>`;
+    });
+  }
+  if (andarSel) h += `<path class="esc" fill-rule="evenodd" d="M0 0H1190V1061H0Z M0 ${yAndar(andarSel)}H1190V${yAndar(andarSel) + FPASSO}H0Z"/>`;
+  for (let a = 13; a >= 1; a--) h += `<rect class="fa${andarSel === a ? ' sel' : ''}" data-a="${a}" x="0" y="${yAndar(a)}" width="1190" height="${FPASSO}"/>`;
+  svgF.innerHTML = h;
+  if (andarSel) mostrarAndar(andarSel);
+}
+function mostrarAndar(a) {
+  const us = [1, 2, 3, 4, 5, 6, 7, 8].map((f) => U['A' + (a * 100 + f)]), n = us.filter((u) => u.st === 'd').length;
+  tagF.textContent = `${a}º andar · ${n} disponíve${n === 1 ? 'l' : 'is'}`;
+  pn.innerHTML = `<h3>${a}º andar · Torre A</h3><p>Frente (aparece na foto): finais 01 a 04 · fundos: 05 a 08</p><div class="ls">` +
+    us.map((u) => `<button class="${u.st}${passa(u) ? '' : ' fora'}" data-id="${u.id}">${u.num}<small>${{ d: DORMS[u.final] + ' dorm', r: 'Reservado', v: 'Vendido' }[u.st]}</small></button>`).join('') + '</div>';
+  pn.classList.add('on');
+}
+svgF.addEventListener('click', (e) => {
+  const r = e.target.closest('.fa'); if (!r) return;
+  const a = +r.dataset.a, b = svgF.getBoundingClientRect(), x = (e.clientX - b.left) / b.width * 1190;
+  const i = FCOLS.findIndex(([x1, x2]) => x >= x1 && x < x2);
+  andarSel = a; pintarFachada();
+  if (i >= 0) { const u = U['A' + (a * 100 + i + 1)]; if (u.st === 'd' && passa(u)) abrir(u.id); }
+});
+pn.addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b && U[b.dataset.id].st === 'd') abrir(b.dataset.id); });
+document.getElementById('fachCor').onclick = (e) => { corF = !corF; e.currentTarget.classList.toggle('on', corF); pintarFachada(); };
+
 // ---------- mapa 2D (o mesmo de antes) ----------
 const elAnd = document.getElementById('andares');
 function pintarMapa() {
@@ -335,7 +405,7 @@ function pintarMapa() {
 elAnd.addEventListener('click', (e) => { const b = e.target.closest('.u'); if (b && U[b.dataset.id].st === 'd') abrir(b.dataset.id); });
 document.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { torreMapa = b.dataset.t; document.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); pintarMapa(); });
 function pintar() {
-  pintar3d(); pintarMapa();
+  pintar3d(); pintarMapa(); pintarFachada();
   document.getElementById('nDisp').textContent = Object.values(U).filter((u) => u.st === 'd').length;
 }
 
@@ -345,6 +415,7 @@ function planta(u) { const g = garden(u), d = DORMS[u.final]; return `/midia/nim
 function abrir(id) {
   const u = U[id]; sel = id; pintar(); contorno.visible = true;
   if (!document.getElementById('cena').hidden) focarUnidade(u);
+  if (u.torre === 'A') { andarSel = u.andar; pintarFachada(); }
   const d = DORMS[u.final], g = garden(u), fav = favs.includes(id);
   ok.classList.remove('on'); fc.style.display = '';
   fc.innerHTML = `<span class="k">Disponível</span><h2>Apto ${u.num} · Torre ${u.torre}</h2>
@@ -389,9 +460,9 @@ favbar.onclick = () => {
 // ---------- 3D / mapa e filtros ----------
 document.querySelectorAll('[data-v]').forEach((b) => b.onclick = () => {
   document.querySelectorAll('[data-v]').forEach((x) => x.classList.toggle('on', x === b));
-  const tres = b.dataset.v === '3d';
-  document.getElementById('cena').hidden = !tres; document.getElementById('mapa').hidden = tres;
-  if (tres) tamanho();
+  const v = b.dataset.v;
+  document.getElementById('cena').hidden = v !== '3d'; document.getElementById('mapa').hidden = v !== 'mapa'; document.getElementById('fach').hidden = v !== 'fach';
+  if (v === '3d') { tamanho(); controls.autoRotate = true; if (!window.__cam3d) { window.__cam3d = 1; camera.position.copy(VISAO.tudo[1]()); controls.target.copy(VISAO.tudo[0]); } }
 });
 document.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { filtro = b.dataset.f; document.querySelectorAll('[data-f]').forEach((x) => x.classList.toggle('on', x === b)); pintar(); });
 pintar(); pintarFav();
