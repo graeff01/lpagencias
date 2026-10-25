@@ -35,12 +35,13 @@ header p{margin:0;font-size:13.5px;opacity:.88}
 .leg{display:flex;gap:14px;font-size:12px;color:var(--soft);margin:2px 0 10px;flex-wrap:wrap}
 .leg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px}
 /* 3D */
-.cena{position:relative;height:min(64vh,560px);border-radius:20px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#dbe9f6 0%,#eef3ef 55%,#e3ebe4 100%);border:1px solid var(--line);box-shadow:0 30px 60px -40px rgba(0,0,0,.35);touch-action:none}
+.cena{position:relative;height:min(64vh,560px);border-radius:20px;overflow:hidden;background:linear-gradient(180deg,#a9c9e6 0%,#d7e6f0 45%,#e9efe8 100%);border:1px solid var(--line);box-shadow:0 30px 60px -40px rgba(0,0,0,.35);touch-action:none}
 .cena canvas{display:block;width:100%;height:100%}
 .cena .dica{position:absolute;left:12px;bottom:12px;background:rgba(15,29,51,.82);color:#fff;font-size:12px;padding:8px 12px;border-radius:99px;pointer-events:none;transition:opacity .4s}
 .cena .tip{position:absolute;pointer-events:none;background:#fff;color:var(--ink);font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;box-shadow:0 8px 20px -8px rgba(0,0,0,.35);transform:translate(-50%,calc(-100% - 12px));opacity:0;transition:opacity .12s;white-space:nowrap}
 .cena .tip.on{opacity:1}
 .cena .ir{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+.cena .ir button.on{background:#0f1d33;color:#fff}
 .cena .ir button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px -8px rgba(0,0,0,.35)}
 /* mapa */
 .predio{background:linear-gradient(180deg,#fff,#f9faf9);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px;box-shadow:0 30px 60px -40px rgba(0,0,0,.35)}
@@ -108,7 +109,7 @@ header p{margin:0;font-size:13.5px;opacity:.88}
   <div class="leg"><span><i style="background:#16a34a"></i>Disponível</span><span><i style="background:#f59e0b"></i>Reservado</span><span><i style="background:#c9d0cc"></i>Vendido</span></div>
 
   <div class="cena" id="cena">
-    <div class="ir"><button data-ir="A">Torre A</button><button data-ir="B">Torre B</button><button data-ir="tudo">⤢</button></div>
+    <div class="ir"><button data-ir="luz" class="on" title="Acender os disponíveis">💡</button><button data-ir="A">Torre A</button><button data-ir="B">Torre B</button><button data-ir="tudo">⤢</button></div>
     <div class="tip" id="tip"></div>
     <div class="dica" id="dica">👆 Arraste para girar · toque num apê</div>
   </div>
@@ -135,8 +136,8 @@ import { RoundedBoxGeometry } from '/vendor/three/RoundedBoxGeometry.js';
 
 // ---------- dados fictícios: 2 torres × 13 andares × 8 finais ----------
 const DORMS = { 1: '3', 2: '2', 3: '2', 4: '3', 5: '3', 6: '2', 7: '2', 8: '3' };
-const SOL = { 1: 'manhã', 2: 'manhã', 3: 'manhã', 4: 'manhã', 5: 'tarde', 6: 'tarde', 7: 'tarde', 8: 'tarde' };
-const VISTA = { 1: 'rua', 2: 'rua', 3: 'rua', 4: 'rua', 5: 'clube', 6: 'clube', 7: 'clube', 8: 'clube' };
+const SOL = { 1: 'manhã', 2: 'manhã', 3: 'tarde', 4: 'tarde', 5: 'manhã', 6: 'manhã', 7: 'tarde', 8: 'tarde' };
+const VISTA = { 1: 'clube', 2: 'clube', 3: 'jardim', 4: 'jardim', 5: 'clube', 6: 'clube', 7: 'jardim', 8: 'jardim' };
 const rnd = (s) => () => (s = (s * 9301 + 49297) % 233280) / 233280;
 const U = {};
 ['A', 'B'].forEach((t, ti) => {
@@ -147,109 +148,139 @@ const U = {};
       st: x < 0.30 + alto * 0.25 ? 'v' : (x < 0.40 + alto * 0.25 ? 'r' : 'd') };
   }
 });
-const garden = (u) => u.andar === 1 && (u.final === 1 || u.final === 4);
+const garden = (u) => u.andar === 1 && (u.final === 3 || u.final === 8);
 let filtro = 'todos', sel = null, torreMapa = 'A';
 const passa = (u) => filtro === 'todos' || (filtro === 'g' ? garden(u) : DORMS[u.final] === filtro);
 let favs = []; try { favs = JSON.parse(localStorage.getItem('nimbus_favs') || '[]'); } catch (e) {}
 
-// ---------- cena 3D ----------
+// ---------- cena 3D: as duas torres com a fachada do Nimbus ----------
 const cena = document.getElementById('cena'), tip = document.getElementById('tip'), dica = document.getElementById('dica');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 cena.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xe6eee8, 45, 90);
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+scene.fog = new THREE.Fog(0xdfe8ee, 60, 130);
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 300);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
-controls.minDistance = 7; controls.maxDistance = 48; controls.maxPolarAngle = Math.PI * 0.49;
-controls.autoRotate = true; controls.autoRotateSpeed = 0.7;
-scene.add(new THREE.HemisphereLight(0xeaf3ff, 0x9fb59f, 1.25));
-const sol = new THREE.DirectionalLight(0xfff1dc, 2.4); sol.position.set(18, 30, 14); sol.castShadow = true;
-sol.shadow.mapSize.set(1024, 1024); Object.assign(sol.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 80 });
-scene.add(sol);
+controls.minDistance = 8; controls.maxDistance = 70; controls.maxPolarAngle = Math.PI * 0.48;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+scene.add(new THREE.HemisphereLight(0xeaf2ff, 0xa3b39b, 1.1));
+const sol = new THREE.DirectionalLight(0xffe7c7, 2.6); sol.position.set(26, 34, 12); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 120 });
+sol.shadow.bias = -0.0005; scene.add(sol);
 
-// terreno: gramado, calçada, piscina do clube e árvores
-const chao = new THREE.Mesh(new THREE.CircleGeometry(40, 64), new THREE.MeshStandardMaterial({ color: 0xcfe0cd, roughness: 1 }));
-chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; scene.add(chao);
-const piso = new THREE.Mesh(new THREE.BoxGeometry(24, 0.08, 14), new THREE.MeshStandardMaterial({ color: 0xece7df, roughness: 0.9 }));
-piso.position.set(0, 0.04, 1); piso.receiveShadow = true; scene.add(piso);
-const agua = new THREE.Mesh(new RoundedBoxGeometry(6, 0.12, 2.6, 2, 0.3), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.15, metalness: 0.1, emissive: 0x0ea5e9, emissiveIntensity: 0.15 }));
-agua.position.set(0, 0.1, 5.8); scene.add(agua);
-const folha = new THREE.MeshStandardMaterial({ color: 0x4f8f5a, roughness: 0.9 }), tronco = new THREE.MeshStandardMaterial({ color: 0x8b6b4a });
-[[-9, 6], [-7.5, 7.2], [9, 6.4], [7.4, 7.4], [-11, -4], [11, -3.5], [3.8, 8], [-3.6, 8.2]].forEach(([x, z], i) => {
-  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.9), tronco); t.position.set(x, 0.45, z); t.castShadow = true; scene.add(t);
-  const c = new THREE.Mesh(new THREE.SphereGeometry(0.55 + (i % 3) * 0.12, 16, 12), folha); c.position.set(x, 1.15, z); c.castShadow = true; scene.add(c);
-});
-
-// torres: cada apartamento é um bloco (frente: finais 1–4, fundos: 5–8)
-const COR = { d: 0x22c55e, r: 0xf59e0b, v: 0xdfe3e0 };
-const geoU = new RoundedBoxGeometry(1.04, 0.84, 1.42, 2, 0.05);
-const matLaje = new THREE.MeshStandardMaterial({ color: 0xf6f3ee, roughness: 0.8 });
-const matTijolo = new THREE.MeshStandardMaterial({ color: 0xa65f3d, roughness: 0.9 });
-const blocos = [], porId = {};
-const XT = { A: -5.6, B: 5.6 }, H0 = 0.62, HA = 0.98;
-function posUnidade(u) {
-  const frente = u.final <= 4, i = frente ? u.final - 1 : 8 - u.final;
-  return new THREE.Vector3(XT[u.torre] + (i - 1.5) * 1.12, H0 + (u.andar - 1) * HA + 0.42, frente ? 0.76 : -0.76);
+const M = (c, r = 0.85, extra = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, ...extra });
+const mat = {
+  taupe: M(0x8f7f70), creme: M(0xe6dccd, 0.75), escuro: M(0x4a4440, 0.8), tijolo: M(0xa4583a, 0.95),
+  laje: M(0xd9d1c4), verde: M(0x4f8a4f, 0.9), asfalto: M(0x9aa09d, 1), grama: M(0xb6cfa8, 1), calcada: M(0xe7e1d6, 0.95),
+  deck: M(0xb08a5e, 0.8), quadra: M(0x5aa9a0, 0.8), guarda: M(0xf0f4f5, 0.1, { transparent: true, opacity: 0.35 }),
+};
+function caixa(w, h, d, m, x, y, z, sombra = true) {
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z);
+  o.castShadow = sombra; o.receiveShadow = true; scene.add(o); return o;
 }
+
+// terreno (como na implantação: torres a oeste, estacionamento entre elas, clube junto à rua)
+const chao = new THREE.Mesh(new THREE.CircleGeometry(70, 64), mat.grama); chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; scene.add(chao);
+caixa(34, 0.06, 26, mat.asfalto, -4, 0.03, 0, false);
+for (let z = -11; z <= 11; z += 1.1) { caixa(0.06, 0.07, 0.5, mat.creme, -4, 0.04, z, false); }
+caixa(14, 0.1, 22, mat.calcada, 17, 0.05, 0, false);
+const piscina = new THREE.Mesh(new RoundedBoxGeometry(4.2, 0.14, 9, 2, 0.25), M(0x3ec1e6, 0.12, { emissive: 0x0ea5e9, emissiveIntensity: 0.18 }));
+piscina.position.set(14, 0.1, -1.5); piscina.receiveShadow = true; scene.add(piscina);
+caixa(2.4, 0.14, 9, mat.deck, 17.4, 0.08, -1.5, false);
+caixa(5, 0.1, 3.4, mat.quadra, 20, 0.08, 7, false);
+caixa(4, 1.6, 4.2, mat.tijolo, 20.5, 0.8, -7.5);
+caixa(4, 0.12, 4.4, mat.laje, 20.5, 1.66, -7.5);
+const folha = M(0x4f8f5a, 0.9), tronco = M(0x7a5c40);
+const arv = (x, z, s = 1) => {
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.13 * s, 1.1 * s), tronco); t.position.set(x, 0.55 * s, z); t.castShadow = true; scene.add(t);
+  const c = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75 * s, 1), folha); c.position.set(x, 1.5 * s, z); c.castShadow = true; scene.add(c);
+};
+[[11, 5], [11, -8], [11, 1.5], [24.5, 4], [24.5, -2], [24.5, -10], [5.5, 11], [5.5, -11], [-18, 10], [-18, -10], [-18, 0], [0, 12], [-8, 12]].forEach(([x, z], i) => arv(x, z, 0.9 + (i % 3) * 0.18));
+for (let z = -12; z <= 12; z += 2.4) arv(2.6, z, 0.7);
+
+// torres: duas alas (norte e sul) ligadas por um núcleo com a faixa de tijolinho
+const XT = { A: -11, B: -1 }, H0 = 0.7, HA = 1.0, ALA_Z = 4.3, ALA_W = 4.6, ALA_D = 5.6, NUC_D = 3;
+const ANDARES = 13, TOPO = H0 + ANDARES * HA;
 ['A', 'B'].forEach((t) => {
-  const base = new THREE.Mesh(new THREE.BoxGeometry(4.9, H0, 3.5), matLaje); base.position.set(XT[t], H0 / 2, 0); base.castShadow = base.receiveShadow = true; scene.add(base);
-  for (let a = 1; a <= 13; a++) {
-    const laje = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.1, 3.5), matLaje);
-    laje.position.set(XT[t], H0 + a * HA - 0.02, 0); laje.castShadow = laje.receiveShadow = true; scene.add(laje);
-  }
-  const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.5, 13 * HA + 0.4, 3.56), matTijolo); faixa.position.set(XT[t] + 2.5, H0 + 13 * HA / 2, 0); faixa.castShadow = true; scene.add(faixa);
-  const cob = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.7, 1.6), matLaje); cob.position.set(XT[t] - 0.6, H0 + 13 * HA + 0.35, 0); cob.castShadow = true; scene.add(cob);
+  const x = XT[t];
+  [ALA_Z, -ALA_Z].forEach((zc) => {
+    caixa(ALA_W, H0, ALA_D, mat.laje, x, H0 / 2, zc);
+    caixa(ALA_W - 0.3, ANDARES * HA, ALA_D - 0.3, mat.taupe, x, H0 + ANDARES * HA / 2, zc);
+    caixa(ALA_W + 0.1, 0.35, ALA_D + 0.1, mat.taupe, x, TOPO + 0.17, zc);
+    [-1, 1].forEach((k) => caixa(0.35, 0.8, 0.35, mat.escuro, x + k * 1.2, TOPO + 0.6, zc + k * 1.6));
+    // janelas das pontas (fachadas norte/sul)
+    for (let a = 0; a < ANDARES; a++) [-0.9, 0.9].forEach((dx) => caixa(0.7, 0.55, 0.06, mat.escuro, x + dx, H0 + a * HA + 0.5, zc + Math.sign(zc) * (ALA_D / 2 - 0.13), false));
+  });
+  caixa(ALA_W - 1.6, ANDARES * HA + H0, NUC_D, mat.escuro, x, (ANDARES * HA + H0) / 2, 0);
+  [-1, 1].forEach((s) => {
+    caixa(0.9, ANDARES * HA + H0 + 0.6, NUC_D - 0.6, mat.tijolo, x + s * (ALA_W / 2 - 0.85), (ANDARES * HA + H0 + 0.6) / 2, 0);
+    for (let a = 1; a <= ANDARES; a++) caixa(0.3, 0.22, NUC_D - 0.8, mat.verde, x + s * (ALA_W / 2 - 0.3), H0 + a * HA - 0.35, 0);
+  });
+  caixa(ALA_W - 1.4, 0.3, NUC_D + 0.2, mat.laje, x, TOPO + 0.45, 0);
 });
+
+// cada apartamento na fachada: moldura creme + vidro (que acende conforme a disponibilidade) + guarda-corpo
+const COR = { d: 0x22c55e, r: 0xf59e0b, v: 0x3a3f44 };
+const vidros = [], porId = {};
+// finais: 1-2 ala norte/leste, 3-4 ala norte/oeste, 5-6 ala sul/leste, 7-8 ala sul/oeste
+function lugar(u) {
+  const f = u.final, norte = f <= 4, leste = [1, 2, 5, 6].includes(f), slot = [1, 3, 5, 7].includes(f) ? 0 : 1;
+  const zc = norte ? ALA_Z : -ALA_Z, s = leste ? 1 : -1;
+  return { x: XT[u.torre] + s * (ALA_W / 2 - 0.15), y: H0 + (u.andar - 1) * HA + 0.5, z: zc + (slot ? -1.35 : 1.35) * (norte ? 1 : -1), s };
+}
+const geoV = new THREE.BoxGeometry(0.06, 0.66, 2.0), geoH = new THREE.BoxGeometry(0.26, 0.12, 2.5), geoL = new THREE.BoxGeometry(0.26, 0.86, 0.13);
+const geoG = new THREE.BoxGeometry(0.03, 0.34, 1.9), geoC = new THREE.BoxGeometry(0.04, 0.04, 1.95);
 Object.values(U).forEach((u) => {
-  const m = new THREE.Mesh(geoU, new THREE.MeshStandardMaterial({ color: COR[u.st], roughness: 0.35, metalness: 0.05, transparent: true }));
-  m.position.copy(posUnidade(u)); m.castShadow = true; m.receiveShadow = true; m.userData.u = u;
-  scene.add(m); blocos.push(m); porId[u.id] = m;
+  const p = lugar(u), fx = p.x + p.s * 0.13;
+  const v = new THREE.Mesh(geoV, M(COR[u.st], 0.2, { metalness: 0.3, emissive: COR[u.st], emissiveIntensity: 0 }));
+  v.position.set(p.x + p.s * 0.02, p.y, p.z); v.userData.u = u; scene.add(v); vidros.push(v); porId[u.id] = v;
+  [[0, 0.43, 0, geoH], [0, -0.43, 0, geoH], [0, 0, 1.19, geoL], [0, 0, -1.19, geoL]].forEach(([dx, dy, dz, g]) => {
+    const m = new THREE.Mesh(g, mat.creme); m.position.set(fx, p.y + dy, p.z + dz); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  });
+  const g = new THREE.Mesh(geoG, mat.guarda); g.position.set(fx + p.s * 0.02, p.y - 0.16, p.z); scene.add(g);
+  const c = new THREE.Mesh(geoC, mat.creme); c.position.set(fx + p.s * 0.02, p.y + 0.02, p.z); scene.add(c);
 });
+let acesas = true;
 function pintar3d() {
-  blocos.forEach((m) => {
-    const u = m.userData.u, ok = passa(u);
-    m.material.color.setHex(COR[u.st]);
-    m.material.emissive.setHex(u.st === 'd' ? 0x16a34a : u.st === 'r' ? 0xd97706 : 0x000000);
-    m.material.emissiveIntensity = u.id === sel ? 0.9 : (u.st === 'v' ? 0 : 0.18);
-    m.material.opacity = ok ? 1 : 0.12; m.material.depthWrite = ok;
+  vidros.forEach((m) => {
+    const u = m.userData.u, ok = passa(u), cor = acesas && ok ? COR[u.st] : 0x2f3438;
+    m.material.color.setHex(cor);
+    m.material.emissive.setHex(cor);
+    m.material.emissiveIntensity = u.id === sel ? 1.2 : (acesas && ok && u.st !== 'v' ? 0.55 : 0);
   });
 }
-const contorno = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.12, 0.92, 1.5)), new THREE.LineBasicMaterial({ color: 0x0f1d33 }));
+const contorno = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.05, 2.7), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }));
 contorno.visible = false; scene.add(contorno);
 
 // câmera: voo suave até um ponto
 let voo = null;
-function voar(alvo, pos, ms = 1100) {
-  voo = { t0: performance.now(), ms, a0: controls.target.clone(), p0: camera.position.clone(), a1: alvo, p1: pos };
-}
-// Afasta a câmera em telas estreitas (celular em pé) para caber o prédio inteiro.
+function voar(alvo, pos, ms = 1200) { voo = { t0: performance.now(), ms, a0: controls.target.clone(), p0: camera.position.clone(), a1: alvo, p1: pos }; }
 const longe = () => Math.max(1, Math.pow(1.25 / camera.aspect, 0.75));
-const VISAO = { tudo: [new THREE.Vector3(0, 7, 0), () => new THREE.Vector3(17, 13, 25).multiplyScalar(longe())] };
-function enquadrarTorre(t) { const x = XT[t], k = longe(); voar(new THREE.Vector3(x, 7, 0), new THREE.Vector3(x + 7 * k, 7 + 3 * k, 15 * k)); }
+const VISAO = { tudo: [new THREE.Vector3(3, 6, 0), () => new THREE.Vector3(32, 20, 30).multiplyScalar(longe()).add(new THREE.Vector3(3, 0, 0))] };
+function enquadrarTorre(t) { const x = XT[t], k = longe(); voar(new THREE.Vector3(x, 7, 0), new THREE.Vector3(x + 15 * k, 9 + 3 * k, 13 * k)); }
 function focarUnidade(u) {
-  const p = posUnidade(u), lado = u.final <= 4 ? 1 : -1;
-  const k = longe(); voar(p.clone(), p.clone().add(new THREE.Vector3(lado * 2.2 * k, 1.6, lado * 6.2 * k)));
+  const p = lugar(u), k = longe(), alvo = new THREE.Vector3(p.x, p.y, p.z);
+  voar(alvo, alvo.clone().add(new THREE.Vector3(p.s * 7 * k, 1.5, (p.z > 0 ? 3 : -3) * k)));
 }
 
-
-// toque/clique num bloco (sem confundir com arrastar)
+// toque/clique numa janela (sem confundir com arrastar)
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
 let down = null;
 function pegar(ev) {
   const r = renderer.domElement.getBoundingClientRect();
   ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ptr, camera);
-  const hit = ray.intersectObjects(blocos.filter((m) => m.material.opacity > 0.5))[0];
+  const hit = ray.intersectObjects(vidros, false)[0];
   return hit && hit.object.userData.u;
 }
 renderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; controls.autoRotate = false; dica.style.opacity = 0; });
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 7) return;
-  const u = pegar(e); if (u && u.st === 'd') abrir(u.id);
+  const u = pegar(e); if (u && u.st === 'd' && passa(u)) abrir(u.id);
 });
 renderer.domElement.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse') return;
@@ -261,6 +292,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
 });
 document.querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => {
   controls.autoRotate = false; const t = b.dataset.ir;
+  if (t === 'luz') { acesas = !acesas; b.classList.toggle('on', acesas); pintar3d(); return; }
   t === 'tudo' ? voar(VISAO.tudo[0].clone(), VISAO.tudo[1]()) : enquadrarTorre(t);
 });
 
@@ -274,7 +306,7 @@ renderer.setAnimationLoop((t) => {
     controls.target.lerpVectors(voo.a0, voo.a1, e); camera.position.lerpVectors(voo.p0, voo.p1, e);
     if (k >= 1) voo = null;
   }
-  if (sel && porId[sel]) { const m = porId[sel]; m.material.emissiveIntensity = 0.55 + 0.35 * Math.sin(t / 220); contorno.position.copy(m.position); }
+  if (sel && porId[sel]) { const m = porId[sel]; m.material.emissiveIntensity = 0.8 + 0.6 * Math.sin(t / 200); contorno.position.copy(m.position); }
   controls.update(); renderer.render(scene, camera);
 });
 
@@ -303,13 +335,12 @@ function abrir(id) {
   const u = U[id]; sel = id; pintar(); contorno.visible = true;
   if (!document.getElementById('cena').hidden) focarUnidade(u);
   const d = DORMS[u.final], g = garden(u), fav = favs.includes(id);
-  const pos = [1, 2, 3, 4].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('') + [8, 7, 6, 5].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('');
   ok.classList.remove('on'); fc.style.display = '';
   fc.innerHTML = `<span class="k">Disponível</span><h2>Apto ${u.num} · Torre ${u.torre}</h2>
     <div class="sub">${d} dormitórios com suíte${g ? ' · com Garden privativo' : ''}</div>
     <div class="gr"><div><b>${u.andar}º</b><span>andar</span></div><div><b>Sol da ${SOL[u.final]}</b><span>na sacada</span></div><div><b>≈ ${d === '3' ? 49 : 44} m²</b><span>área interna</span></div></div>
     <div class="duo"><div class="pl"><img src="${planta(u)}" alt="Planta"><small>Planta ${d} dorm${g ? ' com Garden' : ''}</small></div>
-      <div class="pos"><div class="clube">CLUBE</div><div class="q">${[8, 7, 6, 5].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('')}${[1, 2, 3, 4].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('')}</div><div class="rua">RUA</div><small>Posição no andar</small></div></div>
+      <div class="pos"><div class="clube">OESTE · LESTE (CLUBE)</div><div class="q" style="grid-template-columns:repeat(2,1fr)">${[[3,1],[4,2],[7,5],[8,6]].map(([o,l]) => `<span class="${o === u.final ? 'eu' : ''}">0${o}</span><span class="${l === u.final ? 'eu' : ''}">0${l}</span>`).join('')}</div><div class="rua">ALA NORTE ↑ · SUL ↓</div><small>Posição no andar</small></div></div>
     <div class="tags"><span>Vista para ${VISTA[u.final] === 'rua' ? 'a rua' : 'o clube'}</span>${u.andar >= 9 ? '<span>Andar alto</span>' : ''}${g ? '<span>Garden</span>' : ''}<span>Sacada com churrasqueira</span></div>
     <div class="acoes"><button class="segurar" id="seg">Segurar por 24h<small>Grátis e sem compromisso</small></button><button class="coracao${fav ? ' on' : ''}" id="cor" aria-label="Favoritar">${fav ? '❤️' : '🤍'}</button></div>`;
   document.getElementById('seg').onclick = () => segurar(id);
