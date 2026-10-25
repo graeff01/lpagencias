@@ -391,6 +391,30 @@ router.get('/encontre', (req, res) => {
   res.redirect(302, '/?quiz=1' + (qs ? '&' + qs : ''));
 });
 
+// "Match": o visitante desliza fotos (sem saber de qual empreendimento são)
+// e o sistema indica os que mais combinam com o gosto dele.
+router.get('/match', async (req, res, next) => {
+  try {
+    const emps = (await db.list({ publishedOnly: true })).map(prepCard);
+    const dados = emps.map((e) => ({
+      slug: e.slug,
+      nome: e.nome,
+      href: e.dominio ? `https://${e.dominio}/` : `/${e.slug}`,
+      bairro: e.bairro || '',
+      cidade: e.cidade || '',
+      dorms: e._dorms,
+      tipologia: e._tipologia || '',
+      preco: e._precoFmt || '',
+      selo: e._selo || '',
+      capa: imgVar(e._capa).sm || imgVar(e._capa).src || '',
+      fotos: e.gallery.filter((g) => g && g.url).slice(0, 4).map((g) => ({ url: imgVar(g.url).sm || imgVar(g.url).src, tag: g.tag || '' })),
+      lazer: e.infra.map((i) => (i && (i.titulo || i)) || '').filter((t) => typeof t === 'string' && t).slice(0, 8),
+    })).filter((e) => e.fotos.length || e.capa);
+    res.set('X-Robots-Tag', 'noindex');
+    res.render('match', { title: 'Match de imóveis | Auxiliadora Predial', emps: dados, portalWa: '/wa/' + PORTAL_SLUG });
+  } catch (e) { next(e); }
+});
+
 // Landing page pública do empreendimento — ou, se o endereço não for de
 // nenhum empreendimento, a página da região (/canoas, /moinhos-de-vento).
 router.get('/:slug', async (req, res, next) => {

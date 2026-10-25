@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <meta name="theme-color" content="#0b1220">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <style>
+    :root{--rosa:#ff3d77;--verde:#22c55e;--azul:#3b82f6;--ink:#0b1220}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;color:#fff;background:radial-gradient(120% 80% at 50% 0%,#1e2a4a 0%,#0b1220 60%);overflow:hidden;-webkit-font-smoothing:antialiased}
+    .app{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+    .top{display:flex;align-items:center;justify-content:space-between;height:44px}
+    .top a{color:#fff;text-decoration:none;font-size:13px;opacity:.75}
+    .logo{font-weight:800;letter-spacing:-.02em;font-size:18px}.logo b{color:var(--rosa)}
+    .prog{height:4px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin:4px 0 12px}
+    .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rosa),#ff8a5b);transition:width .35s}
+    .deck{position:relative;flex:1;min-height:0}
+    .card{position:absolute;inset:0;border-radius:24px;overflow:hidden;background:#1b2440 center/cover no-repeat;box-shadow:0 30px 60px -20px rgba(0,0,0,.6);touch-action:none;user-select:none;will-change:transform;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+    .card.arrasta{transition:none}
+    .card::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,0) 45%)}
+    .card .tx{position:absolute;left:20px;right:20px;bottom:22px;z-index:2}
+    .card .tx small{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);padding:6px 10px;border-radius:99px;margin-bottom:10px}
+    .card .tx h2{margin:0;font-size:30px;line-height:1.05;letter-spacing:-.02em}
+    .card .tx p{margin:6px 0 0;font-size:14.5px;opacity:.85}
+    .card.pergunta{background:linear-gradient(150deg,#ff3d77,#7c3aed);display:grid;place-items:center;text-align:center;padding:30px}
+    .card.pergunta::after{display:none}
+    .card.pergunta .q{font-size:64px}.card.pergunta h2{font-size:30px;margin:14px 0 8px;letter-spacing:-.02em}.card.pergunta p{margin:0;opacity:.9}
+    .selo{position:absolute;top:34px;z-index:3;font-size:30px;font-weight:900;letter-spacing:.06em;padding:6px 14px;border:4px solid;border-radius:12px;opacity:0;transform:rotate(-14deg)}
+    .selo.sim{left:22px;color:var(--verde);border-color:var(--verde)}
+    .selo.nao{right:22px;color:var(--rosa);border-color:var(--rosa);transform:rotate(14deg)}
+    .selo.super{left:50%;top:auto;bottom:140px;transform:translateX(-50%) rotate(-8deg);color:var(--azul);border-color:var(--azul)}
+    .bts{display:flex;justify-content:center;align-items:center;gap:18px;padding:16px 0 4px}
+    .bts[hidden]{display:none}
+    .bts button{border:0;border-radius:50%;background:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 14px 30px -10px rgba(0,0,0,.6);transition:transform .15s}
+    .bts button:active{transform:scale(.9)}
+    .bts .nao{width:64px;height:64px;font-size:28px;color:var(--rosa)}
+    .bts .sim{width:64px;height:64px;font-size:30px;color:var(--verde)}
+    .bts .super{width:50px;height:50px;font-size:22px;color:var(--azul)}
+    .tela{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:24px;z-index:5}
+    .tela[hidden]{display:none}
+    .intro h1{font-size:40px;line-height:1.02;letter-spacing:-.03em;margin:14px 0 12px}
+    .intro h1 i{font-family:'Playfair Display',serif;font-weight:400;color:#ffb3c9}
+    .intro p{opacity:.85;font-size:16px;line-height:1.5;margin:0 auto 26px;max-width:340px}
+    .intro .cor{font-size:70px;animation:bate 1.4s ease-in-out infinite}
+    @keyframes bate{0%,100%{transform:scale(1)}15%{transform:scale(1.15)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+    .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:16px;padding:16px 26px;font:inherit;font-size:16px;font-weight:800;cursor:pointer;text-decoration:none}
+    .bt.rosa{background:linear-gradient(135deg,var(--rosa),#ff8a5b);color:#fff;box-shadow:0 16px 36px -12px rgba(255,61,119,.8)}
+    .bt.wa{background:#25D366;color:#fff}
+    .bt.claro{background:rgba(255,255,255,.12);color:#fff}
+    .intro .como{display:flex;justify-content:center;gap:18px;margin-top:26px;font-size:12.5px;opacity:.8}
+    /* resultado */
+    .res{justify-content:flex-start;overflow:auto;padding-top:6px}
+    .res h1{font-size:36px;margin:8px 0 2px;letter-spacing:-.03em;background:linear-gradient(90deg,#ff3d77,#ffb36b);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .res .sub{opacity:.8;margin:0 0 16px;font-size:14px}
+    .top1{border-radius:22px;overflow:hidden;background:#141c33;text-align:left;box-shadow:0 30px 60px -24px rgba(0,0,0,.7);animation:surge .7s cubic-bezier(.2,.8,.2,1) both}
+    @keyframes surge{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}
+    .top1 .ft{height:200px;background:#222 center/cover;position:relative}
+    .top1 .pct{position:absolute;right:12px;top:12px;background:#fff;color:var(--ink);font-weight:900;border-radius:99px;padding:8px 12px;font-size:15px}
+    .top1 .pct b{color:var(--rosa)}
+    .top1 .cp{padding:16px}
+    .top1 h2{margin:0 0 4px;font-size:24px;letter-spacing:-.02em}
+    .top1 .lc{opacity:.75;font-size:13.5px}
+    .curtiu{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
+    .curtiu span{font-size:12px;font-weight:600;padding:6px 10px;border-radius:99px;background:rgba(255,61,119,.16);color:#ffc2d4}
+    .top1 .acs{display:grid;gap:8px}
+    .outros{margin:18px 0 8px;text-align:left}
+    .outros h3{font-size:14px;opacity:.75;margin:0 0 10px;font-weight:600}
+    .outro{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.07);border-radius:16px;padding:8px;margin-bottom:8px;color:#fff;text-decoration:none}
+    .outro i{width:64px;height:64px;border-radius:12px;background:#222 center/cover;flex:none}
+    .outro b{display:block;font-size:15px}.outro small{opacity:.7;font-size:12.5px}
+    .outro .p{margin-left:auto;font-weight:800;color:#ff9ab6;padding-right:6px}
+    .conf{position:fixed;inset:0;pointer-events:none;z-index:9}
+    .conf span{position:absolute;top:-20px;font-size:22px;animation:cai 2.4s linear forwards}
+    @keyframes cai{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+    @media(prefers-reduced-motion:reduce){.intro .cor,.conf span{animation:none}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><a href="/">← Lançamentos</a><span class="logo">Match<b>♥</b>imóveis</span><span style="width:70px"></span></div>
+  <div class="prog"><i id="prog"></i></div>
+  <div class="deck" id="deck"></div>
+  <div class="bts" id="bts" hidden>
+    <button type="button" class="nao" data-acao="nao" aria-label="Não curti">✕</button>
+    <button type="button" class="super" data-acao="super" aria-label="Amei">★</button>
+    <button type="button" class="sim" data-acao="sim" aria-label="Curti">♥</button>
+  </div>
+
+  <section class="tela intro" id="intro">
+    <div class="cor">💘</div>
+    <h1>Encontre o apê que <i>combina</i> com você</h1>
+    <p>Deslize as fotos: <b>pra direita</b> se curtir, <b>pra esquerda</b> se não. Sem nomes, só o seu gosto. No final, a gente revela o seu match.</p>
+    <div><button type="button" class="bt rosa" id="comecar">Começar ♥</button></div>
+    <div class="como"><span>👈 Não curti</span><span>★ Amei</span><span>Curti 👉</span></div>
+  </section>
+  <section class="tela res" id="res" hidden></section>
+</div>
+<div class="conf" id="conf"></div>
+
+<script>
+(function(){
+  var EMPS = <%- JSON.stringify(emps).replace(/</g, '\\u003c') %>;
+  var deck = document.getElementById('deck'), bts = document.getElementById('bts'), prog = document.getElementById('prog');
+  var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  function embaralhar(a){ for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  // Baralho: até 2 fotos por empreendimento (sem nome), mais uma pergunta sobre dormitórios.
+  var cartas = [];
+  EMPS.forEach(function(e, i){
+    var fs = e.fotos.length ? e.fotos : [{ url: e.capa, tag: '' }];
+    embaralhar(fs.slice()).slice(0, 2).forEach(function(f){ cartas.push({ emp: i, url: f.url, tag: f.tag || 'Empreendimento' }); });
+  });
+  cartas = embaralhar(cartas).slice(0, 14);
+  var temTres = EMPS.some(function(e){ return (e.dorms || []).some(function(d){ return d >= 3; }); });
+  if (temTres && cartas.length > 3) cartas.splice(3, 0, { pergunta: 'dorms' });
+
+  var pontos = EMPS.map(function(){ return 0; }), curtidas = EMPS.map(function(){ return []; }), resp = {}, idx = 0;
+
+  function montar(){
+    deck.innerHTML = '';
+    for (var k = Math.min(cartas.length - 1, idx + 2); k >= idx; k--) {
+      var c = cartas[k], el = document.createElement('div');
+      el.className = 'card' + (c.pergunta ? ' pergunta' : ''); el.dataset.k = k;
+      if (c.pergunta) el.innerHTML = '<div><div class="q">🛏️</div><h2>Precisa de 3 dormitórios ou mais?</h2><p>👉 sim · 👈 não</p></div>';
+      else { el.style.backgroundImage = 'url("' + c.url + '")'; el.innerHTML = '<div class="tx"><small>' + esc(c.tag) + '</small><h2>Você curte?</h2></div>'; }
+      el.insertAdjacentHTML('afterbegin', '<span class="selo sim">CURTI</span><span class="selo nao">NÃO</span><span class="selo super">AMEI</span>');
+      var prof = k - idx; el.style.transform = 'translateY(' + (prof * 10) + 'px) scale(' + (1 - prof * 0.04) + ')'; el.style.zIndex = 10 - prof;
+      deck.appendChild(el);
+    }
+    var topo = deck.querySelector('[data-k="' + idx + '"]'); if (topo) arrastavel(topo);
+    prog.style.width = (idx / cartas.length * 100) + '%';
+    // pré-carrega a próxima foto
+    var prox = cartas[idx + 3]; if (prox && prox.url) { var im = new Image(); im.src = prox.url; }
+  }
+
+  function arrastavel(el){
+    var x0 = 0, y0 = 0, dx = 0, dy = 0, ativo = false;
+    el.addEventListener('pointerdown', function(e){ ativo = true; x0 = e.clientX; y0 = e.clientY; el.classList.add('arrasta'); el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointermove', function(e){
+      if (!ativo) return; dx = e.clientX - x0; dy = e.clientY - y0;
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (dx / 18) + 'deg)';
+      el.querySelector('.selo.sim').style.opacity = Math.max(0, Math.min(1, dx / 90));
+      el.querySelector('.selo.nao').style.opacity = Math.max(0, Math.min(1, -dx / 90));
+      el.querySelector('.selo.super').style.opacity = Math.max(0, Math.min(1, -dy / 110 - Math.abs(dx) / 200));
+    });
+    function soltar(){
+      if (!ativo) return; ativo = false; el.classList.remove('arrasta');
+      if (dx > 100) decidir('sim'); else if (dx < -100) decidir('nao'); else if (dy < -120) decidir('super');
+      else { el.style.transform = ''; el.querySelectorAll('.selo').forEach(function(s){ s.style.opacity = 0; }); }
+      dx = dy = 0;
+    }
+    el.addEventListener('pointerup', soltar); el.addEventListener('pointercancel', soltar);
+  }
+
+  function decidir(acao){
+    var c = cartas[idx]; if (!c) return;
+    var el = deck.querySelector('[data-k="' + idx + '"]');
+    if (c.pergunta) resp.dorms3 = acao !== 'nao';
+    else {
+      pontos[c.emp] += acao === 'super' ? 4 : acao === 'sim' ? 2 : -1;
+      if (acao !== 'nao' && curtidas[c.emp].indexOf(c.tag) < 0) curtidas[c.emp].push(c.tag);
+    }
+    if (navigator.vibrate) navigator.vibrate(acao === 'nao' ? 8 : 14);
+    if (el) {
+      el.style.transition = 'transform .45s ease, opacity .45s';
+      var s = el.querySelector('.selo.' + acao); if (s) s.style.opacity = 1;
+      el.style.transform = acao === 'super' ? 'translateY(-130%) rotate(-6deg)' : 'translateX(' + (acao === 'sim' ? 140 : -140) + '%) rotate(' + (acao === 'sim' ? 22 : -22) + 'deg)';
+      el.style.opacity = 0;
+    }
+    idx++;
+    setTimeout(function(){ idx >= cartas.length ? resultado() : montar(); }, 260);
+  }
+  bts.addEventListener('click', function(e){ var b = e.target.closest('[data-acao]'); if (b) decidir(b.dataset.acao); });
+  document.addEventListener('keydown', function(e){ if (bts.hidden) return; if (e.key === 'ArrowRight') decidir('sim'); if (e.key === 'ArrowLeft') decidir('nao'); if (e.key === 'ArrowUp') decidir('super'); });
+
+  function resultado(){
+    prog.style.width = '100%'; deck.innerHTML = ''; bts.hidden = true;
+    var lista = EMPS.map(function(e, i){
+      var p = pontos[i], ds = e.dorms || [];
+      if (resp.dorms3 === true) p += ds.some(function(d){ return d >= 3; }) ? 3 : -2;
+      if (resp.dorms3 === false) p += ds.some(function(d){ return d <= 2; }) ? 1 : -1;
+      return { e: e, i: i, p: p };
+    }).sort(function(a, b){ return b.p - a.p; });
+    var max = lista[0].p, min = lista[lista.length - 1].p;
+    var pct = function(p){ return Math.round(max === min ? 80 : 62 + (p - min) / (max - min) * 36); };
+    var t = lista[0], e = t.e, gostos = curtidas[t.i];
+    var resumo = 'Match de imóveis: ' + pct(t.p) + '% com o ' + e.nome + (gostos.length ? ' · curtiu: ' + gostos.join(', ') : '') + (resp.dorms3 != null ? ' · ' + (resp.dorms3 ? 'quer 3 dorm ou mais' : 'até 2 dorm') : '');
+    var wa = '/wa/' + encodeURIComponent(e.slug) + '?src=match&msg=' + encodeURIComponent('Olá! Fiz o Match de imóveis e deu ' + pct(t.p) + '% com o ' + e.nome + '. Quero saber mais!') + '&vi=' + encodeURIComponent(resumo);
+    var r = document.getElementById('res');
+    r.innerHTML = '<div style="font-size:44px">💘</div><h1>É um match!</h1><p class="sub">Pelo seu gosto, este é o seu lugar:</p>' +
+      '<div class="top1"><div class="ft" style="background-image:url(\'' + esc(e.capa) + '\')"><span class="pct"><b>' + pct(t.p) + '%</b> match</span></div><div class="cp">' +
+      '<h2>' + esc(e.nome) + '</h2><div class="lc">' + esc([e.bairro, e.cidade].filter(Boolean).join(' · ')) + (e.tipologia ? ' · ' + esc(e.tipologia) : '') + '</div>' +
+      (gostos.length ? '<div class="curtiu">' + gostos.map(function(g){ return '<span>♥ ' + esc(g) + '</span>'; }).join('') + '</div>' : '<div style="height:12px"></div>') +
+      '<div class="acs"><a class="bt wa" href="' + esc(wa) + '" target="_blank" rel="noopener nofollow">Falar com um consultor</a><a class="bt claro" href="' + esc(e.href) + '">Conhecer o ' + esc(e.nome) + '</a></div></div></div>' +
+      '<div class="outros"><h3>Também combinam com você</h3>' + lista.slice(1, 3).map(function(o){
+        return '<a class="outro" href="' + esc(o.e.href) + '"><i style="background-image:url(\'' + esc(o.e.capa) + '\')"></i><span><b>' + esc(o.e.nome) + '</b><small>' + esc(o.e.bairro || o.e.cidade) + '</small></span><span class="p">' + pct(o.p) + '%</span></a>';
+      }).join('') + '</div><div><button type="button" class="bt claro" id="denovo">↻ Jogar de novo</button></div>';
+    r.hidden = false;
+    document.getElementById('denovo').onclick = function(){ location.reload(); };
+    var cf = document.getElementById('conf'), em = ['💘', '❤️', '✨', '🏡', '💖'];
+    for (var k = 0; k < 28; k++) { var s = document.createElement('span'); s.textContent = em[k % em.length]; s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 0.8 + 's'; cf.appendChild(s); }
+    setTimeout(function(){ cf.innerHTML = ''; }, 3500);
+    if (window.gtag) gtag('event', 'match_resultado', { empreendimento: e.nome });
+  }
+
+  document.getElementById('comecar').onclick = function(){
+    document.getElementById('intro').hidden = true; bts.hidden = false; montar();
+  };
+  if (!cartas.length) document.getElementById('comecar').disabled = true;
+})();
+</script>
+<%- include('partials/lead-gate', { titulo: 'Fale com um consultor', interesses: ['Conhecer o empreendimento', 'Valores e condições de pagamento', 'Agendar uma visita', 'Plantas e metragens'] }) %>
+</body>
+</html>
