@@ -7,86 +7,120 @@
 <title>Escolha seu apartamento · protótipo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "/vendor/three/three.module.min.js" } }</script>
 <style>
-:root{--ink:#0f1a14;--soft:#6d7f74;--line:rgba(0,0,0,.08);--verde:#16a34a;--amar:#f5a524;--cinza:#c9d0cc;--ouro:#c9a275;--navy:#0f1d33}
+:root{--ink:#0f1a14;--soft:#6d7f74;--line:rgba(0,0,0,.08);--verde:#16a34a;--navy:#0f1d33;--ouro:#c9a275}
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,sans-serif;background:#f4f6f5;color:var(--ink);-webkit-font-smoothing:antialiased}
 .demo{background:#fff4d6;color:#7a5400;font-size:12px;font-weight:600;text-align:center;padding:8px 14px}
-header{position:relative;height:240px;background:url(/vitrine/nimbus/img/fachada.webp) center 30%/cover;color:#fff}
-header::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,12,10,.85),rgba(6,12,10,.15))}
-header .tx{position:absolute;z-index:1;left:18px;right:18px;bottom:18px}
+header{position:relative;height:220px;background:url(/vitrine/nimbus/img/fachada.webp) center 30%/cover;color:#fff}
+header::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,12,10,.88),rgba(6,12,10,.15))}
+header .tx{position:absolute;z-index:1;left:18px;right:18px;bottom:44px}
 header small{letter-spacing:.16em;text-transform:uppercase;font-size:11px;font-weight:700;color:#e8c9a0}
 header h1{margin:6px 0 4px;font-size:28px;line-height:1.05;letter-spacing:-.02em}
 header h1 i{font-family:'Playfair Display',serif;font-weight:400;color:#e8c9a0}
 header p{margin:0;font-size:13.5px;opacity:.88}
-.wrap{max-width:980px;margin:0 auto;padding:16px}
-.vivo{display:flex;gap:8px;flex-wrap:wrap;margin:-34px 0 14px;position:relative;z-index:2}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 120px}
+.vivo{display:flex;gap:8px;flex-wrap:wrap;margin:-22px 0 14px;position:relative;z-index:2}
 .vivo span{background:#fff;border-radius:99px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:0 10px 24px -14px rgba(0,0,0,.4);display:flex;align-items:center;gap:6px}
 .vivo .pt{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:p 1.4s infinite}
 @keyframes p{50%{opacity:.3}}
-.barra{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
-.torres{display:flex;background:#fff;border-radius:12px;padding:4px;border:1px solid var(--line)}
-.torres button{border:0;background:none;font:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:9px;cursor:pointer;color:var(--soft)}
-.torres button.on{background:var(--navy);color:#fff}
+.barra{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.seg2{display:flex;background:#fff;border-radius:12px;padding:4px;border:1px solid var(--line)}
+.seg2 button{border:0;background:none;font:inherit;font-weight:700;font-size:13px;padding:8px 13px;border-radius:9px;cursor:pointer;color:var(--soft);white-space:nowrap}
+.seg2 button.on{background:var(--navy);color:#fff}
 .filtros{display:flex;gap:6px;flex-wrap:wrap}
 .filtros button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:8px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .filtros button.on{border-color:var(--navy);background:var(--navy);color:#fff}
-.leg{display:flex;gap:14px;font-size:12px;color:var(--soft);margin:4px 0 12px;flex-wrap:wrap}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--soft);margin:2px 0 10px;flex-wrap:wrap}
 .leg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+/* 3D */
+.cena{position:relative;height:min(64vh,560px);border-radius:20px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#dbe9f6 0%,#eef3ef 55%,#e3ebe4 100%);border:1px solid var(--line);box-shadow:0 30px 60px -40px rgba(0,0,0,.35);touch-action:none}
+.cena canvas{display:block;width:100%;height:100%}
+.cena .dica{position:absolute;left:12px;bottom:12px;background:rgba(15,29,51,.82);color:#fff;font-size:12px;padding:8px 12px;border-radius:99px;pointer-events:none;transition:opacity .4s}
+.cena .tip{position:absolute;pointer-events:none;background:#fff;color:var(--ink);font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;box-shadow:0 8px 20px -8px rgba(0,0,0,.35);transform:translate(-50%,calc(-100% - 12px));opacity:0;transition:opacity .12s;white-space:nowrap}
+.cena .tip.on{opacity:1}
+.cena .ir{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+.cena .ir button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px -8px rgba(0,0,0,.35)}
+/* mapa */
 .predio{background:linear-gradient(180deg,#fff,#f9faf9);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px;box-shadow:0 30px 60px -40px rgba(0,0,0,.35)}
+.predio[hidden],.cena[hidden]{display:none}
 .topo{height:10px;margin:0 22px 8px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,#9b5b3c,#c98a63)}
-.andar{display:grid;grid-template-columns:26px repeat(8,minmax(0,1fr));gap:4px;margin-bottom:5px;align-items:center}
+.andar{display:grid;grid-template-columns:26px repeat(8,minmax(0,1fr));gap:4px;margin-bottom:4px;align-items:center}
 .andar b{font-size:11px;color:var(--soft);text-align:right;padding-right:4px;font-weight:600}
-.u{position:relative;min-width:0;padding:0;aspect-ratio:1/0.82;border:0;border-radius:7px;cursor:pointer;font:inherit;font-size:9.5px;letter-spacing:-.02em;font-weight:700;color:#fff;display:grid;place-items:center;transition:transform .15s,box-shadow .15s,opacity .2s}
-.u.d{background:linear-gradient(160deg,#22c55e,#15803d)}
-.u.r{background:linear-gradient(160deg,#fbbf24,#d97706)}
-.u.v{background:var(--cinza);color:#8a958f;cursor:not-allowed}
-.u.d:hover{transform:scale(1.12);box-shadow:0 8px 18px -6px rgba(22,163,74,.7);z-index:2}
-.u.fora{opacity:.18}
-.u.sel{outline:3px solid var(--navy);outline-offset:2px;transform:scale(1.12);z-index:3}
-.u.novo{animation:novo 1.2s ease}
-@keyframes novo{0%{transform:scale(1)}30%{transform:scale(1.35);box-shadow:0 0 0 8px rgba(245,165,36,.35)}100%{transform:scale(1)}}
+.u{min-width:0;padding:0;aspect-ratio:1/0.82;border:0;border-radius:7px;cursor:pointer;font:inherit;font-size:9.5px;letter-spacing:-.02em;font-weight:700;color:#fff;display:grid;place-items:center;transition:transform .15s,opacity .2s}
+.u.d{background:linear-gradient(160deg,#22c55e,#15803d)}.u.r{background:linear-gradient(160deg,#fbbf24,#d97706)}.u.v{background:#c9d0cc;color:#8a958f;cursor:not-allowed}
+.u.fora{opacity:.18}.u.sel{outline:3px solid var(--navy);outline-offset:2px;transform:scale(1.12)}
+.u .fav{position:absolute}
 .terreo{display:grid;grid-template-columns:26px 1fr;gap:5px;margin-top:8px}
 .terreo div{grid-column:2;height:22px;border-radius:6px;background:repeating-linear-gradient(90deg,#86b98f 0 14px,#7aad84 14px 28px);font-size:10.5px;font-weight:700;color:#fff;display:grid;place-items:center;letter-spacing:.1em}
 .nota{font-size:11.5px;color:var(--soft);margin-top:10px}
-/* ficha da unidade */
-.ficha{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.25);padding:18px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-width:520px;margin:0 auto}
+/* ficha */
+.ficha{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.25);padding:16px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.8,.2,1);max-width:560px;margin:0 auto;max-height:86vh;overflow:auto}
 .ficha.on{transform:none}
-.ficha .alca{width:40px;height:4px;border-radius:4px;background:#dfe4e1;margin:-6px auto 12px}
-.ficha .k{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--verde)}
-.ficha h2{margin:4px 0 2px;font-size:26px;letter-spacing:-.02em}
-.ficha .sub{color:var(--soft);font-size:13.5px;margin-bottom:12px}
-.ficha .gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.ficha .gr div{background:#f4f6f5;border-radius:12px;padding:10px}
-.ficha .gr b{display:block;font-size:15px}
-.ficha .gr span{font-size:11px;color:var(--soft)}
-.ficha .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.ficha .tags span{font-size:12px;font-weight:600;padding:6px 10px;border-radius:99px;background:#eef6f0;color:#166534}
-.ficha .seg{width:100%;border:0;border-radius:14px;padding:16px;font:inherit;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(160deg,#22c55e,#15803d);cursor:pointer;box-shadow:0 14px 30px -12px rgba(22,163,74,.7)}
-.ficha .seg small{display:block;font-size:11.5px;font-weight:500;opacity:.9;margin-top:2px}
-.ficha .x{position:absolute;right:14px;top:12px;border:0;background:#f1f3f2;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}
-.ok{display:none;text-align:center;padding:10px 0 4px}
-.ok.on{display:block}
+.alca{width:40px;height:4px;border-radius:4px;background:#dfe4e1;margin:0 auto 10px}
+.k{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--verde)}
+.ficha h2{margin:4px 0 2px;font-size:25px;letter-spacing:-.02em}
+.sub{color:var(--soft);font-size:13.5px;margin-bottom:12px}
+.gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.gr div{background:#f4f6f5;border-radius:12px;padding:10px}
+.gr b{display:block;font-size:14.5px}.gr span{font-size:11px;color:var(--soft)}
+.duo{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;margin-bottom:12px}
+.pl{background:#f4f6f5;border-radius:12px;padding:8px;position:relative}
+.pl img{width:100%;height:110px;object-fit:contain;display:block}
+.pl small,.pos small{display:block;font-size:10.5px;color:var(--soft);font-weight:600;margin-top:4px;text-align:center}
+.pos{background:#f4f6f5;border-radius:12px;padding:10px 8px 8px;display:flex;flex-direction:column;justify-content:center}
+.pos .rua,.pos .clube{font-size:9.5px;font-weight:700;color:var(--soft);text-align:center;letter-spacing:.08em}
+.pos .q{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:4px 0}
+.pos .q span{aspect-ratio:1;border-radius:4px;background:#dfe4e1;font-size:9px;font-weight:700;color:#8a958f;display:grid;place-items:center}
+.pos .q span.eu{background:var(--verde);color:#fff;box-shadow:0 0 0 3px rgba(22,163,74,.25)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tags span{font-size:12px;font-weight:600;padding:6px 10px;border-radius:99px;background:#eef6f0;color:#166534}
+.acoes{display:flex;gap:8px}
+.segurar{flex:1;border:0;border-radius:14px;padding:15px;font:inherit;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(160deg,#22c55e,#15803d);cursor:pointer;box-shadow:0 14px 30px -12px rgba(22,163,74,.7)}
+.segurar small{display:block;font-size:11.5px;font-weight:500;opacity:.9;margin-top:2px}
+.coracao{width:56px;border:1px solid var(--line);border-radius:14px;background:#fff;font-size:22px;cursor:pointer}
+.coracao.on{background:#fff0f3;border-color:#fda4af}
+.x{position:absolute;right:14px;top:12px;border:0;background:#f1f3f2;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}
+.ok{display:none;text-align:center;padding:10px 0 4px}.ok.on{display:block}
 .ok .ic{width:56px;height:56px;border-radius:50%;background:#dcfce7;color:#16a34a;display:grid;place-items:center;margin:0 auto 10px;font-size:28px}
-.ok h3{margin:0 0 6px}
-.ok p{margin:0;color:var(--soft);font-size:14px}
-.ok .t{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;margin-top:10px;color:var(--ink)}
-@media(min-width:760px){header{height:300px}header h1{font-size:40px}.u{font-size:11px}}
+.ok h3{margin:0 0 6px}.ok p{margin:0;color:var(--soft);font-size:14px}
+.ok .t{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;margin-top:10px}
+/* favoritos */
+.favbar{white-space:nowrap;position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,150%);z-index:15;background:var(--navy);color:#fff;border:0;border-radius:99px;padding:12px 18px;font:inherit;font-weight:700;font-size:14px;box-shadow:0 16px 40px -14px rgba(0,0,0,.5);cursor:pointer;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.favbar.on{transform:translate(-50%,0)}
+.cmp table{width:100%;border-collapse:collapse;font-size:13px}
+.cmp th,.cmp td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:center}
+.cmp th{font-size:14px}.cmp td:first-child,.cmp th:first-child{text-align:left;color:var(--soft);font-weight:600}
+.cmp .mini{border:0;background:#16a34a;color:#fff;border-radius:10px;padding:8px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+@media(min-width:760px){header{height:280px}header h1{font-size:40px}.u{font-size:11px}}
 </style>
 </head>
 <body>
-<div class="demo">⚠️ PROTÓTIPO · disponibilidade e tipologias fictícias, só para mostrar a ideia</div>
-<header><div class="tx"><small>Nimbus Place Life · Igara</small><h1>Escolha o <i>seu</i> apartamento</h1><p>Toque em um apê verde para ver os detalhes e segurá-lo por 24h.</p></div></header>
+<div class="demo">⚠️ PROTÓTIPO · disponibilidade, tipologias, sol e vista são fictícios</div>
+<header><div class="tx"><small>Nimbus Place Life · Igara</small><h1>Escolha o <i>seu</i> apartamento</h1><p>Gire o prédio e toque num apê verde.</p></div></header>
 <div class="wrap">
   <div class="vivo"><span><i class="pt"></i><b id="nDisp">0</b>&nbsp;disponíveis</span><span>🔥 <b>&nbsp;7&nbsp;</b> reservados esta semana</span></div>
   <div class="barra">
-    <div class="torres"><button class="on" data-t="A">Torre A</button><button data-t="B">Torre B</button></div>
+    <div class="seg2" id="vis"><button class="on" data-v="3d">🏙️ 3D</button><button data-v="mapa">▦ Mapa</button></div>
     <div class="filtros"><button class="on" data-f="todos">Todos</button><button data-f="2">2 dorm</button><button data-f="3">3 dorm</button><button data-f="g">Garden</button></div>
   </div>
   <div class="leg"><span><i style="background:#16a34a"></i>Disponível</span><span><i style="background:#f59e0b"></i>Reservado</span><span><i style="background:#c9d0cc"></i>Vendido</span></div>
-  <div class="predio"><div class="topo"></div><div id="andares"></div><div class="terreo"><div>TÉRREO · CLUBE</div></div></div>
-  <p class="nota">No real, o mapa é atualizado pelo espelho de vendas da construtora.</p>
+
+  <div class="cena" id="cena">
+    <div class="ir"><button data-ir="A">Torre A</button><button data-ir="B">Torre B</button><button data-ir="tudo">⤢</button></div>
+    <div class="tip" id="tip"></div>
+    <div class="dica" id="dica">👆 Arraste para girar · toque num apê</div>
+  </div>
+
+  <div class="predio" id="mapa" hidden>
+    <div class="seg2" style="display:inline-flex;margin-bottom:10px"><button class="on" data-t="A">Torre A</button><button data-t="B">Torre B</button></div>
+    <div class="topo"></div><div id="andares"></div><div class="terreo"><div>TÉRREO · CLUBE</div></div>
+  </div>
+  <p class="nota">No real, o prédio é atualizado pelo espelho de vendas da construtora.</p>
 </div>
+
+<button class="favbar" id="favbar">❤️ <span id="nFav">0</span> · Comparar</button>
 
 <div class="ficha" id="ficha" aria-live="polite">
   <div class="alca"></div><button class="x" id="fx" aria-label="Fechar">×</button>
@@ -94,70 +128,231 @@ header p{margin:0;font-size:13.5px;opacity:.88}
   <div class="ok" id="ok"><div class="ic">✓</div><h3>Apartamento segurado pra você!</h3><p>Um consultor vai te chamar no WhatsApp para confirmar.</p><div class="t" id="tmr">23:59:59</div></div>
 </div>
 
-<script>
-// Dados fictícios: 2 torres × 13 andares × 8 finais.
-var FINAIS = { 1: '3', 2: '2', 3: '2', 4: '3', 5: '3', 6: '2', 7: '2', 8: '3' };   // final -> dormitórios (exemplo)
-var SOL = { 1: 'manhã', 2: 'manhã', 3: 'manhã', 4: 'manhã', 5: 'tarde', 6: 'tarde', 7: 'tarde', 8: 'tarde' };
-var VISTA = { 1: 'clube', 2: 'clube', 3: 'rua', 4: 'rua', 5: 'jardim', 6: 'jardim', 7: 'clube', 8: 'clube' };
-function rnd(s){ return function(){ s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
-var dados = {};
-['A','B'].forEach(function(t, ti){
-  var r = rnd(ti ? 77 : 13);
-  for (var a = 1; a <= 13; a++) for (var f = 1; f <= 8; f++) {
-    var x = r(), alto = a / 13;
-    var st = x < 0.30 + alto * 0.25 ? 'v' : (x < 0.40 + alto * 0.25 ? 'r' : 'd');
-    dados[t + a + '0' + f] = { torre: t, andar: a, final: f, st: st };
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from '/vendor/three/OrbitControls.js';
+import { RoundedBoxGeometry } from '/vendor/three/RoundedBoxGeometry.js';
+
+// ---------- dados fictícios: 2 torres × 13 andares × 8 finais ----------
+const DORMS = { 1: '3', 2: '2', 3: '2', 4: '3', 5: '3', 6: '2', 7: '2', 8: '3' };
+const SOL = { 1: 'manhã', 2: 'manhã', 3: 'manhã', 4: 'manhã', 5: 'tarde', 6: 'tarde', 7: 'tarde', 8: 'tarde' };
+const VISTA = { 1: 'rua', 2: 'rua', 3: 'rua', 4: 'rua', 5: 'clube', 6: 'clube', 7: 'clube', 8: 'clube' };
+const rnd = (s) => () => (s = (s * 9301 + 49297) % 233280) / 233280;
+const U = {};
+['A', 'B'].forEach((t, ti) => {
+  const r = rnd(ti ? 77 : 13);
+  for (let a = 1; a <= 13; a++) for (let f = 1; f <= 8; f++) {
+    const x = r(), alto = a / 13;
+    U[t + (a * 100 + f)] = { id: t + (a * 100 + f), torre: t, andar: a, final: f, num: a * 100 + f,
+      st: x < 0.30 + alto * 0.25 ? 'v' : (x < 0.40 + alto * 0.25 ? 'r' : 'd') };
   }
 });
-var torre = 'A', filtro = 'todos', sel = null;
-var el = document.getElementById('andares'), ficha = document.getElementById('ficha'), fc = document.getElementById('fc'), ok = document.getElementById('ok');
-function tipo(u){ return u.andar === 1 && (u.final === 1 || u.final === 8) ? 'g' : FINAIS[u.final]; }
-function passa(u){ var t = tipo(u); return filtro === 'todos' || (filtro === 'g' ? t === 'g' : (t === filtro || (t === 'g' && FINAIS[u.final] === filtro))); }
-function desenhar(){
-  var h = '';
-  for (var a = 13; a >= 1; a--) {
-    h += '<div class="andar"><b>' + a + 'º</b>';
-    for (var f = 1; f <= 8; f++) {
-      var id = torre + a + '0' + f, u = dados[id];
-      h += '<button class="u ' + u.st + (passa(u) ? '' : ' fora') + (sel === id ? ' sel' : '') + '" data-id="' + id + '" aria-label="Apartamento ' + a + '0' + f + '">' + a + '0' + f + '</button>';
-    }
+const garden = (u) => u.andar === 1 && (u.final === 1 || u.final === 4);
+let filtro = 'todos', sel = null, torreMapa = 'A';
+const passa = (u) => filtro === 'todos' || (filtro === 'g' ? garden(u) : DORMS[u.final] === filtro);
+let favs = []; try { favs = JSON.parse(localStorage.getItem('nimbus_favs') || '[]'); } catch (e) {}
+
+// ---------- cena 3D ----------
+const cena = document.getElementById('cena'), tip = document.getElementById('tip'), dica = document.getElementById('dica');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+cena.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xe6eee8, 45, 90);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
+controls.minDistance = 7; controls.maxDistance = 48; controls.maxPolarAngle = Math.PI * 0.49;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.7;
+scene.add(new THREE.HemisphereLight(0xeaf3ff, 0x9fb59f, 1.25));
+const sol = new THREE.DirectionalLight(0xfff1dc, 2.4); sol.position.set(18, 30, 14); sol.castShadow = true;
+sol.shadow.mapSize.set(1024, 1024); Object.assign(sol.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 80 });
+scene.add(sol);
+
+// terreno: gramado, calçada, piscina do clube e árvores
+const chao = new THREE.Mesh(new THREE.CircleGeometry(40, 64), new THREE.MeshStandardMaterial({ color: 0xcfe0cd, roughness: 1 }));
+chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; scene.add(chao);
+const piso = new THREE.Mesh(new THREE.BoxGeometry(24, 0.08, 14), new THREE.MeshStandardMaterial({ color: 0xece7df, roughness: 0.9 }));
+piso.position.set(0, 0.04, 1); piso.receiveShadow = true; scene.add(piso);
+const agua = new THREE.Mesh(new RoundedBoxGeometry(6, 0.12, 2.6, 2, 0.3), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.15, metalness: 0.1, emissive: 0x0ea5e9, emissiveIntensity: 0.15 }));
+agua.position.set(0, 0.1, 5.8); scene.add(agua);
+const folha = new THREE.MeshStandardMaterial({ color: 0x4f8f5a, roughness: 0.9 }), tronco = new THREE.MeshStandardMaterial({ color: 0x8b6b4a });
+[[-9, 6], [-7.5, 7.2], [9, 6.4], [7.4, 7.4], [-11, -4], [11, -3.5], [3.8, 8], [-3.6, 8.2]].forEach(([x, z], i) => {
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.9), tronco); t.position.set(x, 0.45, z); t.castShadow = true; scene.add(t);
+  const c = new THREE.Mesh(new THREE.SphereGeometry(0.55 + (i % 3) * 0.12, 16, 12), folha); c.position.set(x, 1.15, z); c.castShadow = true; scene.add(c);
+});
+
+// torres: cada apartamento é um bloco (frente: finais 1–4, fundos: 5–8)
+const COR = { d: 0x22c55e, r: 0xf59e0b, v: 0xdfe3e0 };
+const geoU = new RoundedBoxGeometry(1.04, 0.84, 1.42, 2, 0.05);
+const matLaje = new THREE.MeshStandardMaterial({ color: 0xf6f3ee, roughness: 0.8 });
+const matTijolo = new THREE.MeshStandardMaterial({ color: 0xa65f3d, roughness: 0.9 });
+const blocos = [], porId = {};
+const XT = { A: -5.6, B: 5.6 }, H0 = 0.62, HA = 0.98;
+function posUnidade(u) {
+  const frente = u.final <= 4, i = frente ? u.final - 1 : 8 - u.final;
+  return new THREE.Vector3(XT[u.torre] + (i - 1.5) * 1.12, H0 + (u.andar - 1) * HA + 0.42, frente ? 0.76 : -0.76);
+}
+['A', 'B'].forEach((t) => {
+  const base = new THREE.Mesh(new THREE.BoxGeometry(4.9, H0, 3.5), matLaje); base.position.set(XT[t], H0 / 2, 0); base.castShadow = base.receiveShadow = true; scene.add(base);
+  for (let a = 1; a <= 13; a++) {
+    const laje = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.1, 3.5), matLaje);
+    laje.position.set(XT[t], H0 + a * HA - 0.02, 0); laje.castShadow = laje.receiveShadow = true; scene.add(laje);
+  }
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.5, 13 * HA + 0.4, 3.56), matTijolo); faixa.position.set(XT[t] + 2.5, H0 + 13 * HA / 2, 0); faixa.castShadow = true; scene.add(faixa);
+  const cob = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.7, 1.6), matLaje); cob.position.set(XT[t] - 0.6, H0 + 13 * HA + 0.35, 0); cob.castShadow = true; scene.add(cob);
+});
+Object.values(U).forEach((u) => {
+  const m = new THREE.Mesh(geoU, new THREE.MeshStandardMaterial({ color: COR[u.st], roughness: 0.35, metalness: 0.05, transparent: true }));
+  m.position.copy(posUnidade(u)); m.castShadow = true; m.receiveShadow = true; m.userData.u = u;
+  scene.add(m); blocos.push(m); porId[u.id] = m;
+});
+function pintar3d() {
+  blocos.forEach((m) => {
+    const u = m.userData.u, ok = passa(u);
+    m.material.color.setHex(COR[u.st]);
+    m.material.emissive.setHex(u.st === 'd' ? 0x16a34a : u.st === 'r' ? 0xd97706 : 0x000000);
+    m.material.emissiveIntensity = u.id === sel ? 0.9 : (u.st === 'v' ? 0 : 0.18);
+    m.material.opacity = ok ? 1 : 0.12; m.material.depthWrite = ok;
+  });
+}
+const contorno = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.12, 0.92, 1.5)), new THREE.LineBasicMaterial({ color: 0x0f1d33 }));
+contorno.visible = false; scene.add(contorno);
+
+// câmera: voo suave até um ponto
+let voo = null;
+function voar(alvo, pos, ms = 1100) {
+  voo = { t0: performance.now(), ms, a0: controls.target.clone(), p0: camera.position.clone(), a1: alvo, p1: pos };
+}
+// Afasta a câmera em telas estreitas (celular em pé) para caber o prédio inteiro.
+const longe = () => Math.max(1, Math.pow(1.25 / camera.aspect, 0.75));
+const VISAO = { tudo: [new THREE.Vector3(0, 7, 0), () => new THREE.Vector3(17, 13, 25).multiplyScalar(longe())] };
+function enquadrarTorre(t) { const x = XT[t], k = longe(); voar(new THREE.Vector3(x, 7, 0), new THREE.Vector3(x + 7 * k, 7 + 3 * k, 15 * k)); }
+function focarUnidade(u) {
+  const p = posUnidade(u), lado = u.final <= 4 ? 1 : -1;
+  const k = longe(); voar(p.clone(), p.clone().add(new THREE.Vector3(lado * 2.2 * k, 1.6, lado * 6.2 * k)));
+}
+
+
+// toque/clique num bloco (sem confundir com arrastar)
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let down = null;
+function pegar(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(blocos.filter((m) => m.material.opacity > 0.5))[0];
+  return hit && hit.object.userData.u;
+}
+renderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; controls.autoRotate = false; dica.style.opacity = 0; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 7) return;
+  const u = pegar(e); if (u && u.st === 'd') abrir(u.id);
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const u = pegar(e), r = cena.getBoundingClientRect();
+  if (!u) { tip.classList.remove('on'); renderer.domElement.style.cursor = ''; return; }
+  tip.textContent = `${u.num} · Torre ${u.torre} · ${{ d: 'Disponível', r: 'Reservado', v: 'Vendido' }[u.st]}`;
+  tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.classList.add('on');
+  renderer.domElement.style.cursor = u.st === 'd' ? 'pointer' : 'not-allowed';
+});
+document.querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => {
+  controls.autoRotate = false; const t = b.dataset.ir;
+  t === 'tudo' ? voar(VISAO.tudo[0].clone(), VISAO.tudo[1]()) : enquadrarTorre(t);
+});
+
+function tamanho() { const w = cena.clientWidth, h = cena.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+addEventListener('resize', tamanho); tamanho();
+camera.position.copy(VISAO.tudo[1]()); controls.target.copy(VISAO.tudo[0]);
+const ease = (k) => 1 - Math.pow(1 - k, 3);
+renderer.setAnimationLoop((t) => {
+  if (voo) {
+    const k = Math.min(1, (performance.now() - voo.t0) / voo.ms), e = ease(k);
+    controls.target.lerpVectors(voo.a0, voo.a1, e); camera.position.lerpVectors(voo.p0, voo.p1, e);
+    if (k >= 1) voo = null;
+  }
+  if (sel && porId[sel]) { const m = porId[sel]; m.material.emissiveIntensity = 0.55 + 0.35 * Math.sin(t / 220); contorno.position.copy(m.position); }
+  controls.update(); renderer.render(scene, camera);
+});
+
+// ---------- mapa 2D (o mesmo de antes) ----------
+const elAnd = document.getElementById('andares');
+function pintarMapa() {
+  let h = '';
+  for (let a = 13; a >= 1; a--) {
+    h += `<div class="andar"><b>${a}º</b>`;
+    for (let f = 1; f <= 8; f++) { const u = U[torreMapa + (a * 100 + f)]; h += `<button class="u ${u.st}${passa(u) ? '' : ' fora'}${sel === u.id ? ' sel' : ''}" data-id="${u.id}">${u.num}</button>`; }
     h += '</div>';
   }
-  el.innerHTML = h;
-  document.getElementById('nDisp').textContent = Object.keys(dados).filter(function(k){ return dados[k].st === 'd'; }).length;
+  elAnd.innerHTML = h;
 }
-function abrir(id){
-  var u = dados[id]; sel = id; desenhar();
-  var t = tipo(u), dorms = t === 'g' ? FINAIS[u.final] : t, garden = t === 'g';
+elAnd.addEventListener('click', (e) => { const b = e.target.closest('.u'); if (b && U[b.dataset.id].st === 'd') abrir(b.dataset.id); });
+document.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { torreMapa = b.dataset.t; document.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); pintarMapa(); });
+function pintar() {
+  pintar3d(); pintarMapa();
+  document.getElementById('nDisp').textContent = Object.values(U).filter((u) => u.st === 'd').length;
+}
+
+// ---------- ficha da unidade ----------
+const ficha = document.getElementById('ficha'), fc = document.getElementById('fc'), ok = document.getElementById('ok');
+function planta(u) { const g = garden(u), d = DORMS[u.final]; return `/midia/nimbus/planta-${d}d${g ? '-garden' : ''}.webp`; }
+function abrir(id) {
+  const u = U[id]; sel = id; pintar(); contorno.visible = true;
+  if (!document.getElementById('cena').hidden) focarUnidade(u);
+  const d = DORMS[u.final], g = garden(u), fav = favs.includes(id);
+  const pos = [1, 2, 3, 4].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('') + [8, 7, 6, 5].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('');
   ok.classList.remove('on'); fc.style.display = '';
-  fc.innerHTML = '<span class="k">Disponível</span><h2>Apto ' + u.andar + '0' + u.final + ' · Torre ' + u.torre + '</h2>' +
-    '<div class="sub">' + dorms + ' dormitórios com suíte' + (garden ? ' · com Garden privativo' : '') + '</div>' +
-    '<div class="gr"><div><b>' + u.andar + 'º</b><span>andar</span></div><div><b>Sol da ' + SOL[u.final] + '</b><span>na sacada</span></div><div><b>' + (dorms === '3' ? '≈ 49' : '≈ 44') + ' m²</b><span>área interna</span></div></div>' +
-    '<div class="tags"><span>Vista para o ' + VISTA[u.final] + '</span>' + (u.andar >= 9 ? '<span>Andar alto</span>' : '') + (garden ? '<span>Garden</span>' : '') + '<span>Sacada com churrasqueira</span></div>' +
-    '<button class="seg" id="seg">Segurar este apê por 24h<small>Grátis e sem compromisso</small></button>';
-  document.getElementById('seg').onclick = function(){ segurar(id); };
+  fc.innerHTML = `<span class="k">Disponível</span><h2>Apto ${u.num} · Torre ${u.torre}</h2>
+    <div class="sub">${d} dormitórios com suíte${g ? ' · com Garden privativo' : ''}</div>
+    <div class="gr"><div><b>${u.andar}º</b><span>andar</span></div><div><b>Sol da ${SOL[u.final]}</b><span>na sacada</span></div><div><b>≈ ${d === '3' ? 49 : 44} m²</b><span>área interna</span></div></div>
+    <div class="duo"><div class="pl"><img src="${planta(u)}" alt="Planta"><small>Planta ${d} dorm${g ? ' com Garden' : ''}</small></div>
+      <div class="pos"><div class="clube">CLUBE</div><div class="q">${[8, 7, 6, 5].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('')}${[1, 2, 3, 4].map((f) => `<span class="${f === u.final ? 'eu' : ''}">0${f}</span>`).join('')}</div><div class="rua">RUA</div><small>Posição no andar</small></div></div>
+    <div class="tags"><span>Vista para ${VISTA[u.final] === 'rua' ? 'a rua' : 'o clube'}</span>${u.andar >= 9 ? '<span>Andar alto</span>' : ''}${g ? '<span>Garden</span>' : ''}<span>Sacada com churrasqueira</span></div>
+    <div class="acoes"><button class="segurar" id="seg">Segurar por 24h<small>Grátis e sem compromisso</small></button><button class="coracao${fav ? ' on' : ''}" id="cor" aria-label="Favoritar">${fav ? '❤️' : '🤍'}</button></div>`;
+  document.getElementById('seg').onclick = () => segurar(id);
+  document.getElementById('cor').onclick = () => favoritar(id);
   ficha.classList.add('on');
 }
-function segurar(id){
-  dados[id].st = 'r'; fc.style.display = 'none'; ok.classList.add('on'); desenhar();
-  var b = el.querySelector('[data-id="' + id + '"]'); if (b) b.classList.add('novo');
-  var fim = Date.now() + 864e5;
-  clearInterval(window.__t); window.__t = setInterval(function(){
-    var s = Math.max(0, Math.floor((fim - Date.now()) / 1000)), p = function(n){ return String(n).padStart(2, '0'); };
-    document.getElementById('tmr').textContent = p(Math.floor(s / 3600)) + ':' + p(Math.floor(s % 3600 / 60)) + ':' + p(s % 60);
-  }, 1000);
+function fechar() { ficha.classList.remove('on'); sel = null; contorno.visible = false; pintar(); }
+document.getElementById('fx').onclick = fechar;
+function segurar(id) {
+  U[id].st = 'r'; fc.style.display = 'none'; ok.classList.add('on'); pintar();
+  const fim = Date.now() + 864e5; clearInterval(window.__t);
+  window.__t = setInterval(() => { const s = Math.max(0, Math.floor((fim - Date.now()) / 1000)), p = (n) => String(n).padStart(2, '0');
+    document.getElementById('tmr').textContent = `${p(Math.floor(s / 3600))}:${p(Math.floor(s % 3600 / 60))}:${p(s % 60)}`; }, 1000);
 }
-el.addEventListener('click', function(e){ var b = e.target.closest('.u'); if (!b) return; var u = dados[b.dataset.id]; if (u.st !== 'd') return; abrir(b.dataset.id); });
-document.getElementById('fx').onclick = function(){ ficha.classList.remove('on'); sel = null; desenhar(); };
-document.querySelectorAll('[data-t]').forEach(function(b){ b.onclick = function(){ torre = b.dataset.t; document.querySelectorAll('[data-t]').forEach(function(x){ x.classList.toggle('on', x === b); }); desenhar(); }; });
-document.querySelectorAll('[data-f]').forEach(function(b){ b.onclick = function(){ filtro = b.dataset.f; document.querySelectorAll('[data-f]').forEach(function(x){ x.classList.toggle('on', x === b); }); desenhar(); }; });
-// "Ao vivo": de vez em quando outro cliente reserva um apê (simulação do protótipo).
-setInterval(function(){
-  var ks = Object.keys(dados).filter(function(k){ return dados[k].st === 'd' && dados[k].torre === torre && k !== sel; });
-  if (!ks.length) return; var k = ks[Math.floor(Math.random() * ks.length)]; dados[k].st = 'r'; desenhar();
-  var b = el.querySelector('[data-id="' + k + '"]'); if (b) b.classList.add('novo');
-}, 9000);
-desenhar();
+// ---------- favoritos e comparação ----------
+const favbar = document.getElementById('favbar');
+function pintarFav() { document.getElementById('nFav').textContent = favs.length + (favs.length === 1 ? ' favorito' : ' favoritos'); favbar.classList.toggle('on', favs.length > 0); try { localStorage.setItem('nimbus_favs', JSON.stringify(favs)); } catch (e) {} }
+function favoritar(id) {
+  favs = favs.includes(id) ? favs.filter((x) => x !== id) : [...favs, id].slice(-3);
+  const b = document.getElementById('cor'); if (b) { const on = favs.includes(id); b.classList.toggle('on', on); b.textContent = on ? '❤️' : '🤍'; }
+  pintarFav();
+}
+favbar.onclick = () => {
+  sel = null; contorno.visible = false; ok.classList.remove('on'); fc.style.display = '';
+  const us = favs.map((id) => U[id]);
+  const lin = (rot, fn) => `<tr><td>${rot}</td>${us.map((u) => `<td>${fn(u)}</td>`).join('')}</tr>`;
+  fc.innerHTML = `<span class="k">Seus favoritos</span><h2>Comparar</h2><div class="cmp"><table>
+    <tr><th></th>${us.map((u) => `<th>${u.num}<br><small style="font-weight:500;color:#6d7f74">Torre ${u.torre}</small></th>`).join('')}</tr>
+    ${lin('Dormitórios', (u) => DORMS[u.final])}${lin('Andar', (u) => u.andar + 'º')}${lin('Sol', (u) => SOL[u.final])}${lin('Vista', (u) => VISTA[u.final])}${lin('Garden', (u) => garden(u) ? 'Sim' : '—')}
+    <tr><td></td>${us.map((u) => `<td><button class="mini" data-ver="${u.id}">Ver</button></td>`).join('')}</tr></table></div>`;
+  fc.querySelectorAll('[data-ver]').forEach((b) => b.onclick = () => abrir(b.dataset.ver));
+  ficha.classList.add('on'); pintar();
+};
+
+// ---------- 3D / mapa e filtros ----------
+document.querySelectorAll('[data-v]').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('[data-v]').forEach((x) => x.classList.toggle('on', x === b));
+  const tres = b.dataset.v === '3d';
+  document.getElementById('cena').hidden = !tres; document.getElementById('mapa').hidden = tres;
+  if (tres) tamanho();
+});
+document.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { filtro = b.dataset.f; document.querySelectorAll('[data-f]').forEach((x) => x.classList.toggle('on', x === b)); pintar(); });
+pintar(); pintarFav();
 </script>
 </body>
 </html>
