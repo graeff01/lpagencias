@@ -81,7 +81,12 @@
     if(!valido(d.tel)){ err.textContent='Informe um WhatsApp válido, com DDD.'; err.hidden=false; f.tel.focus(); return; }
     guardar(d);
     if(window.gtag) gtag('event','formulario_whatsapp',{interesse:d.int});
-    if(window.fbq) fbq('track','Lead',{content_name:d.int});
+    if(window.fbq){
+      // Correspondência avançada: a Meta liga o lead à pessoa (o pixel criptografa antes de enviar).
+      var ph=d.tel.replace(/\D/g,''); if(ph.length<=11) ph='55'+ph;
+      if(window.__pixel) fbq('init',window.__pixel,{ph:ph,fn:d.nome.split(' ')[0].toLowerCase(),country:'br'});
+      fbq('track','Lead',{content_name:d.int});
+    }
     var url=comDados(pendente,d); fechar();
     window.open(url,'_blank')||(location.href=url);
   });
