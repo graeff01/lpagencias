@@ -486,3 +486,24 @@ a.chip:hover{border-color:var(--line-strong)}
 .sd-retornos span{font-size:12px;color:var(--muted)}
 @media(max-width:900px){.sd-retornos{grid-template-columns:repeat(2,1fr)}.sd-retornos>div{border-bottom:1px solid var(--line)}}
 .sd-ret-g{grid-template-columns:repeat(6,1fr)}@media(max-width:900px){.sd-ret-g{grid-template-columns:repeat(2,1fr)}}
+
+/* Relatório de leads: landing direto x recepção */
+.cam{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 18px 6px}
+@media(max-width:760px){.cam{grid-template-columns:1fr}}
+.cam-box{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--sunken)}
+.cam-box.lp{border-color:#bfe6cf;background:#f0faf4}
+.cam-box.rec{border-color:#f5d6b8;background:#fff6ee}
+.cam-box span{display:block;font-size:12px;font-weight:650;color:var(--muted)}
+.cam-box b{display:block;font-size:30px;font-weight:760;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.cam-box i{font-style:normal;font-size:12px;color:var(--muted)}
+.cam-split{display:flex;height:10px;border-radius:10px;overflow:hidden;margin:10px 18px 6px;background:var(--sunken)}
+.cam-split .lp,.cam-leg i.lp{background:#1f9d57}
+.cam-split .rec,.cam-leg i.rec{background:#f08a2c}
+.cam-leg{display:flex;gap:16px;padding:0 18px;font-size:12px;color:var(--muted)}
+.cam-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.cam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;padding:16px 18px}
+.cam-grid h3{font-size:12.5px;font-weight:700;margin-bottom:8px}
+.tbl.mini{font-size:13px}
+.tbl.mini th{padding:7px 8px}
+.tbl.mini td{padding:7px 8px}
+.tbl.mini td.empty{padding:14px 8px}

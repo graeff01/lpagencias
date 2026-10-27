@@ -54,6 +54,96 @@
       <div class="kpi"><span>Resgatados</span><b><%= resumo.resgates %></b><i>voltaram após 24h e trocaram de corretor</i></div>
     </div>
 
+    <% var cm = caminho, totCm = cm.lp + cm.rec, pLp = totCm ? Math.round(cm.lp * 100 / totCm) : 0; %>
+    <div class="panel">
+      <h2 class="panel-h">Por onde o lead chegou<% if (dias) { %> · últimos <%= dias %> dias<% } %></h2>
+      <div class="cam">
+        <div class="cam-box lp">
+          <span>Direto da landing → corretor da vez</span>
+          <b><%= cm.lp %></b>
+          <i>leads novos que clicaram no WhatsApp da página</i>
+        </div>
+        <div class="cam-box rec">
+          <span>Pela recepção (encaminhado à mão)</span>
+          <b><%= cm.rec %></b>
+          <i><%= cm.confirmados %> confirmados pelo corretor<% if (cm.rec) { %> (<%= Math.round(cm.confirmados * 100 / cm.rec) %>%)<% } %></i>
+        </div>
+        <div class="cam-box">
+          <span>Total</span>
+          <b><%= totCm %></b>
+          <i><% if (cm.ambos) { %><%= cm.ambos %> pessoa<%= cm.ambos > 1 ? 's' : '' %> chegou pelos dois caminhos<% } else { %>nenhuma pessoa repetida entre os caminhos<% } %></i>
+        </div>
+      </div>
+      <% if (totCm) { %>
+      <div class="cam-split"><span class="lp" style="width:<%= pLp %>%"></span><span class="rec" style="width:<%= 100 - pLp %>%"></span></div>
+      <div class="cam-leg"><span><i class="lp"></i>Landing <%= pLp %>%</span><span><i class="rec"></i>Recepção <%= 100 - pLp %>%</span></div>
+      <% } %>
+
+      <div class="cam-grid">
+        <div>
+          <h3>Por dia</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Dia</th><th>Landing</th><th>Recepção</th><th>Total</th></tr></thead>
+            <tbody>
+              <% if (!cm.porDia.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+              <% cm.porDia.forEach(function(d){ var p = d.dia.split('-'); %>
+                <tr><td><%= p[2] + '/' + p[1] %></td><td class="num"><%= d.lp %></td><td class="num"><%= d.rec %></td><td class="num"><%= d.lp + d.rec %></td></tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Por corretor</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Corretor</th><th>Landing</th><th>Recepção</th><th>Total</th></tr></thead>
+            <tbody>
+              <% if (!cm.porCorretor.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+              <% cm.porCorretor.forEach(function(c){ %>
+                <tr><td><%= c.nome %></td><td class="num"><%= c.lp %></td><td class="num"><%= c.rec %></td><td class="num"><%= c.lp + c.rec %></td></tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Anúncio que trouxe (landing)</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Origem · campanha</th><th>Leads</th></tr></thead>
+            <tbody>
+              <% if (!cm.anuncios.length) { %><tr><td colspan="2" class="empty">—</td></tr><% } %>
+              <% cm.anuncios.forEach(function(a){ %><tr><td><%= a.nome %></td><td class="num"><%= a.n %></td></tr><% }); %>
+            </tbody>
+          </table>
+          <h3 style="margin-top:18px">Canal informado (recepção)</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Canal</th><th>Leads</th></tr></thead>
+            <tbody>
+              <% if (!cm.canais.length) { %><tr><td colspan="2" class="empty">—</td></tr><% } %>
+              <% cm.canais.forEach(function(a){ %><tr><td><%= a.nome %></td><td class="num"><%= a.n %></td></tr><% }); %>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Retorno dos corretores (recepção)</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Situação</th><th>Leads</th></tr></thead>
+            <tbody>
+              <% var temRet = false; Object.keys(cm.rotulosRetorno).forEach(function(k){ if (!cm.retornos[k]) return; temRet = true; %>
+                <tr><td><%= cm.rotulosRetorno[k] %></td><td class="num"><%= cm.retornos[k] %></td></tr>
+              <% }); %>
+              <% if (!temRet) { %><tr><td colspan="2" class="empty">Nenhum retorno ainda.</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel-foot"><p class="hint">
+        <b>Landing:</b> cada pessoa que clicou no WhatsApp da página pela primeira vez e foi direto para o corretor da vez
+        (cliques repetidos e robôs não contam). Para separar por anúncio, o link do anúncio precisa ter
+        <code>utm_source</code> e <code>utm_campaign</code>.
+        <b>Recepção:</b> cada lead que a recepção encaminhou na tela da campanha; reencaminhado conta uma vez.
+        O canal é o que ela marca no envio.
+      </p></div>
+    </div>
+
     <div class="panel">
       <h2 class="panel-h">Distribuição<% if (dias) { %> · últimos <%= dias %> dias<% } %></h2>
       <div class="tbl-wrap">

@@ -328,20 +328,57 @@ router.post('/corretores/:id/zerar', async (req, res, next) => {
 });
 
 // ---- Relatório de leads ----
+// Landing direto para o corretor da vez x recepção: totais, por dia, por
+// anúncio/canal, por corretor e o que os corretores responderam.
+function compararCaminhos({ lp, rec }) {
+  const dia = (d) => new Date(d).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+  const conta = (lista, chave) => {
+    const m = new Map();
+    for (const x of lista) { const k = chave(x); m.set(k, (m.get(k) || 0) + 1); }
+    return [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
+  };
+  const dias = new Map();
+  for (const x of lp) { const k = dia(x.created_at); dias.set(k, { lp: 0, rec: 0, ...dias.get(k) }); dias.get(k).lp++; }
+  for (const x of rec) { const k = dia(x.created_at); dias.set(k, { lp: 0, rec: 0, ...dias.get(k) }); dias.get(k).rec++; }
+  const corretores = new Map();
+  const somar = (x, campo) => {
+    let k = String(x.corretor_fone || '').replace(/\D/g, '');   // mesmo corretor com o telefone escrito de jeitos diferentes
+    if (k && !k.startsWith('55')) k = '55' + k;
+    k = k || x.corretor_nome || '?';
+    if (!corretores.has(k)) corretores.set(k, { nome: x.corretor_nome || k, lp: 0, rec: 0 });
+    corretores.get(k)[campo]++;
+  };
+  lp.forEach((x) => somar(x, 'lp')); rec.forEach((x) => somar(x, 'rec'));
+  const telsLp = new Set(lp.map((x) => x.lead_telefone).filter(Boolean));
+  const retornos = {};
+  for (const x of rec) if (x.retorno) retornos[x.retorno] = (retornos[x.retorno] || 0) + 1;
+  return {
+    lp: lp.length, rec: rec.length,
+    confirmados: rec.filter((x) => x.confirmado_em).length,
+    retornos, rotulosRetorno: equipes.RETORNOS,
+    ambos: new Set(rec.map((x) => x.lead_telefone).filter((t) => t && telsLp.has(t))).size,
+    anuncios: conta(lp, (x) => [x.utm_source || 'sem anúncio (orgânico/direto)', x.utm_campaign].filter(Boolean).join(' · ')),
+    canais: conta(rec, (x) => x.canal || 'canal não informado'),
+    porDia: [...dias].map(([d, v]) => ({ dia: d, ...v })).sort((a, b) => (a.dia < b.dia ? 1 : -1)).slice(0, 31),
+    porCorretor: [...corretores.values()].sort((a, b) => (b.lp + b.rec) - (a.lp + a.rec)),
+  };
+}
+
 router.get('/leads/:id', async (req, res, next) => {
   try {
     const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const dias = req.query.dias ? Number(req.query.dias) : null;
-    const [stats, perdidos, cliques, resumo] = await Promise.all([
+    const [stats, perdidos, cliques, resumo, caminhos] = await Promise.all([
       db.statsCorretores(emp.id, dias),
       db.naoRetornados(emp.id, dias),
       db.cliquesRecentes(emp.id, 200),
       db.resumoCliques(emp.id),
+      db.leadsPorCaminho(emp.id, dias),
     ]);
     stats.forEach((s) => { s.nao_retornados = perdidos[s.id] || 0; });
     res.render('admin/leads', {
-      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias,
+      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos),
     });
   } catch (e) { next(e); }
 });
