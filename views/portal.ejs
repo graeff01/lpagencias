@@ -4,6 +4,12 @@
 <%
   var heroImg = cfg.hero_imagem || (emps[0] && emps[0]._capa) || '';
   var heroV = h.imgVar(heroImg);
+  // Filme de fundo: versão vertical (-v.mp4) e capas (.webp) seguem o nome do arquivo quando é mídia do próprio site.
+  var heroVid = cfg.hero_video || '';
+  var vidLocal = /^\/midia\/.+\.mp4$/.test(heroVid);
+  var heroVidV = vidLocal ? heroVid.replace(/\.mp4$/, '-v.mp4') : '';
+  var capaVid = vidLocal ? heroVid.replace(/\.mp4$/, '.webp') : '', capaVidV = vidLocal ? heroVid.replace(/\.mp4$/, '-v.webp') : '';
+  if (capaVid) heroV = { src: capaVid, sm: capaVidV };
   var desc = regiao
     ? 'Lançamentos de apartamentos ' + (regiao.tipo === 'bairro' ? 'no ' : 'em ') + regiao.nome + ' selecionados pela Auxiliadora Predial. Compare plantas, localização e condições.'
     : cfg.meta_description;
@@ -60,7 +66,9 @@
       --green-bright:<%= h.shade(cfg.cor_principal, 30) %>; --green-ink:<%= h.shade(cfg.cor_principal, -78) %>;
       --orange:<%= cfg.cor_accent %>; --orange-deep:<%= h.shade(cfg.cor_accent, -34) %>;
     }
-    <% if (heroV.src) { %>.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),url("<%= heroV.src %>")}
+    <% if (heroVid && heroV.src) { %>.pt-hero .bg{background-image:url("<%= heroV.src %>")}
+    <% if (heroV.sm) { %>@media(max-width:760px){.pt-hero .bg{background-image:url("<%= heroV.sm %>")}}<% } %>
+    <% } else if (heroV.src) { %>.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),url("<%= heroV.src %>")}
     <% if (heroV.sm) { %>@media(max-width:760px){.pt-hero .bg{background-image:linear-gradient(100deg,rgba(5,22,13,.93) 0%,rgba(5,22,13,.7) 45%,rgba(5,22,13,.35) 100%),url("<%= heroV.sm %>")}}<% } %><% } %>
   </style>
   <script type="application/ld+json">
@@ -113,9 +121,12 @@
   <a class="pt-nav-wa" href="<%= wa %>?src=topo" target="_blank" rel="noopener nofollow"><%- waSvg %><span>Fale conosco</span></a>
 </nav>
 
-<header class="pt-hero<%= regiao ? ' reg' : '' %>">
+<header class="pt-hero<%= regiao ? ' reg' : '' %><%= heroVid ? ' com-video' : '' %>">
   <div class="bg"></div>
-  <div class="blob b1"></div><div class="blob b2"></div>
+  <% if (heroVid) { %>
+  <video class="pt-vid" muted loop playsinline preload="none" aria-hidden="true" data-src="<%= heroVid %>?v=<%= v %>"<% if (heroVidV) { %> data-src-v="<%= heroVidV %>?v=<%= v %>"<% } %><% if (vidLocal) { %> data-webm="<%= heroVid.replace(/\.mp4$/, '.webm') %>?v=<%= v %>" data-webm-v="<%= heroVidV.replace(/\.mp4$/, '.webm') %>?v=<%= v %>"<% } %>></video>
+  <div class="pt-veu"></div>
+  <% } else { %><div class="blob b1"></div><div class="blob b2"></div><% } %>
   <div class="pt-wrap pt-hero-in">
     <% if (regiao) { %>
       <nav class="pt-crumb" aria-label="Você está em"><a href="/">Início</a><span>/</span><span><%= regiao.nome %></span></nav>
@@ -123,20 +134,42 @@
       <span class="pt-kick"><span class="d"></span><%= cfg.hero_kicker %></span>
     <% } %>
     <h1><%= h1 %></h1>
-    <% if (sub) { %><p class="pt-sub"><%= sub %></p><% } %>
+    <% if (sub && (regiao || !heroVid)) { %><p class="pt-sub"><%= sub %></p><% } %>
     <div class="pt-ctas">
-      <a href="#empreendimentos" class="pt-btn pri"><%= cfg.hero_cta || 'Ver empreendimentos' %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      <a href="#empreendimentos" class="pt-btn pri"><%= cfg.hero_cta || 'Ver lançamentos' %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      <% if (heroVid) { %>
+      <a href="/match?utm_source=portal&amp;utm_medium=hero" class="pt-btn match"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.6h2c.7-1.5 2.2-2.6 4.3-2.6 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21Z"/></svg>Dar match</a>
+      <% } else { %>
       <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="pt-btn wa"><%- waSvg %>Falar com um consultor</a>
+      <% } %>
     </div>
   </div>
-  <% if (numeros.length) { %>
+  <% if (numeros.length && !heroVid) { %>
   <div class="pt-wrap">
     <div class="pt-stats">
       <% numeros.forEach(function(n){ %><div class="st"><b><%= n.num %></b><span><%= n.label %></span></div><% }); %>
     </div>
   </div>
   <% } %>
+  <% if (heroVid) { %><a class="pt-rolar" href="#empreendimentos" aria-label="Ver lançamentos"><span></span></a><% } %>
 </header>
+<% if (heroVid) { %>
+<script>
+  // Filme do topo: vertical no celular em pé; não baixa com economia de dados nem com "reduzir movimento".
+  (function(){
+    var vd=document.querySelector('.pt-vid'); if(!vd) return;
+    var c=navigator.connection||{};
+    if(c.saveData||/2g/.test(c.effectiveType||'')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var emPe=matchMedia('(orientation: portrait) and (max-width: 900px)').matches;
+    var a=function(n){return vd.getAttribute(n)||'';}, webm=!vd.canPlayType('video/mp4; codecs="avc1.640028"');   // sem H.264: WebM
+    vd.src=emPe?((webm&&a('data-webm-v'))||a('data-src-v')||a('data-src')):((webm&&a('data-webm'))||a('data-src'));
+    vd.addEventListener('playing',function(){ vd.classList.add('on'); },{once:true});
+    var p=vd.play(); if(p&&p.catch) p.catch(function(){});
+    // fora da tela, pausa (economiza bateria e processador)
+    if('IntersectionObserver' in window) new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ var q=vd.play(); if(q&&q.catch) q.catch(function(){}); } else vd.pause(); }); }).observe(vd);
+  })();
+</script>
+<% } %>
 
 <section class="pt-sec alt" id="empreendimentos">
   <div class="pt-wrap">

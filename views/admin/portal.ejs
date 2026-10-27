@@ -73,6 +73,7 @@
             <div class="field"><label>Texto do botão</label><input name="hero_cta" value="<%= val(cfg.hero_cta) %>"></div>
           </div>
           <div class="field"><label>Foto de fundo</label><%- imagem('hero_imagem', 'Enviar foto', 110, 66) %><div class="hint">Foto horizontal e larga (1600 px ou mais). Em branco, volta para a foto padrão do escritório.</div></div>
+          <div class="field" style="margin-top:14px"><label>Vídeo de fundo (.mp4, sem som)</label><input name="hero_video" value="<%= val(cfg.hero_video) %>" placeholder="/midia/portal/familia.mp4"><div class="hint">Toca em loop atrás do título. Se existir um arquivo com o mesmo nome terminado em <code>-v.mp4</code>, ele é usado no celular em pé. Em branco, volta para o filme padrão da família.</div></div>
         </div>
 
         <div class="fieldset">

@@ -26,7 +26,10 @@
     function fechar(){ balao.classList.remove('on'); try{ sessionStorage.setItem('ap_balao','x'); }catch(_){} }
     document.getElementById('waBalaoX').addEventListener('click',fechar);
     // Com o teste "Encontre seu imóvel" aberto, o balão espera para não disputar a atenção.
-    function mostrarBalao(){ if(document.body.classList.contains('quiz-aberto')) return setTimeout(mostrarBalao,4000); balao.classList.add('on'); setTimeout(fechar,11000); }
+    function mostrarBalao(){ if(document.body.classList.contains('quiz-aberto')) return setTimeout(mostrarBalao,4000);
+      // celular: não cobre os botões do topo com filme; espera a pessoa rolar
+      var hv=document.querySelector('.pt-hero.com-video'); if(hv&&innerWidth<=760&&scrollY<hv.offsetHeight*0.5) return setTimeout(mostrarBalao,3000);
+      balao.classList.add('on'); setTimeout(fechar,11000); }
     if(!fechado){ setTimeout(mostrarBalao,5000); }
   })();
 </script>
