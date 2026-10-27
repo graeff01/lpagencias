@@ -363,7 +363,7 @@ a.pt-gnota:hover{border-color:var(--green)}
 @media(max-width:520px){
   .pt-hero.com-video .pt-ctas{display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
   .pt-hero.com-video .pt-btn{padding:15px 12px;font-size:14.5px}
-  .pt-hero.com-video .pt-hero-in{padding-bottom:44px}
+  .pt-hero.com-video .pt-hero-in{padding-bottom:108px}   /* acima do botão flutuante do WhatsApp */
 }
 /* indicação de rolar (só computador) */
 .pt-rolar{position:absolute;left:50%;bottom:26px;width:26px;height:42px;margin-left:-13px;border:1.5px solid rgba(255,255,255,.55);border-radius:14px;z-index:2}
