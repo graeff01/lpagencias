@@ -86,6 +86,7 @@
       var ph=d.tel.replace(/\D/g,''); if(ph.length<=11) ph='55'+ph;
       if(window.__pixel) fbq('init',window.__pixel,{ph:ph,fn:d.nome.split(' ')[0].toLowerCase(),country:'br'});
       fbq('track','Lead',{content_name:d.int});
+      fbq('track','CompleteRegistration',{content_name:d.int});   // conjuntos que otimizam por "Concluir inscrição"
     }
     var url=comDados(pendente,d); fechar();
     window.open(url,'_blank')||(location.href=url);

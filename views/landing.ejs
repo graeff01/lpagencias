@@ -832,7 +832,7 @@
       gtag('event','envio_formulario',{empreendimento:EMP});
       if(ADS_CONV) gtag('event','conversion',{send_to:ADS_CONV});
     }
-    if(window.fbq) fbq('track','Lead',{content_name:EMP});
+    if(window.fbq){ fbq('track','Lead',{content_name:EMP}); fbq('track','CompleteRegistration',{content_name:EMP}); }
     var extra=window.__utm?'&'+new URLSearchParams(window.__utm).toString():'';
     var G=window.__leadGate, lead={ nome:String(d.get('nome')||'').trim(), tel:String(d.get('tel')||'').trim(), int:d.get('interesse')||'' };
     // Com o formulário padrão ligado, nome e WhatsApp vão estruturados (auditoria + mensagem padrão).
