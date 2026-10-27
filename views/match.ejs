@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title><%= title %></title>
   <meta name="description" content="Deslize as fotos dos lançamentos e descubra o apartamento que combina com você.">
@@ -19,10 +19,11 @@
       --ink:#21262e; --soft:#656e7b; --line:#e8ebef; --bg:#ffffff;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%}
+    html,body{height:100%;width:100%;overflow:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
+    html{position:fixed;inset:0}
     body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
     button{font:inherit}
-    .app{position:relative;height:100%;height:100dvh;max-width:460px;margin:0 auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+    .app{overflow:hidden;position:relative;height:100%;height:100dvh;max-width:460px;margin:0 auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
     /* topo */
     .top{flex:none;height:58px;display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:0 8px}
     .top .ic{width:44px;height:44px;border:0;background:none;display:grid;place-items:center;color:#c3c9d1;cursor:pointer;text-decoration:none}
@@ -104,7 +105,7 @@
     .bt.sim{width:60px;height:60px;color:var(--sim)}
     .bt.nao.ativo{background:var(--nao);color:#fff}.bt.sim.ativo{background:var(--sim);color:#fff}.bt.super.ativo{background:var(--super);color:#fff}
     /* telas */
-    .tela{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+    .tela{overflow-x:hidden;position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
     .tela[hidden]{display:none}
     .intro{background:#fff}
     .intro .leque{position:relative;width:230px;height:250px;margin-bottom:26px}
@@ -202,6 +203,11 @@
 <div class="conf" id="conf"></div>
 
 <script>
+  // Sem zoom: a pinça não amplia a página (o toque duplo já é desligado pelo touch-action no CSS).
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function(t){ document.addEventListener(t, function(e){ e.preventDefault(); }, { passive: false }); });
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+</script>
+<script>
 (function(){
   var EMPS = <%- JSON.stringify(emps).replace(/</g, '\\u003c') %>;
   var $ = function(id){ return document.getElementById(id); };
@@ -214,7 +220,7 @@
   // Um cartão por empreendimento, com até 5 fotos (como um perfil). O nome só aparece no match.
   var ordem = embaralhar(EMPS.map(function(e, i){ return i; }).filter(function(i){ return EMPS[i].fotos.length || EMPS[i].capa; })).slice(0, 10);
   var ultimoMatch = 0;   // nº de curtidas no último match mostrado
-  var votos = {}, hist = [], pos = 0, aberto = null;
+  var votos = {}, hist = [], pos = 0, aberto = null, ocupado = false;   // ocupado: cartão saindo da tela
 
   // ---------- intro: leque com as capas ----------
   var lq = $('leque');
@@ -251,6 +257,7 @@
   }
 
   function montar(){
+    ocupado = false;
     pilha.innerHTML = '';
     for (var p = Math.min(ordem.length - 1, pos + 1); p >= pos; p--) pilha.appendChild(cartao(ordem[p], p - pos));
     var topo = pilha.lastChild; if (topo) ativar(topo);
@@ -299,7 +306,8 @@
   }
 
   function decidir(acao){
-    var c = pilha.lastChild; if (!c || pos >= ordem.length) return;
+    var c = pilha.lastChild; if (ocupado || !c || pos >= ordem.length) return;
+    ocupado = true;
     var i = +c.dataset.i; votos[i] = acao; hist.push(i);
     var b = bts.querySelector('.bt.' + acao); if (b) { b.classList.add('ativo'); setTimeout(function(){ b.classList.remove('ativo'); }, 260); }
     c.querySelector('.carimbo.' + acao).style.opacity = 1;
