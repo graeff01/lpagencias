@@ -8,6 +8,10 @@
   <div class="mc-caixa">
     <button type="button" class="mc-x" data-mc-fechar aria-label="Fechar">×</button>
     <div class="mc-palco" aria-hidden="true">
+      <div class="mc-foto" id="mcFoto"></div>
+      <div class="mc-aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+      <div class="mc-raios"></div><div class="mc-halo"></div>
+      <span class="mc-bri b1"></span><span class="mc-bri b2"></span><span class="mc-bri b3"></span><span class="mc-bri b4"></span><span class="mc-bri b5"></span><span class="mc-bri b6"></span>
       <div class="mc-cor c1">♥</div><div class="mc-cor c2">♥</div><div class="mc-cor c3">♥</div><div class="mc-cor c4">♥</div>
       <div class="mc-deck" id="mcDeck"></div>
       <div class="mc-bts"><span class="n">✕</span><span class="s">★</span><span class="l">♥</span></div>
@@ -27,10 +31,31 @@
 .mc-caixa{position:relative;width:min(400px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#21262e;border-radius:28px;padding:0 22px 20px;text-align:center;
   box-shadow:0 40px 90px -30px rgba(0,0,0,.6);opacity:0;transform:translateY(30px) scale(.94);transition:opacity .4s,transform .5s cubic-bezier(.2,1.3,.4,1)}
 .mc.on .mc-caixa{opacity:1;transform:none}
-.mc-x{position:absolute;top:10px;right:12px;z-index:5;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.9);font-size:24px;line-height:1;color:#656e7b;cursor:pointer}
-.mc-palco{position:relative;height:300px;margin:0 -22px 14px;background:radial-gradient(120% 90% at 50% 100%,#ffe3ee 0%,#fff4ef 45%,#fff 80%);overflow:hidden}
-.mc-deck{position:absolute;left:50%;top:18px;width:168px;height:200px;margin-left:-84px}
-.mc-card{position:absolute;inset:0;border-radius:16px;background:#ddd center/cover;box-shadow:0 18px 34px -14px rgba(0,0,0,.45);transform-origin:50% 120%;transition:transform .7s cubic-bezier(.4,.1,.2,1),opacity .7s}
+.mc-x{position:absolute;top:10px;right:12px;z-index:8;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.9);font-size:24px;line-height:1;color:#656e7b;cursor:pointer}
+.mc-palco{position:relative;height:300px;margin:0 -22px 14px;background:linear-gradient(160deg,#2b0b33 0%,#4a0f3d 45%,#5b1a2a 100%);overflow:hidden;isolation:isolate}
+.mc-palco::after{content:'';position:absolute;inset:auto 0 0 0;height:70px;background:linear-gradient(0deg,#fff 8%,rgba(255,255,255,0));z-index:4;pointer-events:none}
+.mc-foto{position:absolute;inset:-30px;background:center/cover;filter:blur(26px) saturate(1.4);opacity:.45;transform:scale(1.1);transition:background-image .8s,opacity .8s}
+.mc-aurora{position:absolute;inset:0;mix-blend-mode:screen}
+.mc-aurora i{position:absolute;width:260px;height:260px;border-radius:50%;filter:blur(40px);opacity:.75}
+.mc-aurora .a1{background:#fd267a;left:-60px;top:-50px;animation:mcA1 9s ease-in-out infinite alternate}
+.mc-aurora .a2{background:#ff7a36;right:-70px;top:40px;animation:mcA2 11s ease-in-out infinite alternate}
+.mc-aurora .a3{background:#8b5cf6;left:30%;bottom:-120px;animation:mcA3 13s ease-in-out infinite alternate}
+@keyframes mcA1{to{transform:translate(90px,60px) scale(1.2)}}
+@keyframes mcA2{to{transform:translate(-80px,50px) scale(.85)}}
+@keyframes mcA3{to{transform:translate(-60px,-70px) scale(1.25)}}
+.mc-raios{position:absolute;left:50%;top:120px;width:620px;height:620px;margin:-310px 0 0 -310px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.09) 0 6deg,transparent 6deg 22deg);
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 62%);mask:radial-gradient(circle,#000 0,transparent 62%);animation:mcGira 40s linear infinite}
+@keyframes mcGira{to{transform:rotate(360deg)}}
+.mc-halo{position:absolute;left:50%;top:118px;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,220,.55),rgba(253,38,122,.18) 45%,transparent 70%);animation:mcHalo 3s ease-in-out infinite}
+@keyframes mcHalo{50%{transform:scale(1.12);opacity:.75}}
+.mc-bri{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(255,255,255,.8);opacity:0;animation:mcBri 2.8s ease-in-out infinite}
+.mc-bri.b1{left:14%;top:22%}.mc-bri.b2{left:82%;top:16%;animation-delay:.6s}.mc-bri.b3{left:24%;top:64%;animation-delay:1.2s}
+.mc-bri.b4{left:76%;top:58%;animation-delay:1.7s}.mc-bri.b5{left:9%;top:45%;animation-delay:2.2s}.mc-bri.b6{left:90%;top:38%;animation-delay:.3s}
+@keyframes mcBri{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.3)}}
+.mc-deck,.mc-bts{z-index:5}
+.mc-cor{z-index:3}
+.mc-deck{position:absolute;z-index:5;left:50%;top:18px;width:168px;height:200px;margin-left:-84px}
+.mc-card{position:absolute;inset:0;border-radius:16px;background:#ddd center/cover;box-shadow:0 22px 40px -12px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.18);transform-origin:50% 120%;transition:transform .7s cubic-bezier(.4,.1,.2,1),opacity .7s}
 .mc-card::after{content:'';position:absolute;inset:0;border-radius:16px;background:linear-gradient(0deg,rgba(0,0,0,.55),transparent 55%)}
 .mc-card .st{position:absolute;top:16px;left:12px;z-index:1;font-weight:900;font-size:18px;letter-spacing:.04em;color:#21d07c;border:3px solid #21d07c;border-radius:7px;padding:0 6px;transform:rotate(-16deg);opacity:0;transition:opacity .25s}
 .mc-card.vai .st{opacity:1}
@@ -42,7 +67,7 @@
 .mc-bts .n{width:38px;height:38px;color:#fd3a73;font-size:16px}.mc-bts .s{width:30px;height:30px;color:#1ec0ff;font-size:14px}.mc-bts .l{width:38px;height:38px;color:#21d07c;font-size:18px}
 .mc-bts .l.bate{animation:mcBate .5s ease}
 @keyframes mcBate{40%{transform:scale(1.3);background:#21d07c;color:#fff}}
-.mc-cor{position:absolute;bottom:-20px;font-size:18px;color:#fd267a;opacity:0;animation:mcSobe 5s linear infinite}
+.mc-cor{position:absolute;bottom:-20px;font-size:18px;color:#ff8fb4;text-shadow:0 0 10px rgba(253,38,122,.8);opacity:0;animation:mcSobe 5s linear infinite}
 .mc-cor.c1{left:12%;animation-delay:0s}.mc-cor.c2{left:30%;font-size:12px;animation-delay:1.3s}.mc-cor.c3{left:72%;font-size:22px;animation-delay:2.4s}.mc-cor.c4{left:88%;font-size:13px;animation-delay:3.4s}
 @keyframes mcSobe{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.85}100%{transform:translateY(-300px) scale(1.1) rotate(25deg);opacity:0}}
 .mc-kick{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fd267a;background:#ffeef4;padding:6px 10px;border-radius:99px}
@@ -52,7 +77,7 @@
 .mc-go{display:block;border-radius:99px;padding:16px;font-weight:800;font-size:16px;color:#fff;text-decoration:none;background:linear-gradient(45deg,#fd267a,#ff6036);box-shadow:0 14px 30px -10px rgba(253,38,122,.7);transition:transform .15s}
 .mc-go:hover{transform:translateY(-2px)}
 .mc-alt{margin-top:10px;border:0;background:none;color:#656e7b;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:8px}
-@media(prefers-reduced-motion:reduce){.mc-cor{animation:none;display:none}.mc-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.mc-cor{animation:none;display:none}.mc-card{transition:none}.mc-aurora i,.mc-raios,.mc-halo,.mc-bri{animation:none}}
 </style>
 <script>
 (function(){
@@ -67,6 +92,7 @@
   }
   function montar(){
     deck.innerHTML = '';
+    document.getElementById('mcFoto').style.backgroundImage = 'url("' + FOTOS[k % FOTOS.length].url + '")';
     for (var j = 2; j >= 0; j--) { var c = carta(FOTOS[(k + j) % FOTOS.length], 3 - j); c.style.transform = 'translateY(' + (j * 8) + 'px) scale(' + (1 - j * 0.05) + ')'; deck.appendChild(c); }
   }
   // Demonstração: o cartão de cima "dá curtir" sozinho, em loop.
