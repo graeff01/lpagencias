@@ -181,6 +181,13 @@
       return true;
     }
     if(/[?&]quiz=1\b/.test(location.search)) abrir('anuncio');
-    else if(podeAbrirSozinho()) setTimeout(function(){ if(!document.body.classList.contains('quiz-aberto')) abrir('automatico'); },2200);
+    else if(podeAbrirSozinho()) setTimeout(function(){
+      if(document.body.classList.contains('quiz-aberto')) return;
+      // Primeira visita: o convite do Match de imóveis (com opção de cair no teste de 3 perguntas).
+      if(window.__conviteMatch){
+        gravar(sessionStorage,K_SESSAO,'1');
+        window.__conviteMatch(function(){ gravar(localStorage,K_FECHOU,String(Date.now())); }, function(){ mostrar(1); abrir('convite-match'); });
+      } else abrir('automatico');
+    },2200);
   })();
 </script>

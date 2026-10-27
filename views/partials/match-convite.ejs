@@ -1,0 +1,99 @@
+<%#
+  Convite para o "Match de imóveis" (portal): aparece sozinho na primeira visita,
+  no lugar do teste de 3 perguntas, com as regras de exibição do quiz.
+  Espera: fotos (lista de URLs de capa).
+%>
+<div class="mc" id="matchConvite" role="dialog" aria-modal="true" aria-labelledby="mcTit" hidden>
+  <div class="mc-fundo" data-mc-fechar></div>
+  <div class="mc-caixa">
+    <button type="button" class="mc-x" data-mc-fechar aria-label="Fechar">×</button>
+    <div class="mc-palco" aria-hidden="true">
+      <div class="mc-cor c1">♥</div><div class="mc-cor c2">♥</div><div class="mc-cor c3">♥</div><div class="mc-cor c4">♥</div>
+      <div class="mc-deck" id="mcDeck"></div>
+      <div class="mc-bts"><span class="n">✕</span><span class="s">★</span><span class="l">♥</span></div>
+    </div>
+    <span class="mc-kick">Novo · Match de imóveis</span>
+    <h2 id="mcTit">Seu próximo apê está a um <em>match</em> de distância</h2>
+    <p>Deslize os lançamentos como num app de encontros e descubra qual combina com você. Leva 1 minuto.</p>
+    <a class="mc-go" id="mcGo" href="/match">💘 Começar o match</a>
+    <button type="button" class="mc-alt" id="mcQuiz">Prefiro responder 3 perguntas</button>
+  </div>
+</div>
+<style>
+.mc{position:fixed;inset:0;z-index:210;display:grid;place-items:center;padding:16px}
+.mc[hidden]{display:none}
+.mc-fundo{position:absolute;inset:0;background:rgba(12,10,20,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;transition:opacity .35s}
+.mc.on .mc-fundo{opacity:1}
+.mc-caixa{position:relative;width:min(400px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#21262e;border-radius:28px;padding:0 22px 20px;text-align:center;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.6);opacity:0;transform:translateY(30px) scale(.94);transition:opacity .4s,transform .5s cubic-bezier(.2,1.3,.4,1)}
+.mc.on .mc-caixa{opacity:1;transform:none}
+.mc-x{position:absolute;top:10px;right:12px;z-index:5;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.9);font-size:24px;line-height:1;color:#656e7b;cursor:pointer}
+.mc-palco{position:relative;height:300px;margin:0 -22px 14px;background:radial-gradient(120% 90% at 50% 100%,#ffe3ee 0%,#fff4ef 45%,#fff 80%);overflow:hidden}
+.mc-deck{position:absolute;left:50%;top:18px;width:168px;height:200px;margin-left:-84px}
+.mc-card{position:absolute;inset:0;border-radius:16px;background:#ddd center/cover;box-shadow:0 18px 34px -14px rgba(0,0,0,.45);transform-origin:50% 120%;transition:transform .7s cubic-bezier(.4,.1,.2,1),opacity .7s}
+.mc-card::after{content:'';position:absolute;inset:0;border-radius:16px;background:linear-gradient(0deg,rgba(0,0,0,.55),transparent 55%)}
+.mc-card .st{position:absolute;top:16px;left:12px;z-index:1;font-weight:900;font-size:18px;letter-spacing:.04em;color:#21d07c;border:3px solid #21d07c;border-radius:7px;padding:0 6px;transform:rotate(-16deg);opacity:0;transition:opacity .25s}
+.mc-card.vai .st{opacity:1}
+.mc-card.vai{transform:translateX(190px) rotate(26deg)!important;opacity:0}
+.mc-card .lb{position:absolute;left:10px;bottom:10px;z-index:1;color:#fff;font-weight:800;font-size:14px;text-align:left}
+.mc-card .lb small{display:block;font-weight:500;font-size:11px;opacity:.85}
+.mc-bts{position:absolute;z-index:5;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:12px;align-items:center}
+.mc-bts span{display:grid;place-items:center;border-radius:50%;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14);font-weight:900}
+.mc-bts .n{width:38px;height:38px;color:#fd3a73;font-size:16px}.mc-bts .s{width:30px;height:30px;color:#1ec0ff;font-size:14px}.mc-bts .l{width:38px;height:38px;color:#21d07c;font-size:18px}
+.mc-bts .l.bate{animation:mcBate .5s ease}
+@keyframes mcBate{40%{transform:scale(1.3);background:#21d07c;color:#fff}}
+.mc-cor{position:absolute;bottom:-20px;font-size:18px;color:#fd267a;opacity:0;animation:mcSobe 5s linear infinite}
+.mc-cor.c1{left:12%;animation-delay:0s}.mc-cor.c2{left:30%;font-size:12px;animation-delay:1.3s}.mc-cor.c3{left:72%;font-size:22px;animation-delay:2.4s}.mc-cor.c4{left:88%;font-size:13px;animation-delay:3.4s}
+@keyframes mcSobe{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.85}100%{transform:translateY(-300px) scale(1.1) rotate(25deg);opacity:0}}
+.mc-kick{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fd267a;background:#ffeef4;padding:6px 10px;border-radius:99px}
+.mc h2{font-size:25px;line-height:1.15;letter-spacing:-.02em;margin:10px 0 8px;font-weight:800}
+.mc h2 em{font-style:normal;background:linear-gradient(45deg,#fd267a,#ff6036);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mc p{color:#656e7b;font-size:14.5px;line-height:1.5;margin:0 0 18px}
+.mc-go{display:block;border-radius:99px;padding:16px;font-weight:800;font-size:16px;color:#fff;text-decoration:none;background:linear-gradient(45deg,#fd267a,#ff6036);box-shadow:0 14px 30px -10px rgba(253,38,122,.7);transition:transform .15s}
+.mc-go:hover{transform:translateY(-2px)}
+.mc-alt{margin-top:10px;border:0;background:none;color:#656e7b;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:8px}
+@media(prefers-reduced-motion:reduce){.mc-cor{animation:none;display:none}.mc-card{transition:none}}
+</style>
+<script>
+(function(){
+  var FOTOS = <%- JSON.stringify(fotos).replace(/</g, '\\u003c') %>;
+  var box = document.getElementById('matchConvite'); if (!box || FOTOS.length < 2) return;
+  var deck = document.getElementById('mcDeck'), coracao = box.querySelector('.mc-bts .l');
+  var CALMO = matchMedia('(prefers-reduced-motion: reduce)').matches, timer = null, k = 0, aoFechar = null;
+  function carta(f, z){
+    var d = document.createElement('div'); d.className = 'mc-card'; d.style.backgroundImage = 'url("' + f.url + '")'; d.style.zIndex = z;
+    d.innerHTML = '<span class="st">CURTI</span><span class="lb">' + (f.bairro || 'Lançamento') + '<small>' + (f.tipologia || '') + '</small></span>';
+    return d;
+  }
+  function montar(){
+    deck.innerHTML = '';
+    for (var j = 2; j >= 0; j--) { var c = carta(FOTOS[(k + j) % FOTOS.length], 3 - j); c.style.transform = 'translateY(' + (j * 8) + 'px) scale(' + (1 - j * 0.05) + ')'; deck.appendChild(c); }
+  }
+  // Demonstração: o cartão de cima "dá curtir" sozinho, em loop.
+  function passo(){
+    var topo = deck.lastChild; if (!topo) return;
+    topo.classList.add('vai'); coracao.classList.remove('bate'); void coracao.offsetWidth; coracao.classList.add('bate');
+    setTimeout(function(){ k = (k + 1) % FOTOS.length; montar(); }, 750);
+  }
+  function abrir(fechou, quiz){
+    aoFechar = fechou; box._quiz = quiz;
+    montar(); box.hidden = false; document.body.classList.add('quiz-aberto');
+    requestAnimationFrame(function(){ box.classList.add('on'); });
+    if (!CALMO) timer = setInterval(passo, 2200);
+    var q = new URLSearchParams(location.search), go = document.getElementById('mcGo'), u = new URL(go.href);
+    ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid'].forEach(function(n){ if (q.get(n)) u.searchParams.set(n, q.get(n)); });
+    go.href = u.pathname + u.search;
+    if (window.gtag) gtag('event', 'match_convite_aberto');
+  }
+  function fechar(motivo){
+    clearInterval(timer); box.classList.remove('on'); document.body.classList.remove('quiz-aberto');
+    setTimeout(function(){ box.hidden = true; }, CALMO ? 0 : 350);
+    if (motivo === 'fechou' && aoFechar) aoFechar();
+  }
+  box.addEventListener('click', function(e){ if (e.target.closest('[data-mc-fechar]')) fechar('fechou'); });
+  addEventListener('keydown', function(e){ if (e.key === 'Escape' && !box.hidden) fechar('fechou'); });
+  document.getElementById('mcQuiz').onclick = function(){ fechar('quiz'); if (box._quiz) setTimeout(box._quiz, CALMO ? 0 : 300); };
+  document.getElementById('mcGo').addEventListener('click', function(){ if (window.gtag) gtag('event', 'match_convite_comecar'); });
+  window.__conviteMatch = abrir;
+})();
+</script>

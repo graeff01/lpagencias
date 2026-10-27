@@ -290,6 +290,7 @@
   </div>
 </footer>
 
+<%- include('partials/match-convite', { fotos: quiz.filter(function(q){ return q.capa; }).slice(0, 8).map(function(q){ return { url: q.capa, bairro: q.bairro || q.cidade, tipologia: q.tipologia }; }) }) %>
 <%- include('partials/quiz', { quiz: quiz, wa: wa }) %>
 <%- include('partials/flutuantes', { wa: wa, msgBalao: ' Quer ajuda para escolher seu lançamento? Fale com um consultor.' }) %>
 

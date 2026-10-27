@@ -406,9 +406,10 @@ router.get('/match', async (req, res, next) => {
       tipologia: e._tipologia || '',
       preco: e._precoFmt || '',
       selo: e._selo || '',
-      capa: imgVar(e._capa).sm || imgVar(e._capa).src || '',
-      fotos: e.gallery.filter((g) => g && g.url).slice(0, 4).map((g) => ({ url: imgVar(g.url).sm || imgVar(g.url).src, tag: g.tag || '' })),
-      lazer: e.infra.map((i) => (i && (i.titulo || i)) || '').filter((t) => typeof t === 'string' && t).slice(0, 8),
+      capa: imgVar(e._capa).src || '',
+      // Fotos em resolução cheia: a versão -sm (800 px) fica borrada no cartão em tela cheia.
+      fotos: e.gallery.filter((g) => g && g.url).slice(0, 5).map((g) => ({ url: imgVar(g.url).src, tag: g.tag || '' })),
+      lazer: e.infra.map((i) => (i && (i.titulo || i)) || '').filter((t) => typeof t === 'string' && t).slice(0, 12),
     })).filter((e) => e.fotos.length || e.capa);
     res.set('X-Robots-Tag', 'noindex');
     res.render('match', { title: 'Match de imóveis | Auxiliadora Predial', emps: dados, portalWa: '/wa/' + PORTAL_SLUG });
