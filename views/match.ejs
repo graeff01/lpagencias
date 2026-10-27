@@ -34,7 +34,7 @@
     .top .likes b{position:absolute;top:4px;right:2px;min-width:18px;height:18px;border-radius:9px;background:var(--grad);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 5px;transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
     .top .likes b.on{transform:scale(1)}
     /* baralho */
-    .deck{position:relative;flex:none;height:min(calc(100dvh - 168px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),calc((100vw - 16px) * 1.45),680px);margin:0 8px;display:flex;justify-content:center}
+    .deck{position:relative;flex:none;height:min(calc(100dvh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),calc((100vw - 16px) * 1.45),680px);margin:0 8px;display:flex;justify-content:center}
     .pilha{position:relative;width:100%;height:100%;max-width:440px}
     .card{position:absolute;inset:0;border-radius:14px;overflow:hidden;background:#11151b;box-shadow:0 2px 18px rgba(0,0,0,.12);touch-action:none;user-select:none;-webkit-user-select:none;will-change:transform;transform-origin:50% 100%}
     .card.voltando{transition:transform .45s cubic-bezier(.2,1.4,.4,1)}
@@ -47,7 +47,7 @@
     .card .barras i{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.35)}
     .card .barras i.on{background:#fff}
     .card .grad{position:absolute;inset:auto 0 0 0;height:58%;background:linear-gradient(0deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.55) 38%,rgba(0,0,0,0) 100%);z-index:1;pointer-events:none}
-    .card .info{position:absolute;left:16px;right:16px;bottom:18px;color:#fff;z-index:2;pointer-events:none}
+    .card .info{position:absolute;left:16px;right:16px;bottom:52px;color:#fff;z-index:2;pointer-events:none}
     .card .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;background:rgba(255,255,255,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:6px 10px;border-radius:99px;margin-bottom:10px}
     .card h2{margin:0;font-size:31px;font-weight:800;letter-spacing:-.02em;line-height:1.08;text-shadow:0 2px 14px rgba(0,0,0,.35)}
     .card h2 small{font-weight:400;font-size:24px;opacity:.95}
@@ -76,9 +76,12 @@
     .det .fechar{position:absolute;right:14px;top:calc(46% - 26px);width:52px;height:52px;border-radius:50%;border:0;background:var(--grad);color:#fff;display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(253,38,122,.7);cursor:pointer}
     .det .fechar svg{width:22px;height:22px}
     /* botões */
-    .bts{flex:none;margin-bottom:auto;display:grid;grid-template-columns:46px 64px 52px 64px 46px;justify-content:center;align-items:center;gap:14px;padding:22px 0 16px}
+    /* suporte dos botões: encaixa na borda de baixo do cartão */
+    .bts{flex:none;position:relative;z-index:30;width:max-content;margin:-34px auto auto;display:grid;grid-template-columns:44px 60px 50px 60px 44px;align-items:center;gap:10px;
+      padding:9px 12px;border-radius:99px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+      box-shadow:0 14px 34px -14px rgba(20,24,34,.45),0 0 0 1px rgba(20,24,34,.06)}
     .bts[hidden]{display:none}
-    .bt{border:0;border-radius:50%;background:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12),0 0 0 1px #eef0f3;transition:transform .15s}
+    .bt{border:0;border-radius:50%;background:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08),0 0 0 1px #eef0f3;transition:transform .15s}
     .bt{position:relative;--c:currentColor}
     /* contorno sutil e parado na cor do botão, com um leve brilho no ícone */
     .bt::before{content:'';position:absolute;inset:-1px;border-radius:50%;padding:1px;background:linear-gradient(150deg,currentColor,rgba(255,255,255,0) 45%,rgba(255,255,255,0) 60%,currentColor);
@@ -87,12 +90,12 @@
     .bt:disabled::before,.bt:disabled svg{opacity:.35}
     .bt:active{transform:scale(.88)}
     .bt svg{width:52%;height:52%}
-    .bt.volta{width:46px;height:46px;color:var(--volta)}
+    .bt.volta{width:44px;height:44px;color:var(--volta)}
     .bt.volta:disabled{opacity:.35;cursor:default}
-    .bt.nao{width:64px;height:64px;color:var(--nao)}
-    .bt.super{width:52px;height:52px;color:var(--super)}
-    .bt.det-bt{width:46px;height:46px;color:#b25cff}
-    .bt.sim{width:64px;height:64px;color:var(--sim)}
+    .bt.nao{width:60px;height:60px;color:var(--nao)}
+    .bt.super{width:50px;height:50px;color:var(--super)}
+    .bt.det-bt{width:44px;height:44px;color:#b25cff}
+    .bt.sim{width:60px;height:60px;color:var(--sim)}
     .bt.nao.ativo{background:var(--nao);color:#fff}.bt.sim.ativo{background:var(--sim);color:#fff}.bt.super.ativo{background:var(--super);color:#fff}
     /* telas */
     .tela{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
