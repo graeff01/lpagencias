@@ -265,6 +265,9 @@ router.get('/corretores/:id', async (req, res, next) => {
     const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const corretores = await db.listCorretores(emp.id);
+    // Link pessoal "Meus leads" de cada corretor (criado na primeira vez).
+    const base = baseUrl(req);
+    for (const c of corretores) c.linkMeus = base + '/meus/' + await db.linkDoCorretor(c.telefone);
     res.render('admin/corretores', {
       title: `Corretores · ${emp.nome}`, emp, corretores, q: req.query,
     });
@@ -330,7 +333,7 @@ router.post('/corretores/:id/zerar', async (req, res, next) => {
 // ---- Relatório de leads ----
 // Landing direto para o corretor da vez x recepção: totais, por dia, por
 // anúncio/canal, por corretor e o que os corretores responderam.
-function compararCaminhos({ lp, rec }) {
+function compararCaminhos({ lp, rec, contatos = [] }) {
   const dia = (d) => new Date(d).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
   const conta = (lista, chave) => {
     const m = new Map();
@@ -350,11 +353,23 @@ function compararCaminhos({ lp, rec }) {
   };
   lp.forEach((x) => somar(x, 'lp')); rec.forEach((x) => somar(x, 'rec'));
   const telsLp = new Set(lp.map((x) => x.lead_telefone).filter(Boolean));
+  // Andamento contado nos dois caminhos (landing: página "Meus leads"; recepção: link /ok).
   const retornos = {};
-  for (const x of rec) if (x.retorno) retornos[x.retorno] = (retornos[x.retorno] || 0) + 1;
+  for (const [lista, campo] of [[lp, 'lp'], [rec, 'rec']]) {
+    for (const x of lista) {
+      if (!x.retorno) continue;
+      retornos[x.retorno] = retornos[x.retorno] || { lp: 0, rec: 0 };
+      retornos[x.retorno][campo]++;
+    }
+  }
+  const descartados = contatos.filter((x) => x.status === 'descartado');
   return {
     lp: lp.length, rec: rec.length,
     confirmados: rec.filter((x) => x.confirmado_em).length,
+    comRetorno: { lp: lp.filter((x) => x.retorno).length, rec: rec.filter((x) => x.retorno).length },
+    aguardando: contatos.filter((x) => x.status === 'pendente').length,
+    descartados: descartados.length,
+    motivos: conta(descartados, (x) => x.motivo || 'sem motivo'),
     retornos, rotulosRetorno: equipes.RETORNOS,
     ambos: new Set(rec.map((x) => x.lead_telefone).filter((t) => t && telsLp.has(t))).size,
     anuncios: conta(lp, (x) => [x.utm_source || 'sem anúncio (orgânico/direto)', x.utm_campaign].filter(Boolean).join(' · ')),
@@ -369,13 +384,15 @@ router.get('/leads/:id', async (req, res, next) => {
     const emp = await carregarEmp(req.params.id);
     if (!emp) return next();
     const dias = req.query.dias ? Number(req.query.dias) : null;
-    const [stats, perdidos, cliques, resumo, caminhos] = await Promise.all([
+    const [stats, perdidos, cliques, resumo, caminhos, contatos] = await Promise.all([
       db.statsCorretores(emp.id, dias),
       db.naoRetornados(emp.id, dias),
       db.cliquesRecentes(emp.id, 200),
       db.resumoCliques(emp.id),
       db.leadsPorCaminho(emp.id, dias),
+      db.contatosRecepcao(emp.id, dias),
     ]);
+    caminhos.contatos = contatos;
     stats.forEach((s) => { s.nao_retornados = perdidos[s.id] || 0; });
     res.render('admin/leads', {
       title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos),

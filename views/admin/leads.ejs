@@ -67,6 +67,7 @@
           <span>Pela recepção (encaminhado à mão)</span>
           <b><%= cm.rec %></b>
           <i><%= cm.confirmados %> confirmados pelo corretor<% if (cm.rec) { %> (<%= Math.round(cm.confirmados * 100 / cm.rec) %>%)<% } %></i>
+          <% if (cm.aguardando || cm.descartados) { %><i class="cam-extra"><%= cm.rec + cm.aguardando + cm.descartados %> contatos recebidos: <%= cm.aguardando %> ainda na fila, <%= cm.descartados %> não encaminhados</i><% } %>
         </div>
         <div class="cam-box">
           <span>Total</span>
@@ -123,16 +124,23 @@
           </table>
         </div>
         <div>
-          <h3>Retorno dos corretores (recepção)</h3>
+          <h3>Andamento informado pelos corretores</h3>
           <table class="tbl mini">
-            <thead><tr><th>Situação</th><th>Leads</th></tr></thead>
+            <thead><tr><th>Situação</th><th>Landing</th><th>Recepção</th></tr></thead>
             <tbody>
-              <% var temRet = false; Object.keys(cm.rotulosRetorno).forEach(function(k){ if (!cm.retornos[k]) return; temRet = true; %>
-                <tr><td><%= cm.rotulosRetorno[k] %></td><td class="num"><%= cm.retornos[k] %></td></tr>
+              <% Object.keys(cm.rotulosRetorno).forEach(function(k){ if (!cm.retornos[k]) return; %>
+                <tr><td><%= cm.rotulosRetorno[k] %></td><td class="num"><%= cm.retornos[k].lp %></td><td class="num"><%= cm.retornos[k].rec %></td></tr>
               <% }); %>
-              <% if (!temRet) { %><tr><td colspan="2" class="empty">Nenhum retorno ainda.</td></tr><% } %>
+              <tr><td><b>Sem andamento ainda</b></td><td class="num" <% if (cm.lp - cm.comRetorno.lp) { %>style="color:var(--danger)"<% } %>><%= cm.lp - cm.comRetorno.lp %></td><td class="num" <% if (cm.rec - cm.comRetorno.rec) { %>style="color:var(--danger)"<% } %>><%= cm.rec - cm.comRetorno.rec %></td></tr>
             </tbody>
           </table>
+          <% if (cm.motivos.length) { %>
+          <h3 style="margin-top:18px">Não encaminhados pela recepção</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Motivo</th><th>Contatos</th></tr></thead>
+            <tbody><% cm.motivos.forEach(function(a){ %><tr><td><%= a.nome %></td><td class="num"><%= a.n %></td></tr><% }); %></tbody>
+          </table>
+          <% } %>
         </div>
       </div>
       <div class="panel-foot"><p class="hint">
@@ -140,7 +148,8 @@
         (cliques repetidos e robôs não contam). Para separar por anúncio, o link do anúncio precisa ter
         <code>utm_source</code> e <code>utm_campaign</code>.
         <b>Recepção:</b> cada lead que a recepção encaminhou na tela da campanha; reencaminhado conta uma vez.
-        O canal é o que ela marca no envio.
+        O canal é o que ela marca no envio. Contatos que ela guarda na fila ou marca como "não encaminhar" também aparecem, com o motivo.
+        <b>Andamento:</b> nos leads da landing, o corretor informa pela página "Meus leads" (link em Roleta de corretores); nos da recepção, pelo link de confirmação.
       </p></div>
     </div>
 

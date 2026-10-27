@@ -201,6 +201,36 @@ router.post('/campanha/:id/enviar', async (req, res) => {
   }
 });
 
+// Contato da campanha que não vai para corretor agora: "aguardando" entra na
+// fila "A encaminhar" (não se perde) e "descartado" sai com o motivo. Os dois
+// contam no relatório do empreendimento junto com os envios.
+router.post('/campanha/:id/registrar', async (req, res) => {
+  try {
+    const emp = await campanhaDe(req.params.id);
+    if (!emp) return res.status(404).json({ ok: false });
+    const b = req.body;
+    const telefone = parser.normalizarFone(b.telefone);
+    if (!String(b.nome || '').trim() && !telefone) return res.status(400).json({ ok: false, erro: 'Informe o nome ou o telefone.' });
+    const status = b.status === 'descartado' ? 'descartado' : 'pendente';
+    const motivo = String(b.motivo || '').trim().slice(0, 200) || (status === 'descartado' ? 'sem motivo' : null);
+    const canal = equipes.CANAIS.includes(b.canal) ? b.canal : null;
+    const e = await db.registrarContatoRecepcao({
+      status, motivo, empreendimento_id: emp.id, usuario_id: req.gestor.id,
+      dados: { nome: String(b.nome || '').trim(), telefone, email: b.email, negocio: b.negocio, imovel: b.imovel,
+        origem: b.origem || emp.nome, mensagem: b.mensagem, canal, campanha: emp.id },
+    });
+    await db.registrarEvento({
+      tipo: status === 'descartado' ? 'descartado' : 'aguardando', entrada_id: e.id, empreendimento_id: emp.id,
+      lead_nome: e.dados.nome, lead_telefone: telefone, usuario_id: req.gestor.id,
+      detalhe: ['campanha ' + emp.nome, canal, status === 'descartado' ? motivo : 'na fila: ainda conversando'].filter(Boolean).join(' · '),
+    });
+    res.json({ ok: true, fila: await filaPendentes() });
+  } catch (e) {
+    console.error('[recepcao] falha ao registrar contato:', e.message);
+    res.status(500).json({ ok: false });
+  }
+});
+
 // Chamado pelo clique no nome (antes de abrir o WhatsApp). Um erro aqui não
 // pode impedir o envio: a tela abre o WhatsApp de qualquer jeito.
 router.post('/enviar', async (req, res) => {

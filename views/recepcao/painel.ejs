@@ -267,7 +267,7 @@
       function renderFila() {
         document.getElementById('rc-cont').textContent = fila.length;
         document.title = (fila.length ? '(' + fila.length + ') ' : '') + 'Recepção · Encaminhar leads';
-        if (!fila.length) { listaEntrada.innerHTML = '<p class="rc-fila-vazia">Nenhum lead esperando. Os que chegarem por e-mail aparecem aqui sozinhos.</p>'; return; }
+        if (!fila.length) { listaEntrada.innerHTML = '<p class="rc-fila-vazia">Nenhum lead esperando. Os que chegarem por e-mail e os que você guardar ("ainda conversando") aparecem aqui.</p>'; return; }
         listaEntrada.innerHTML = fila.map(function (f) {
           var d = f.dados || {};
           var atrasado = (Date.now() - new Date(f.recebido).getTime()) > 30 * 60000;
@@ -343,6 +343,9 @@
         var d = f.dados || {};
         if (d.nome && !el.nome.value) el.nome.value = d.nome;
         if (d.telefone && !el.telefone.value) el.telefone.value = P.formatarFone(d.telefone);
+        if (d.mensagem && !el.mensagem.value) el.mensagem.value = d.mensagem;
+        if (d.email && !el.email.value) el.email.value = d.email;
+        if (d.canal) marcarCanal(d.canal);
         entradaAtual = id;
         fetch('/recepcao/fila/' + id + '/abrir', { method: 'POST', credentials: 'same-origin' }).catch(function () {});
         atualBox.innerHTML = 'Encaminhando o lead da fila: <b>' + esc(d.nome || '(sem nome)') + '</b>, recebido ' + ha(f.recebido) + '. Confira os dados e escolha o corretor. <button type="button" id="rc-atual-x">cancelar</button>';
@@ -414,6 +417,13 @@
             + '<span class="rc-av">' + esc(prox.nome.replace(/[^A-Za-zÀ-ÿ\s]/g, '').trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join('').toUpperCase()) + '</span>'
             + '<span class="rc-nm">Enviar para ' + esc(prox.nome) + '</span>'
             + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>';
+          // Contato que não vai para corretor agora também fica registrado (nenhum lead some).
+          h += '<div class="rc-camp-alt"><button type="button" class="btn btn-ghost btn-sm" data-reg="pendente" data-camp="' + c.id + '">⏳ Ainda conversando: guardar na fila</button>'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-reg="descartado" data-camp="' + c.id + '">Não encaminhar…</button></div>'
+            + '<div class="rc-motivos" data-motivos="' + c.id + '" hidden><span>Por que não vai para corretor?</span>'
+            + ['Só curiosidade / sem perfil', 'Não respondeu', 'Spam ou engano', 'Já atendido por outro corretor', 'Outro motivo'].map(function (m) {
+              return '<button type="button" class="chip" data-motivo="' + m + '" data-camp="' + c.id + '">' + m + '</button>';
+            }).join('') + '</div>';
           h += '<div class="rc-fila"><div class="rc-prox-lbl">Fila</div><ol>' + c.fila.map(function (f, i) {
             return '<li class="' + (i === 0 ? 'vez' : '') + '"><span>' + esc(f.nome) + '</span><small>'
               + (i === 0 ? 'é a vez' : f.ultima ? '✓ recebeu ' + horaCurta(f.ultima) : 'ainda não recebeu') + ' · ' + f.atribuicoes + (f.atribuicoes === 1 ? ' lead' : ' leads') + '</small></li>';
@@ -427,6 +437,35 @@
         box.innerHTML = h;
       }
       (window.RC_CAMPANHAS || []).forEach(renderCampanha);
+      function registrarContato(camp, status, motivo) {
+        var d = {
+          nome: el.nome.value.trim(), telefone: P.normalizarFone(el.telefone.value), email: el.email.value.trim(),
+          negocio: el.negocio.value, imovel: el.imovel.value.trim(), origem: el.origem.value.trim(),
+          mensagem: el.mensagem.value.trim(), canal: canal, status: status, motivo: motivo,
+        };
+        if (!d.nome && !d.telefone) { avisar('Preencha pelo menos o nome ou o telefone do cliente.'); el.nome.focus(); return; }
+        fetch('/recepcao/campanha/' + camp + '/registrar', {
+          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d),
+        }).then(function (r) { return r.json(); }).then(function (j) {
+          if (!j.ok) { avisar(j.erro || 'Não consegui registrar. Tente de novo.'); return; }
+          fila = j.fila || fila;
+          avisar(status === 'descartado' ? 'Contato de ' + (d.nome || 'cliente') + ' registrado como não encaminhado (' + motivo + ').' : (d.nome || 'Cliente') + ' guardado na fila "A encaminhar".');
+          limpar();
+        }).catch(function () { avisar('Sem conexão: o contato não foi registrado.'); });
+      }
+      document.addEventListener('click', function (e) {
+        var r = e.target.closest('[data-reg]'), m = e.target.closest('[data-motivo]');
+        if (r) {
+          if (r.dataset.reg === 'pendente') return registrarContato(r.dataset.camp, 'pendente');
+          var box = document.querySelector('[data-motivos="' + r.dataset.camp + '"]'); if (box) box.hidden = !box.hidden;
+        }
+        if (m) {
+          var motivo = m.dataset.motivo;
+          if (motivo === 'Outro motivo') { motivo = window.prompt('Qual o motivo?'); if (!motivo) return; }
+          m.parentNode.hidden = true;
+          registrarContato(m.dataset.camp, 'descartado', motivo);
+        }
+      });
       // A fila também anda com leads do site: atualiza a cada 20 s.
       setInterval(function () {
         (window.RC_CAMPANHAS || []).forEach(function (c) {

@@ -225,7 +225,7 @@ function dadosQuiz(emps) {
 router.get('/robots.txt', (req, res) => {
   const base = baseUrl(req);
   res.type('text/plain').send(
-    `User-agent: *\nDisallow: /wa/\nDisallow: /admin/\nDisallow: /gestor/\nDisallow: /recepcao/\nDisallow: /ok/\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`
+    `User-agent: *\nDisallow: /wa/\nDisallow: /admin/\nDisallow: /gestor/\nDisallow: /recepcao/\nDisallow: /ok/\nDisallow: /meus/\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`
   );
 });
 

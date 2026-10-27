@@ -1,5 +1,6 @@
 // Rotas públicas sem login:
 //   /ok/:token       — o corretor confirma que recebeu o lead (link na mensagem).
+//   /meus/:token     — leads do corretor e o andamento de cada um (link pessoal).
 //   /entrada/email   — webhook de e-mail de lead (quando a caixa é recebida por
 //                      um serviço externo em vez de lida pelo sistema).
 const express = require('express');
@@ -59,6 +60,42 @@ router.post('/ok/:token/retorno', async (req, res, next) => {
     await db.registrarRetorno(e.id, r, obs);
     await db.registrarEvento({ tipo: 'retorno_corretor', ...ev, detalhe: RETORNOS[r] + (obs ? ' · ' + obs : '') });
     res.redirect(303, '/ok/' + encodeURIComponent(req.params.token) + '?salvo=1');
+  } catch (err) { next(err); }
+});
+
+// ---- "Meus leads": link pessoal do corretor ----
+// Lista os leads dos últimos 30 dias, os que vieram direto da landing (o
+// corretor marca o andamento aqui) e os enviados pela recepção (pelo link /ok).
+router.get('/meus/:token', async (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.set('X-Robots-Tag', 'noindex');
+    const c = await db.corretorPorLink(req.params.token);
+    if (!c) return res.status(404).render('meus', { title: 'Link inválido', c: null });
+    const { lp, rec } = await db.leadsDoCorretor(c.telefone, 30);
+    const leads = lp.map((x) => ({ ...x, tipo: 'lp' })).concat(rec.map((x) => ({ ...x, tipo: 'rec' })))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    res.render('meus', { title: 'Meus leads', c, leads, token: req.params.token, RETORNOS, primeiroNome, salvo: Number(req.query.salvo) || null });
+  } catch (err) { next(err); }
+});
+
+router.post('/meus/:token/lead/:id', async (req, res, next) => {
+  try {
+    const c = await db.corretorPorLink(req.params.token);
+    if (!c) return res.status(404).render('meus', { title: 'Link inválido', c: null });
+    const r = String(req.body.retorno || '');
+    const volta = '/meus/' + encodeURIComponent(req.params.token);
+    if (!RETORNOS[r]) return res.redirect(303, volta);
+    const obs = String(req.body.obs || '').trim();
+    const cl = await db.retornoDoClique(req.params.id, c.telefone, r, obs);
+    if (cl) {
+      await db.registrarEvento({
+        tipo: 'retorno_corretor', clique_id: cl.id, empreendimento_id: cl.empreendimento_id,
+        lead_nome: cl.lead_nome, lead_telefone: cl.lead_telefone, corretor_nome: c.nome, corretor_fone: c.telefone,
+        detalhe: 'lead da landing · ' + RETORNOS[r] + (obs ? ' · ' + obs : ''),
+      });
+    }
+    res.redirect(303, volta + '?salvo=' + Number(req.params.id) + '#l' + Number(req.params.id));
   } catch (err) { next(err); }
 });
 

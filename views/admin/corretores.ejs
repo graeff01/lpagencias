@@ -68,6 +68,8 @@
                 <td class="sub"><%= c.ultima_atribuicao ? new Date(c.ultima_atribuicao).toLocaleString('pt-BR') : '—' %></td>
                 <td class="row-acts">
                   <a class="btn btn-ghost btn-sm" href="https://wa.me/<%= h.onlyDigits(c.telefone) %>" target="_blank" rel="noopener" title="Abrir conversa para conferir se o número existe">Testar</a>
+                  <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" title="Manda para o corretor o link onde ele vê os leads dele e conta o andamento de cada um"
+                     href="https://wa.me/<%= h.onlyDigits(c.telefone) %>?text=<%= encodeURIComponent('Oi, ' + String(c.nome).split(' ')[0] + '! Este é o seu link de leads da Auxiliadora Predial: ' + c.linkMeus + '\n\nGuarde nos favoritos. Lá aparecem os leads que chegam para você e, depois de falar com cada cliente, é só tocar em como foi (conversando, visita, proposta…). Leva 5 segundos e ajuda a gente a mandar mais leads bons pra você.') %>">Link "Meus leads"</a>
                   <button class="btn btn-ghost btn-sm" type="button"
                     onclick='editar(<%- JSON.stringify({id:c.id,nome:c.nome,telefone:c.telefone,email:c.email,creci:c.creci,peso:c.peso,ordem:c.ordem,ativo:c.ativo}) %>)'>Editar</button>
                   <form method="POST" action="/admin/corretores/<%= emp.id %>/toggle/<%= c.id %>">

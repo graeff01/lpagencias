@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body class="meus">
+  <%
+    var hora = function(d){ return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+    var telFmt = function(t){ return String(t || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); };
+  %>
+  <div class="ml-wrap">
+    <% if (!c) { %>
+      <div class="login-card" style="text-align:center;margin:60px auto">
+        <h1>Link inválido</h1>
+        <p>Este link não existe ou foi digitado errado. Peça um novo ao seu gestor.</p>
+      </div>
+    <% } else { %>
+      <% var semRet = leads.filter(function(l){ return !l.retorno; }).length; %>
+      <header class="ml-top">
+        <div class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></div>
+        <div>
+          <h1>Olá, <%= primeiroNome(c.nome) %>!</h1>
+          <p>Seus leads dos últimos 30 dias. <% if (semRet) { %><b><%= semRet %> sem andamento</b>: conte como foi cada atendimento.<% } else if (leads.length) { %>Tudo em dia. 👏<% } %></p>
+        </div>
+      </header>
+      <p class="ml-dica">Guarde este link nos favoritos. Ele é só seu: sempre que receber um lead, volte aqui e atualize o andamento.</p>
+
+      <% if (!leads.length) { %>
+        <div class="ml-vazio">Nenhum lead nos últimos 30 dias.</div>
+      <% } %>
+      <% leads.forEach(function(l){ var id = l.tipo === 'lp' ? 'l' + l.id : 'r' + l.id; %>
+        <article class="ml-lead<%= l.retorno ? '' : ' pend' %><%= salvo === l.id && l.tipo === 'lp' ? ' salvo' : '' %>" id="<%= id %>">
+          <div class="ml-cab">
+            <div>
+              <b><%= l.lead_nome || 'Cliente' %></b>
+              <% if (l.lead_telefone) { %><a class="ml-tel" href="https://wa.me/<%= l.lead_telefone %>" target="_blank" rel="noopener"><%= telFmt(l.lead_telefone) %></a><% } %>
+            </div>
+            <span class="tag <%= l.tipo === 'lp' ? 'on' : 'pause' %>"><%= l.tipo === 'lp' ? 'site' : 'recepção' %></span>
+          </div>
+          <div class="ml-info"><%= [l.empreendimento, hora(l.created_at), l.interesse].filter(Boolean).join(' · ') %></div>
+          <% if (l.retorno) { %>
+            <div class="ml-atual">Andamento: <b><%= RETORNOS[l.retorno] %></b> <small>em <%= hora(l.retorno_em) %></small></div>
+          <% } %>
+          <% if (l.tipo === 'lp') { %>
+            <details<%= l.retorno ? '' : ' open' %>>
+              <summary><%= l.retorno ? 'Atualizar andamento' : 'Como está este atendimento?' %></summary>
+              <form method="POST" action="/meus/<%= token %>/lead/<%= l.id %>" class="ok-ret">
+                <input name="obs" maxlength="300" onkeydown="if(event.key==='Enter')event.preventDefault()" placeholder="Observação (opcional): ex. visita sábado 10h" value="<%= l.retorno_obs || '' %>">
+                <% Object.keys(RETORNOS).forEach(function(k){ %>
+                  <button type="submit" name="retorno" value="<%= k %>" class="<%= l.retorno === k ? 'on' : '' %>"><%= RETORNOS[k] %></button>
+                <% }); %>
+              </form>
+            </details>
+          <% } else if (l.token) { %>
+            <a class="btn btn-ghost btn-sm ml-ok" href="/ok/<%= l.token %>"><%= l.confirmado_em ? (l.retorno ? 'Atualizar andamento' : 'Contar como foi') : 'Confirmar recebimento' %></a>
+          <% } %>
+        </article>
+      <% }); %>
+    <% } %>
+  </div>
+</body>
+</html>

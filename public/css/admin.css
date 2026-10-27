@@ -507,3 +507,34 @@ a.chip:hover{border-color:var(--line-strong)}
 .tbl.mini th{padding:7px 8px}
 .tbl.mini td{padding:7px 8px}
 .tbl.mini td.empty{padding:14px 8px}
+
+/* Recepção: contato da campanha que não vai para corretor agora */
+.rc-camp-alt{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;max-width:520px}
+.rc-camp-alt .btn{flex:1 1 auto}
+.rc-motivos{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:520px;margin:6px 0 4px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;background:var(--sunken)}
+.rc-motivos span{width:100%;font-size:12px;font-weight:650;color:var(--muted);margin-bottom:2px}
+
+/* "Meus leads": página pessoal do corretor (celular primeiro) */
+body.meus{background:var(--sunken)}
+.ml-wrap{max-width:560px;margin:0 auto;padding:22px 16px 60px}
+.ml-top{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+.ml-top .m{flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,#1f9d57,#0d7a3f);display:grid;place-items:center}
+.ml-top .m svg{width:22px;height:22px}
+.ml-top h1{font-size:22px;font-weight:760;letter-spacing:-.02em}
+.ml-top p{font-size:14px;color:var(--muted);margin-top:3px;line-height:1.45}
+.ml-dica{font-size:12.5px;color:var(--muted);background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px}
+.ml-vazio{text-align:center;color:var(--muted);padding:40px 0}
+.ml-lead{background:var(--elev);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:12px}
+.ml-lead.pend{border-color:#f3c99a;box-shadow:0 0 0 3px #fff3e6}
+.ml-lead.salvo{border-color:#9fd9b7;box-shadow:0 0 0 3px #e7f7ee}
+.ml-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ml-cab b{display:block;font-size:16px}
+.ml-tel{font-size:13.5px;color:#0d7a3f;font-weight:600;text-decoration:none}
+.ml-info{font-size:12.5px;color:var(--muted);margin-top:4px}
+.ml-atual{font-size:13.5px;margin-top:8px}
+.ml-atual small{color:var(--muted)}
+.ml-lead details{margin-top:10px}
+.ml-lead summary{cursor:pointer;font-size:13.5px;font-weight:650;color:#0d7a3f}
+.ml-lead .ok-ret{margin-top:10px}
+.ml-ok{margin-top:10px}
+.cam-box i.cam-extra{display:block;margin-top:4px;color:#8a5a12}
