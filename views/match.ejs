@@ -34,7 +34,7 @@
     .top .likes b{position:absolute;top:4px;right:2px;min-width:18px;height:18px;border-radius:9px;background:var(--grad);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 5px;transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
     .top .likes b.on{transform:scale(1)}
     /* baralho */
-    .deck{position:relative;flex:none;height:min(calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),calc((100vw - 16px) * 1.45),680px);margin:0 8px;display:flex;justify-content:center}
+    .deck{position:relative;flex:none;height:min(calc(100dvh - 128px - env(safe-area-inset-top) - env(safe-area-inset-bottom)),calc((100vw - 16px) * 1.78),760px);margin:0 8px;display:flex;justify-content:center}
     .pilha{position:relative;width:100%;height:100%;max-width:440px}
     .card{position:absolute;inset:0;border-radius:14px;overflow:hidden;background:#11151b;box-shadow:0 2px 18px rgba(0,0,0,.12);touch-action:none;user-select:none;-webkit-user-select:none;will-change:transform;transform-origin:50% 100%}
     .card.voltando{transition:transform .45s cubic-bezier(.2,1.4,.4,1)}
@@ -104,7 +104,7 @@
     .bt.sim{width:60px;height:60px;color:var(--sim)}
     .bt.nao.ativo{background:var(--nao);color:#fff}.bt.sim.ativo{background:var(--sim);color:#fff}.bt.super.ativo{background:var(--super);color:#fff}
     /* telas */
-    .tela{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+    .tela{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
     .tela[hidden]{display:none}
     .intro{background:#fff}
     .intro .leque{position:relative;width:230px;height:250px;margin-bottom:26px}
@@ -163,6 +163,10 @@
     .conf{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}
     .conf i{position:absolute;top:-24px;font-style:normal;font-size:22px;animation:cai 2.6s linear forwards}
     @keyframes cai{to{transform:translateY(110vh) rotate(560deg);opacity:.15}}
+    .conf .gota{top:-40px;opacity:0;animation-name:chove;animation-timing-function:cubic-bezier(.3,.1,.7,1);animation-fill-mode:forwards}
+    .conf .gota.super{animation-name:brilhaSobe;top:auto;bottom:-40px}
+    @keyframes chove{0%{opacity:0;transform:translateY(0) rotate(-15deg) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(105vh) rotate(25deg) scale(1.1)}}
+    @keyframes brilhaSobe{0%{opacity:0;transform:translateY(0) scale(.5)}15%{opacity:1}100%{opacity:0;transform:translateY(-105vh) scale(1.2) rotate(180deg)}}
 
     @media(prefers-reduced-motion:reduce){.intro .leque div,.intro .leque .cor,.conf i{animation:none}}
   </style>
@@ -208,7 +212,8 @@
   function evento(n, d){ if (window.gtag) gtag('event', n, d || {}); if (window.fbq) fbq('trackCustom', n, d || {}); }
 
   // Um cartão por empreendimento, com até 5 fotos (como um perfil). O nome só aparece no match.
-  var ordem = embaralhar(EMPS.map(function(e, i){ return i; }).filter(function(i){ return EMPS[i].fotos.length || EMPS[i].capa; }));
+  var ordem = embaralhar(EMPS.map(function(e, i){ return i; }).filter(function(i){ return EMPS[i].fotos.length || EMPS[i].capa; })).slice(0, 10);
+  var ultimoMatch = 0;   // nº de curtidas no último match mostrado
   var votos = {}, hist = [], pos = 0, aberto = null;
 
   // ---------- intro: leque com as capas ----------
@@ -303,10 +308,17 @@
     requestAnimationFrame(function(){ c.style.transform = fora; c.style.opacity = acao === 'super' ? 0 : 1; });
     var prox = c.previousSibling; if (prox) { prox.classList.remove('atras'); prox.style.transform = 'none'; }
     if (navigator.vibrate) navigator.vibrate(acao === 'nao' ? 8 : 16);
-    pintarLikes();
+    pintarLikes(); chuva(acao);
     pos++;
     setTimeout(function(){
-      if (acao === 'super') return mostrarMatch(i);     // "amei" revela na hora: é um match!
+      if (acao === 'super') { ultimoMatch = curtidos().length; return mostrarMatch(i); }   // "amei" revela na hora
+      // curtiu: dá match na 2ª curtida e depois a cada 3 novas, com o lançamento que mais combina entre os curtidos
+      var n = curtidos().length;
+      if (acao === 'sim' && n >= 2 && n - ultimoMatch >= (ultimoMatch ? 3 : 2)) {
+        ultimoMatch = n;
+        var melhor = notas().filter(function(x){ return votos[x.i] && votos[x.i] !== 'nao'; })[0];
+        return mostrarMatch(melhor ? melhor.i : i);
+      }
       pos >= ordem.length ? fim() : montar();
     }, CALMO ? 0 : 320);
   }
@@ -362,6 +374,17 @@
     var e = EMPS[i], gs = gostosDe(i), meus = curtidos().map(function(k){ return EMPS[k].nome; });
     var resumo = 'Match de imóveis: ' + pct + '% com o ' + e.nome + (votos[i] === 'super' ? ' (deu AMEI)' : '') + ' · também curtiu: ' + (meus.filter(function(n){ return n !== e.nome; }).join(', ') || '—');
     return '/wa/' + encodeURIComponent(e.slug) + '?src=match&msg=' + encodeURIComponent('Olá! Dei match com o ' + e.nome + ' (' + pct + '%) no Match de imóveis e quero saber mais!') + '&vi=' + encodeURIComponent(resumo);
+  }
+  // Chuva na tela a cada decisão: corações no curti, coração partido no não, estrelas no amei.
+  var CHUVA = { sim: ['💚', '💖', '❤️', '💗'], nao: ['💔', '💔', '🙅', '💨'], super: ['⭐', '✨', '🌟', '💫'] };
+  function chuva(acao){
+    if (CALMO) return; var cf = $('conf'), em = CHUVA[acao] || CHUVA.sim, n = acao === 'nao' ? 12 : 18;
+    for (var k = 0; k < n; k++) {
+      var s = document.createElement('i'); s.className = 'gota ' + acao; s.textContent = em[k % em.length];
+      s.style.left = (Math.random() * 96) + '%'; s.style.fontSize = (16 + Math.random() * 18) + 'px';
+      s.style.animationDelay = (Math.random() * 0.35) + 's'; s.style.animationDuration = (1.1 + Math.random() * 0.8) + 's';
+      cf.appendChild(s); setTimeout(function(x){ return function(){ x.remove(); }; }(s), 2400);
+    }
   }
   function confete(){
     if (CALMO) return; var cf = $('conf'), em = ['💘', '💖', '✨', '🏡', '❤️'];
