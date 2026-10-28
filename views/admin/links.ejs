@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/admin">Empreendimentos</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Corretores</div>
+        <h1>Links de corretores</h1>
+        <p>Quem entra por um link com a tag do corretor (ex.: <code>?cor=FR12345</code> ou <code>#FR12345</code>) vai direto para ele, sem passar pela roleta e sem gastar a vez dele. Fora desses links, tudo continua na roleta.</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-ghost" href="/corretor" target="_blank">Abrir página de cadastro</a>
+        <a class="btn btn-primary" target="_blank" rel="noopener" href="https://wa.me/?text=<%= encodeURIComponent('Pessoal, cadastrem aqui o seu link de corretor da Auxiliadora Predial (nome, CRECI e WhatsApp). Os clientes que entrarem pelo seu link caem direto para você, sem roleta: ' + base + '/corretor') %>">Enviar no grupo</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-h">Cadastrados <span class="sub">(<%= tags.length %>)</span></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Corretor</th><th>Tag</th><th>CRECI</th><th>WhatsApp</th><th>Leads pelo link</th><th>Desde</th><th></th></tr></thead>
+        <tbody>
+          <% if (!tags.length) { %><tr><td colspan="7" class="empty">Ninguém se cadastrou ainda. Mande o link da página de cadastro no grupo dos corretores.</td></tr><% } %>
+          <% tags.forEach(function(t){ %>
+            <tr class="<%= t.ativo ? '' : 'off' %>">
+              <td><b><%= t.nome %></b></td>
+              <td class="mono"><b><%= t.tag %></b></td>
+              <td class="mono"><%= t.creci %></td>
+              <td class="mono"><%= t.telefone.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') %></td>
+              <td class="num"><%= t.leads %></td>
+              <td class="sub"><%= new Date(t.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) %></td>
+              <td>
+                <form method="POST" action="/admin/links/<%= t.id %>/ativo" style="display:inline">
+                  <input type="hidden" name="ativo" value="<%= t.ativo ? '0' : '1' %>">
+                  <button class="btn btn-ghost btn-sm" type="submit"><%= t.ativo ? 'Desativar' : 'Reativar' %></button>
+                </form>
+                <form method="POST" action="/admin/links/<%= t.id %>/excluir" style="display:inline" onsubmit="return confirm('Excluir o cadastro de <%= t.nome %>? O link dele volta a cair na roleta, e ele pode se cadastrar de novo (por exemplo, com outro WhatsApp).')">
+                  <button class="btn btn-ghost btn-sm" type="submit">Excluir</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot"><p class="hint">
+        Desativar faz o link daquele corretor voltar a cair na roleta (útil se ele saiu da empresa ou se alguém se cadastrou com o CRECI de outro).
+        Cada CRECI tem um WhatsApp só (ninguém consegue desviar o link de outro). Para trocar o número de alguém, exclua o cadastro e peça para ele se cadastrar de novo.
+      </p></div>
+    </div>
+  </div>
+</body>
+</html>

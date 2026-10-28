@@ -278,7 +278,7 @@ router.get('/wa/:slug', async (req, res) => {
     // o lead vai para a roleta do portal (a mensagem continua citando o
     // empreendimento), em vez de cair no vazio.
     let alvo = emp;
-    if (!doPortal && !roleta.digitos(emp.whatsapp)
+    if (!doPortal && !req.query.cor && !roleta.digitos(emp.whatsapp)
         && !(await db.listCorretores(emp.id, { ativosOnly: true })).length) {
       alvo = empPortal(await portal.carregar());
     }
@@ -292,7 +292,8 @@ router.get('/wa/:slug', async (req, res) => {
         empreendimento_id: alvo.id, corretor_nome: r.corretor && r.corretor.nome, corretor_fone: r.corretor && r.corretor.telefone,
         detalhe: [doPortal ? 'portal' : (alvo.id !== emp.id ? emp.nome + ' (pela roleta do portal)' : null), lead.interesse, 'botão ' + origem,
           vistoNoSite(req) ? 'viu no site: ' + vistoNoSite(req) : null, req.query.utm_source, req.query.utm_campaign,
-          'protocolo ' + lead.protocolo, r.motivo === 'mesmo-visitante' ? 'mesmo corretor de antes' : null].filter(Boolean).join(' · '),
+          'protocolo ' + lead.protocolo, r.motivo === 'mesmo-visitante' ? 'mesmo corretor de antes' : null,
+          r.motivo === 'link-corretor' ? 'link do corretor (' + String(req.query.cor).toUpperCase() + ')' : null].filter(Boolean).join(' · '),
       }).catch(() => {});
     }
     return enviarParaWhats(res, r.telefone, mensagem(req, emp, lead));

@@ -1,0 +1,29 @@
+<script>
+  // Link do corretor: ?cor=FR12345 (ou #FR12345 no fim do link) leva os
+  // cliques no WhatsApp direto para ele, sem passar pela roleta. A tag fica
+  // guardada 30 dias no aparelho do cliente, para quando ele voltar depois.
+  (function(){
+    var RE=/^[A-Za-z]{1,2}\d{3,}X?$/, K='ap_cor', tag='';
+    try{
+      var q=new URLSearchParams(location.search), h=decodeURIComponent(location.hash.slice(1));
+      tag=(q.get('cor')||q.get('c')||(RE.test(h)?h:'')).trim();
+      if(RE.test(tag)){
+        tag=tag.toUpperCase(); localStorage.setItem(K,JSON.stringify({t:tag,em:Date.now()}));
+        if(RE.test(h)) history.replaceState(null,'',location.pathname+location.search);
+      } else {
+        var s=JSON.parse(localStorage.getItem(K)||'null');
+        tag=s&&s.t&&Date.now()-s.em<30*864e5?s.t:'';
+      }
+    }catch(_){ tag=''; }
+    if(!tag) return;
+    window.__corTag=tag;
+    function anexar(a){
+      var href=a.getAttribute('href'); if(!href||href.indexOf('/wa/')<0||/[?&]cor=/.test(href)) return;
+      a.setAttribute('href',href+(href.indexOf('?')<0?'?':'&')+'cor='+encodeURIComponent(tag));
+    }
+    function todos(){ document.querySelectorAll('a[href*="/wa/"]').forEach(anexar); }
+    document.readyState==='loading'?document.addEventListener('DOMContentLoaded',todos):todos();
+    // Botões criados depois (vitrine, popups): completa na hora do clique, antes de tudo.
+    window.addEventListener('click',function(e){ var a=e.target.closest&&e.target.closest('a[href*="/wa/"]'); if(a) anexar(a); },true);
+  })();
+</script>

@@ -1,0 +1,73 @@
+/* Página pública do corretor: cadastro (nome, CRECI, WhatsApp) e links com a tag dele */
+:root{
+  --green:#0d7a3f;--green-deep:#0a3f21;--green-bright:#1f9d57;--orange:#F47B20;--orange-deep:#d4610f;
+  --ink:#14211a;--muted:#5f6f66;--line:#e1e8e3;--bg:#f4f7f5;--card:#fff;--wa:#25D366;
+  --font:ui-sans-serif,-apple-system,"SF Pro Display","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:rgba(13,122,63,.1);color:var(--green);padding:1px 6px;border-radius:6px}
+.cr-in{max-width:880px;margin:0 auto;padding:0 20px}
+
+.cr-hero{position:relative;color:#fff;padding:22px 0 96px;overflow:hidden;
+  background:linear-gradient(160deg,rgba(6,34,18,.94),rgba(10,63,33,.86) 55%,rgba(13,122,63,.78)),url("/img/portal/escritorio-sm.webp") center/cover}
+.cr-hero::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;right:-180px;top:-220px;background:radial-gradient(circle,rgba(244,123,32,.28),transparent 68%)}
+.cr-hero .cr-in{position:relative;z-index:1}
+.cr-logo{display:flex;width:max-content;align-items:center;gap:10px;font-weight:740;font-size:16px;letter-spacing:-.01em;line-height:1.1;margin-bottom:46px}
+.cr-logo .m{width:36px;height:36px;border-radius:10px;background:linear-gradient(160deg,var(--green-bright),var(--green));display:grid;place-items:center;box-shadow:0 8px 20px -10px rgba(0,0,0,.5)}
+.cr-logo .m svg{width:19px;height:19px}
+.cr-logo small{display:block;font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-top:2px}
+.cr-kick{display:inline-block;font-size:11.5px;font-weight:650;letter-spacing:.18em;text-transform:uppercase;opacity:.82;margin-bottom:12px}
+.cr-hero h1{font-size:clamp(34px,6vw,54px);font-weight:760;letter-spacing:-.035em;line-height:1.02;max-width:14ch}
+.cr-hero p{font-size:clamp(15px,1.9vw,18px);opacity:.88;max-width:560px;margin-top:14px}
+
+.cr-main{margin-top:-64px;padding-bottom:56px;position:relative;z-index:2}
+.cr-card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 50px -36px rgba(10,63,33,.55)}
+.cr-form{padding:26px 24px 22px;max-width:520px}
+.cr-form h2{font-size:20px;font-weight:740;letter-spacing:-.02em;margin-bottom:16px}
+.cr-form label{display:block;font-size:13px;font-weight:650;color:var(--muted);margin-bottom:14px}
+.cr-form input{display:block;width:100%;margin-top:6px;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;transition:border-color .15s,background .15s}
+.cr-form input:focus{outline:none;border-color:var(--green-bright);background:#fff}
+.cr-form small{display:block;font-weight:500;font-size:12px;margin-top:6px}
+.cr-erro{background:#fdf0ee;border:1px solid #f3c9c1;color:#b5432f;border-radius:12px;padding:11px 13px;font-size:14px;margin-bottom:14px}
+.cr-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:15.5px;font-weight:680;color:#fff;border:0;border-radius:13px;padding:15px 22px;cursor:pointer;
+  background:linear-gradient(160deg,var(--orange),var(--orange-deep));box-shadow:0 14px 28px -14px rgba(228,97,15,.7);transition:transform .15s}
+.cr-btn:hover{transform:translateY(-1px)}
+.cr-form .cr-btn{width:100%;margin-top:4px}
+.cr-btn.sm{font-size:13.5px;padding:10px 14px;border-radius:11px;box-shadow:none}
+.cr-btn.wa{background:var(--wa)}
+.cr-btn.ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.cr-mini{font-size:12.5px;color:var(--muted);margin-top:12px}
+
+.cr-passos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.cr-passos div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.cr-passos b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(13,122,63,.1);color:var(--green);font-size:13px;margin-bottom:10px}
+.cr-passos h3{font-size:15px;font-weight:720;margin-bottom:4px}
+.cr-passos p{font-size:13.5px;color:var(--muted)}
+@media(max-width:700px){.cr-passos{grid-template-columns:1fr}}
+
+.cr-tag{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 22px;max-width:620px}
+.cr-tag span{display:block;font-size:12px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cr-tag b{display:block;font-size:34px;font-weight:780;letter-spacing:-.02em;color:var(--green)}
+.cr-tag p{font-size:13.5px;color:var(--muted);max-width:300px}
+.cr-h{font-size:16px;font-weight:720;margin:26px 0 10px}
+.cr-link{display:flex;align-items:center;gap:12px;padding:14px 16px;flex-wrap:wrap}
+.cr-url{flex:1 1 260px;min-width:0}
+.cr-url span{display:block;font-size:12.5px;font-weight:650;color:var(--muted);margin-bottom:5px}
+.cr-url input{width:100%;font:inherit;font-size:13.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.cr-acoes{display:flex;gap:8px}
+.cr-emps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.cr-emp{overflow:hidden;display:flex;flex-direction:column}
+.cr-emp img{width:100%;height:140px;object-fit:cover;display:block}
+.cr-emp-t{padding:12px 14px 4px}
+.cr-emp-t b{display:block;font-size:15.5px}
+.cr-emp-t span{font-size:12.5px;color:var(--muted)}
+.cr-emp .cr-acoes{padding:10px 14px 14px;margin-top:auto}
+.cr-emp .cr-acoes .cr-btn{flex:1}
+.cr-meus{border-color:#bfe6cf;background:#f3fbf6}
+
+.cr-foot{padding:22px 0 30px;font-size:12.5px;color:var(--muted);text-align:center}
+.cr-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;font-size:14px;font-weight:600;padding:11px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10}
+.cr-toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:520px){.cr-hero{padding-bottom:84px}.cr-logo{margin-bottom:34px}.cr-form{padding:22px 18px 18px}.cr-link .cr-acoes{width:100%}.cr-link .cr-acoes .cr-btn{flex:1}}

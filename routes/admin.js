@@ -12,7 +12,7 @@ const pois = require('../lib/pois');
 
 // Endereços que não podem virar slug de empreendimento: o portal usa
 // /wa/portal para a roleta dele, e os demais são rotas do próprio site.
-const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'recepcao', 'ok', 'entrada', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img', 'match']);
+const SLUGS_RESERVADOS = new Set(['portal', 'encontre', 'admin', 'gestor', 'recepcao', 'ok', 'entrada', 'wa', 'robots-txt', 'sitemap-xml', 'css', 'js', 'img', 'match', 'corretor', 'meus']);
 const PORTAL_ID = 0;
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -330,10 +330,33 @@ router.post('/corretores/:id/zerar', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ---- Links de corretores (tag que leva o lead direto, sem roleta) ----
+router.get('/links', async (req, res, next) => {
+  try {
+    res.render('admin/links', { title: 'Links de corretores', tags: await db.listTags(), base: baseUrl(req) });
+  } catch (e) { next(e); }
+});
+
+router.post('/links/:id/excluir', async (req, res, next) => {
+  try {
+    await db.excluirTag(req.params.id);
+    res.redirect('/admin/links');
+  } catch (e) { next(e); }
+});
+
+router.post('/links/:id/ativo', async (req, res, next) => {
+  try {
+    await db.setTagAtiva(req.params.id, req.body.ativo === '1');
+    res.redirect('/admin/links');
+  } catch (e) { next(e); }
+});
+
 // ---- Relatório de leads ----
 // Landing direto para o corretor da vez x recepção: totais, por dia, por
 // anúncio/canal, por corretor e o que os corretores responderam.
-function compararCaminhos({ lp, rec, contatos = [] }) {
+function compararCaminhos({ lp: cliques, rec, contatos = [] }) {
+  const lp = cliques.filter((x) => x.motivo !== 'link-corretor');
+  const lnk = cliques.filter((x) => x.motivo === 'link-corretor');
   const dia = (d) => new Date(d).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
   const conta = (lista, chave) => {
     const m = new Map();
@@ -341,21 +364,22 @@ function compararCaminhos({ lp, rec, contatos = [] }) {
     return [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
   };
   const dias = new Map();
-  for (const x of lp) { const k = dia(x.created_at); dias.set(k, { lp: 0, rec: 0, ...dias.get(k) }); dias.get(k).lp++; }
-  for (const x of rec) { const k = dia(x.created_at); dias.set(k, { lp: 0, rec: 0, ...dias.get(k) }); dias.get(k).rec++; }
+  for (const [lista, campo] of [[lp, 'lp'], [lnk, 'lnk'], [rec, 'rec']]) {
+    for (const x of lista) { const k = dia(x.created_at); dias.set(k, { lp: 0, lnk: 0, rec: 0, ...dias.get(k) }); dias.get(k)[campo]++; }
+  }
   const corretores = new Map();
   const somar = (x, campo) => {
     let k = String(x.corretor_fone || '').replace(/\D/g, '');   // mesmo corretor com o telefone escrito de jeitos diferentes
     if (k && !k.startsWith('55')) k = '55' + k;
     k = k || x.corretor_nome || '?';
-    if (!corretores.has(k)) corretores.set(k, { nome: x.corretor_nome || k, lp: 0, rec: 0 });
+    if (!corretores.has(k)) corretores.set(k, { nome: x.corretor_nome || k, lp: 0, lnk: 0, rec: 0 });
     corretores.get(k)[campo]++;
   };
-  lp.forEach((x) => somar(x, 'lp')); rec.forEach((x) => somar(x, 'rec'));
-  const telsLp = new Set(lp.map((x) => x.lead_telefone).filter(Boolean));
+  lp.forEach((x) => somar(x, 'lp')); lnk.forEach((x) => somar(x, 'lnk')); rec.forEach((x) => somar(x, 'rec'));
+  const telsLp = new Set(cliques.map((x) => x.lead_telefone).filter(Boolean));
   // Andamento contado nos dois caminhos (landing: página "Meus leads"; recepção: link /ok).
   const retornos = {};
-  for (const [lista, campo] of [[lp, 'lp'], [rec, 'rec']]) {
+  for (const [lista, campo] of [[cliques, 'lp'], [rec, 'rec']]) {
     for (const x of lista) {
       if (!x.retorno) continue;
       retornos[x.retorno] = retornos[x.retorno] || { lp: 0, rec: 0 };
@@ -364,14 +388,15 @@ function compararCaminhos({ lp, rec, contatos = [] }) {
   }
   const descartados = contatos.filter((x) => x.status === 'descartado');
   return {
-    lp: lp.length, rec: rec.length,
+    lp: lp.length, lnk: lnk.length, rec: rec.length, landingTotal: cliques.length,
     confirmados: rec.filter((x) => x.confirmado_em).length,
-    comRetorno: { lp: lp.filter((x) => x.retorno).length, rec: rec.filter((x) => x.retorno).length },
+    comRetorno: { lp: cliques.filter((x) => x.retorno).length, rec: rec.filter((x) => x.retorno).length },
     aguardando: contatos.filter((x) => x.status === 'pendente').length,
     descartados: descartados.length,
     motivos: conta(descartados, (x) => x.motivo || 'sem motivo'),
     retornos, rotulosRetorno: equipes.RETORNOS,
     ambos: new Set(rec.map((x) => x.lead_telefone).filter((t) => t && telsLp.has(t))).size,
+    linksPor: conta(lnk, (x) => x.corretor_nome || x.corretor_fone || '?'),
     anuncios: conta(lp, (x) => [x.utm_source || 'sem anúncio (orgânico/direto)', x.utm_campaign].filter(Boolean).join(' · ')),
     canais: conta(rec, (x) => x.canal || 'canal não informado'),
     porDia: [...dias].map(([d, v]) => ({ dia: d, ...v })).sort((a, b) => (a.dia < b.dia ? 1 : -1)).slice(0, 31),

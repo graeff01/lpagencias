@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0a3f21">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/corretor.css?v=<%= v %>">
+</head>
+<body>
+  <header class="cr-hero">
+    <div class="cr-in">
+      <a class="cr-logo" href="/"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora Predial<small>Lançamentos</small></span></a>
+      <% if (!r) { %>
+        <span class="cr-kick">Para corretores e gerentes</span>
+        <h1>Seu link de corretor</h1>
+        <p>Compartilhe os lançamentos com o seu link: quem entrar por ele fala <b>direto com você</b>, sem passar pela roleta e sem gastar a sua vez.</p>
+      <% } else { %>
+        <span class="cr-kick"><%= r.nova ? 'Cadastro feito' : 'Bem-vindo de volta' %></span>
+        <h1>Pronto, <%= String(r.nome).split(' ')[0] %>!</h1>
+        <p>Estes são os seus links. Copie e mande para os seus clientes: os contatos que vierem por eles caem no seu WhatsApp.</p>
+      <% } %>
+    </div>
+  </header>
+
+  <main class="cr-in cr-main">
+    <% if (!r) { %>
+      <form class="cr-card cr-form" method="POST" action="/corretor" autocomplete="on">
+        <h2>Cadastre-se em 30 segundos</h2>
+        <% if (erro) { %><div class="cr-erro" role="alert"><%= erro %></div><% } %>
+        <label>Nome completo<input name="nome" value="<%= d.nome || '' %>" placeholder="Ex.: Fabrício Rocha" autocomplete="name" required></label>
+        <label>CRECI<input name="creci" value="<%= d.creci || '' %>" placeholder="Ex.: 12345" inputmode="numeric" required></label>
+        <label>WhatsApp<input name="whats" value="<%= d.whats || '' %>" placeholder="(51) 99999-0000" inputmode="tel" autocomplete="tel" required>
+          <small>É para este número que os clientes do seu link vão ser enviados.</small></label>
+        <button type="submit" class="cr-btn">Gerar meu link</button>
+        <p class="cr-mini">Já se cadastrou? Preencha de novo com os mesmos dados para ver os seus links.</p>
+      </form>
+
+      <section class="cr-passos">
+        <div><b>1</b><h3>Cadastre-se</h3><p>Com nome, CRECI e WhatsApp. A sua tag é criada na hora (ex.: <code>FR12345</code>).</p></div>
+        <div><b>2</b><h3>Compartilhe</h3><p>Mande o link do lançamento para o cliente, poste no seu status ou nas redes.</p></div>
+        <div><b>3</b><h3>O lead é seu</h3><p>Quem chamar no WhatsApp pelo seu link vai direto para você. A roleta continua igual para todos.</p></div>
+      </section>
+    <% } else { %>
+      <section class="cr-card cr-tag">
+        <div>
+          <span>Sua tag</span>
+          <b><%= r.tag %></b>
+        </div>
+        <p>Também funciona colocando <code>#<%= r.tag %></code> no fim de qualquer link do site.</p>
+      </section>
+
+      <h2 class="cr-h">Site com todos os lançamentos</h2>
+      <div class="cr-card cr-link">
+        <div class="cr-url"><span>Todos os lançamentos</span><input readonly value="<%= r.portal %>"></div>
+        <div class="cr-acoes">
+          <button type="button" class="cr-btn sm" data-copiar="<%= r.portal %>">Copiar</button>
+          <a class="cr-btn sm wa" target="_blank" rel="noopener" href="https://wa.me/?text=<%= encodeURIComponent('Separei os lançamentos da Auxiliadora Predial para você: ' + r.portal) %>">Enviar</a>
+        </div>
+      </div>
+
+      <% if (r.emps.length) { %>
+      <h2 class="cr-h">Por lançamento</h2>
+      <div class="cr-emps">
+        <% r.emps.forEach(function(e){ %>
+          <div class="cr-card cr-emp">
+            <% if (e.capa) { %><img src="<%= e.capa %>" alt="" loading="lazy" onerror="this.remove()"><% } %>
+            <div class="cr-emp-t"><b><%= e.nome %></b><span><%= e.bairro %></span></div>
+            <div class="cr-acoes">
+              <button type="button" class="cr-btn sm" data-copiar="<%= e.url %>">Copiar link</button>
+              <a class="cr-btn sm wa" target="_blank" rel="noopener" href="https://wa.me/?text=<%= encodeURIComponent('Olha esse lançamento: ' + e.nome + ' ' + e.url) %>">Enviar</a>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <% } %>
+
+      <h2 class="cr-h">Acompanhe os seus leads</h2>
+      <div class="cr-card cr-link cr-meus">
+        <div class="cr-url"><span>Meus leads: os clientes que chegaram para você e o andamento de cada um</span><input readonly value="<%= r.meus %>"></div>
+        <div class="cr-acoes">
+          <a class="cr-btn sm" href="<%= r.meus %>">Abrir</a>
+          <button type="button" class="cr-btn sm ghost" data-copiar="<%= r.meus %>">Copiar</button>
+        </div>
+      </div>
+      <p class="cr-mini">Guarde esta página: abra de novo pelo mesmo endereço e preencha os mesmos dados quando quiser os links.</p>
+    <% } %>
+  </main>
+
+  <footer class="cr-foot"><div class="cr-in">Auxiliadora Predial · Lançamentos</div></footer>
+  <div class="cr-toast" id="crToast" role="status" aria-live="polite"></div>
+  <script>
+    (function(){
+      var t=document.getElementById('crToast'), tm;
+      function aviso(m){ t.textContent=m; t.classList.add('on'); clearTimeout(tm); tm=setTimeout(function(){ t.classList.remove('on'); },2200); }
+      document.addEventListener('click',function(e){
+        var b=e.target.closest('[data-copiar]'); if(!b) return;
+        var v=b.getAttribute('data-copiar');
+        (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(v):Promise.reject()).then(function(){ aviso('Link copiado!'); })
+          .catch(function(){ var i=document.createElement('input'); i.value=v; document.body.appendChild(i); i.select(); try{ document.execCommand('copy'); aviso('Link copiado!'); }catch(_){ aviso('Segure no link para copiar.'); } i.remove(); });
+      });
+      var w=document.querySelector('input[name=whats]');
+      if(w) w.addEventListener('input',function(){ var d=w.value.replace(/\D/g,'').slice(0,11); w.value=d.length>6?'('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4):d.length>2?'('+d.slice(0,2)+') '+d.slice(2):d; });
+    })();
+  </script>
+</body>
+</html>

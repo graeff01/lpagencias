@@ -54,7 +54,7 @@
       <div class="kpi"><span>Resgatados</span><b><%= resumo.resgates %></b><i>voltaram após 24h e trocaram de corretor</i></div>
     </div>
 
-    <% var cm = caminho, totCm = cm.lp + cm.rec, pLp = totCm ? Math.round(cm.lp * 100 / totCm) : 0; %>
+    <% var cm = caminho, totCm = cm.lp + cm.lnk + cm.rec, pct = function(n){ return totCm ? Math.round(n * 100 / totCm) : 0; }; %>
     <div class="panel">
       <h2 class="panel-h">Por onde o lead chegou<% if (dias) { %> · últimos <%= dias %> dias<% } %></h2>
       <div class="cam">
@@ -62,6 +62,11 @@
           <span>Direto da landing → corretor da vez</span>
           <b><%= cm.lp %></b>
           <i>leads novos que clicaram no WhatsApp da página</i>
+        </div>
+        <div class="cam-box lnk">
+          <span>Link do próprio corretor</span>
+          <b><%= cm.lnk %></b>
+          <i>clientes que entraram pelo link com a tag dele (não passam pela roleta)</i>
         </div>
         <div class="cam-box rec">
           <span>Pela recepção (encaminhado à mão)</span>
@@ -76,19 +81,19 @@
         </div>
       </div>
       <% if (totCm) { %>
-      <div class="cam-split"><span class="lp" style="width:<%= pLp %>%"></span><span class="rec" style="width:<%= 100 - pLp %>%"></span></div>
-      <div class="cam-leg"><span><i class="lp"></i>Landing <%= pLp %>%</span><span><i class="rec"></i>Recepção <%= 100 - pLp %>%</span></div>
+      <div class="cam-split"><span class="lp" style="width:<%= pct(cm.lp) %>%"></span><span class="lnk" style="width:<%= pct(cm.lnk) %>%"></span><span class="rec" style="width:<%= pct(cm.rec) %>%"></span></div>
+      <div class="cam-leg"><span><i class="lp"></i>Landing <%= pct(cm.lp) %>%</span><span><i class="lnk"></i>Link do corretor <%= pct(cm.lnk) %>%</span><span><i class="rec"></i>Recepção <%= pct(cm.rec) %>%</span></div>
       <% } %>
 
       <div class="cam-grid">
         <div>
           <h3>Por dia</h3>
           <table class="tbl mini">
-            <thead><tr><th>Dia</th><th>Landing</th><th>Recepção</th><th>Total</th></tr></thead>
+            <thead><tr><th>Dia</th><th>Landing</th><th>Link</th><th>Recepção</th><th>Total</th></tr></thead>
             <tbody>
-              <% if (!cm.porDia.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+              <% if (!cm.porDia.length) { %><tr><td colspan="5" class="empty">Nenhum lead no período.</td></tr><% } %>
               <% cm.porDia.forEach(function(d){ var p = d.dia.split('-'); %>
-                <tr><td><%= p[2] + '/' + p[1] %></td><td class="num"><%= d.lp %></td><td class="num"><%= d.rec %></td><td class="num"><%= d.lp + d.rec %></td></tr>
+                <tr><td><%= p[2] + '/' + p[1] %></td><td class="num"><%= d.lp %></td><td class="num"><%= d.lnk %></td><td class="num"><%= d.rec %></td><td class="num"><%= d.lp + d.lnk + d.rec %></td></tr>
               <% }); %>
             </tbody>
           </table>
@@ -96,11 +101,11 @@
         <div>
           <h3>Por corretor</h3>
           <table class="tbl mini">
-            <thead><tr><th>Corretor</th><th>Landing</th><th>Recepção</th><th>Total</th></tr></thead>
+            <thead><tr><th>Corretor</th><th>Landing</th><th>Link</th><th>Recepção</th><th>Total</th></tr></thead>
             <tbody>
-              <% if (!cm.porCorretor.length) { %><tr><td colspan="4" class="empty">Nenhum lead no período.</td></tr><% } %>
+              <% if (!cm.porCorretor.length) { %><tr><td colspan="5" class="empty">Nenhum lead no período.</td></tr><% } %>
               <% cm.porCorretor.forEach(function(c){ %>
-                <tr><td><%= c.nome %></td><td class="num"><%= c.lp %></td><td class="num"><%= c.rec %></td><td class="num"><%= c.lp + c.rec %></td></tr>
+                <tr><td><%= c.nome %></td><td class="num"><%= c.lp %></td><td class="num"><%= c.lnk %></td><td class="num"><%= c.rec %></td><td class="num"><%= c.lp + c.lnk + c.rec %></td></tr>
               <% }); %>
             </tbody>
           </table>
@@ -126,12 +131,12 @@
         <div>
           <h3>Andamento informado pelos corretores</h3>
           <table class="tbl mini">
-            <thead><tr><th>Situação</th><th>Landing</th><th>Recepção</th></tr></thead>
+            <thead><tr><th>Situação</th><th>Site</th><th>Recepção</th></tr></thead>
             <tbody>
               <% Object.keys(cm.rotulosRetorno).forEach(function(k){ if (!cm.retornos[k]) return; %>
                 <tr><td><%= cm.rotulosRetorno[k] %></td><td class="num"><%= cm.retornos[k].lp %></td><td class="num"><%= cm.retornos[k].rec %></td></tr>
               <% }); %>
-              <tr><td><b>Sem andamento ainda</b></td><td class="num" <% if (cm.lp - cm.comRetorno.lp) { %>style="color:var(--danger)"<% } %>><%= cm.lp - cm.comRetorno.lp %></td><td class="num" <% if (cm.rec - cm.comRetorno.rec) { %>style="color:var(--danger)"<% } %>><%= cm.rec - cm.comRetorno.rec %></td></tr>
+              <tr><td><b>Sem andamento ainda</b></td><td class="num" <% if (cm.landingTotal - cm.comRetorno.lp) { %>style="color:var(--danger)"<% } %>><%= cm.landingTotal - cm.comRetorno.lp %></td><td class="num" <% if (cm.rec - cm.comRetorno.rec) { %>style="color:var(--danger)"<% } %>><%= cm.rec - cm.comRetorno.rec %></td></tr>
             </tbody>
           </table>
           <% if (cm.motivos.length) { %>
@@ -147,6 +152,7 @@
         <b>Landing:</b> cada pessoa que clicou no WhatsApp da página pela primeira vez e foi direto para o corretor da vez
         (cliques repetidos e robôs não contam). Para separar por anúncio, o link do anúncio precisa ter
         <code>utm_source</code> e <code>utm_campaign</code>.
+        <b>Link do corretor:</b> quem entrou pelo link com a tag do corretor (cadastro em /corretor) e foi direto para ele, sem gastar a vez na roleta.
         <b>Recepção:</b> cada lead que a recepção encaminhou na tela da campanha; reencaminhado conta uma vez.
         O canal é o que ela marca no envio. Contatos que ela guarda na fila ou marca como "não encaminhar" também aparecem, com o motivo.
         <b>Andamento:</b> nos leads da landing, o corretor informa pela página "Meus leads" (link em Roleta de corretores); nos da recepção, pelo link de confirmação.

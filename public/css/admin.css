@@ -538,3 +538,12 @@ body.meus{background:var(--sunken)}
 .ml-lead .ok-ret{margin-top:10px}
 .ml-ok{margin-top:10px}
 .cam-box i.cam-extra{display:block;margin-top:4px;color:#8a5a12}
+
+/* Recepção: lead com corretor responsável na mensagem — só ele fica liberado */
+.rc-travada .rc-item:not(.rc-resp){opacity:.3;pointer-events:none;filter:grayscale(1)}
+.rc-travada .rc-grupo{opacity:.4}
+.rc-camp.rc-travada .rc-item{opacity:.3;pointer-events:none;filter:grayscale(1)}
+.rc-liberar{border:0;background:none;color:inherit;text-decoration:underline;font-weight:650;cursor:pointer;padding:0;margin-left:4px;font-size:inherit}
+.cam-box.lnk{border-color:#c9d6f5;background:#f2f6ff}
+.cam-split .lnk,.cam-leg i.lnk{background:#3b6fd8}
+@media(min-width:761px){.cam{grid-template-columns:repeat(4,1fr)}}

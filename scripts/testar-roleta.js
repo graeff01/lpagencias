@@ -353,6 +353,33 @@ function ok(cond, msg) {
   ok(mt2.ligacoes === 60 && mt2.qualificados === 5, 'meta salva; valor inválido não apaga a anterior');
   ok((await sdr.getMensagens()).tentativa.includes('[NOME DO CLIENTE]'), 'mensagens prontas com os campos trocáveis');
 
+  console.log('\nLink do corretor (tag): vai direto para ele e não gasta a vez na roleta');
+  ok(db.montarTag('Fabrício da Rocha', '12.345-F') === 'FR12345', 'tag = iniciais + números do CRECI (FR12345)');
+  const empT = await db.create({ slug: 'teste-tag', nome: 'Tag' });
+  const t1 = await db.createCorretor(empT.id, { nome: 'Fabrício Rocha', telefone: '(51) 99993-0001' });
+  const t2 = await db.createCorretor(empT.id, { nome: 'Outra Pessoa', telefone: '51999930002' });
+  const cad = await db.cadastrarTag({ nome: 'Fabrício Rocha', creci: '12345', telefone: '51999930001' });
+  ok(cad.tag && cad.tag.tag === 'FR12345' && cad.nova, 'cadastro cria a tag');
+  ok((await db.cadastrarTag({ nome: 'Fabrício Rocha', creci: '12345', telefone: '51999930001' })).tag.id === cad.tag.id, 'mesmo CRECI e WhatsApp: devolve a mesma tag');
+  ok((await db.cadastrarTag({ nome: 'Golpista', creci: '12345', telefone: '51999939999' })).erro === 'outro-whats', 'mesmo CRECI com outro WhatsApp é recusado');
+  const ua2 = { 'user-agent': 'Mozilla/5.0 (iPhone) Safari/605' };
+  const reqT = (q, ip) => ({ headers: ua2, socket: { remoteAddress: ip }, query: q });
+  const resT = () => ({ cookie() {} });
+  const antes = (await db.listCorretores(empT.id)).map(c => c.atribuicoes).join(',');
+  const lt = await roleta.distribuir(reqT({ cor: 'fr12345' }, '10.9.0.1'), resT(), empT, 'hero', { nome: 'Cli', telefone: '5551988887777' });
+  ok(lt.motivo === 'link-corretor' && lt.corretor.id === t1.id && lt.novoLead, 'link com a tag vai para o dono da tag (novo lead)');
+  ok((await db.listCorretores(empT.id)).map(c => c.atribuicoes).join(',') === antes, 'ninguém gastou a vez na roleta');
+  const lt2 = await roleta.distribuir(reqT({ cor: 'FR12345' }, '10.9.0.1'), resT(), empT, 'flutuante', { nome: 'Cli', telefone: '5551988887777' });
+  ok(lt2.corretor.id === t1.id && !lt2.novoLead, 'o mesmo cliente de novo pelo link não conta como lead novo');
+  const semTag = await roleta.distribuir(reqT({}, '10.9.0.2'), resT(), empT, 'hero');
+  ok(semTag.motivo === 'roleta', 'sem a tag, continua na roleta');
+  const tagFora = await db.cadastrarTag({ nome: 'Maria Fora', creci: '777', telefone: '51999935555' });
+  const lf = await roleta.distribuir(reqT({ cor: tagFora.tag.tag }, '10.9.0.3'), resT(), empT, 'hero');
+  ok(lf.telefone === '5551999935555' && lf.motivo === 'link-corretor', 'corretor fora da roleta deste lançamento também recebe pelo link');
+  await db.setTagAtiva(cad.tag.id, false);
+  ok((await roleta.distribuir(reqT({ cor: 'FR12345' }, '10.9.0.4'), resT(), empT, 'hero')).motivo === 'roleta', 'tag desativada volta para a roleta');
+  void t2;
+
   console.log(falhas ? `\n${falhas} teste(s) falharam.\n` : '\nTodos os testes passaram.\n');
   process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('\nErro no teste:', e); process.exit(1); });

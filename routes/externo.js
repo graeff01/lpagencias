@@ -1,6 +1,7 @@
 // Rotas públicas sem login:
 //   /ok/:token       — o corretor confirma que recebeu o lead (link na mensagem).
 //   /meus/:token     — leads do corretor e o andamento de cada um (link pessoal).
+//   /corretor        — o corretor se cadastra (nome, CRECI, WhatsApp) e recebe os links com a tag dele.
 //   /entrada/email   — webhook de e-mail de lead (quando a caixa é recebida por
 //                      um serviço externo em vez de lida pelo sistema).
 const express = require('express');
@@ -8,7 +9,8 @@ const crypto = require('crypto');
 const router = express.Router();
 const db = require('../lib/db');
 const caixa = require('../lib/caixa-leads');
-const { isBot } = require('../lib/roleta');
+const { isBot, validarWhats } = require('../lib/roleta');
+const { imgVar } = require('../lib/helpers');
 const { RETORNOS } = require('../lib/equipes');
 
 function primeiroNome(n) { return String(n || '').trim().split(/\s+/)[0] || ''; }
@@ -96,6 +98,57 @@ router.post('/meus/:token/lead/:id', async (req, res, next) => {
       });
     }
     res.redirect(303, volta + '?salvo=' + Number(req.params.id) + '#l' + Number(req.params.id));
+  } catch (err) { next(err); }
+});
+
+// ---- Cadastro do corretor: link com a tag dele ----
+function baseDe(req) {
+  return (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+}
+
+async function linksDoCorretor(req, t) {
+  const base = baseDe(req);
+  const emps = (await db.list({ publishedOnly: true })).map((e) => {
+    const gal = Array.isArray(e.gallery) ? e.gallery : [];
+    const capa = e.card_imagem || e.hero_image || (gal[0] && gal[0].url) || '';
+    return { nome: e.nome, bairro: [e.bairro, e.cidade].filter(Boolean).join(', '), capa: imgVar(capa).sm || imgVar(capa).src || '',
+      url: base + '/' + e.slug + '?cor=' + t.tag };
+  });
+  return { portal: base + '/?cor=' + t.tag, emps, meus: base + '/meus/' + await db.linkDoCorretor(t.telefone) };
+}
+
+// Poucos cadastros por IP por hora: o formulário é público.
+const tentativas = new Map();
+function muitasTentativas(req) {
+  const ip = String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+  const agora = Date.now(), lista = (tentativas.get(ip) || []).filter((t) => agora - t < 3600e3);
+  lista.push(agora); tentativas.set(ip, lista);
+  return lista.length > 15;
+}
+
+router.get('/corretor', (req, res) => {
+  res.set('X-Robots-Tag', 'noindex');
+  res.render('corretor', { title: 'Seu link de corretor · Auxiliadora Predial', d: {}, erro: null, r: null });
+});
+
+router.post('/corretor', async (req, res, next) => {
+  try {
+    res.set('X-Robots-Tag', 'noindex');
+    const d = { nome: String(req.body.nome || '').replace(/\s+/g, ' ').trim().slice(0, 120), creci: String(req.body.creci || '').trim().slice(0, 30), whats: String(req.body.whats || '').trim() };
+    const tela = (erro, r) => res.render('corretor', { title: 'Seu link de corretor · Auxiliadora Predial', d, erro, r });
+    if (muitasTentativas(req)) return tela('Muitas tentativas seguidas. Tente de novo daqui a pouco.');
+    const tel = validarWhats(d.whats);
+    if (d.nome.split(' ').length < 2) return tela('Informe seu nome completo (nome e sobrenome).');
+    if (d.creci.replace(/\D/g, '').length < 3) return tela('Informe o número do seu CRECI.');
+    if (!tel) return tela('Informe um WhatsApp válido, com DDD.');
+    const r = await db.cadastrarTag({ nome: d.nome, creci: d.creci, telefone: tel });
+    if (r.erro === 'outro-whats') return tela('Este CRECI já está cadastrado com outro WhatsApp. Se você trocou de número, fale com o seu gerente para atualizar.');
+    if (r.erro === 'inativo') return tela('Este cadastro está desativado. Fale com o seu gerente.');
+    if (r.erro) return tela('Confira o nome e o CRECI.');
+    if (r.nova) {
+      db.registrarEvento({ tipo: 'tag_corretor', corretor_nome: r.tag.nome, corretor_fone: r.tag.telefone, detalhe: 'tag ' + r.tag.tag + ' · CRECI ' + r.tag.creci }).catch(() => {});
+    }
+    tela(null, { tag: r.tag.tag, nome: r.tag.nome, nova: !!r.nova, ...(await linksDoCorretor(req, r.tag)) });
   } catch (err) { next(err); }
 });
 

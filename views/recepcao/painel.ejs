@@ -178,16 +178,30 @@
       // destaca na lista quem tem esse nome. Só sugere; quem decide é ela.
       var sugerido = document.getElementById('rc-sugerido');
       function normNome(n) { return String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(function (p) { return p.length > 2; }); }
+      // Achou o responsável na lista: só ele fica liberado (o lead já é dele).
+      var travadoEm = null;
+      function travar(a) {
+        travadoEm = a;
+        var lista = document.getElementById('rc-lista');
+        lista.classList.toggle('rc-travada', !!a);
+        document.querySelectorAll('.rc-camp').forEach(function (c) { c.classList.toggle('rc-travada', !!a); });
+        if (a && typeof mostrarAba === 'function') mostrarAba('geral');
+      }
       function destacarResponsavel(nome) {
         var alvo = normNome(nome), achado = null;
-        document.querySelectorAll('.rc-item').forEach(function (a) {
+        document.querySelectorAll('#rc-lista .rc-item').forEach(function (a) {
           var n = normNome(a.dataset.nome);
           var bate = alvo.length && n.length && n[0] === alvo[0] && (alvo.length < 2 || n.indexOf(alvo[alvo.length - 1]) >= 0 || n.length === 1);
           a.classList.toggle('rc-resp', !!bate && !achado);
           if (bate && !achado) achado = a;
         });
+        travar(achado);
         if (achado) {
-          sugerido.textContent = 'A mensagem indica como corretor responsável: ' + achado.dataset.nome + ' (destacado abaixo).';
+          sugerido.innerHTML = '';
+          sugerido.appendChild(document.createTextNode('Este lead é de ' + achado.dataset.nome + ' (indicado na mensagem): só dá para enviar para ele. '));
+          var lib = document.createElement('button'); lib.type = 'button'; lib.className = 'rc-liberar'; lib.textContent = 'Não é esta pessoa? Liberar todos';
+          lib.onclick = function () { travar(null); achado.classList.remove('rc-resp'); sugerido.hidden = true; };
+          sugerido.appendChild(lib);
           sugerido.hidden = false;
         } else if (alvo.length && /[a-z]/i.test(nome) && !/ - /.test(nome)) {
           sugerido.textContent = 'A mensagem indica como corretor responsável: ' + nome + ' (não está na lista).';
@@ -490,6 +504,11 @@
       document.querySelector('.rc-wrap').addEventListener('click', function (e) {
         var a = e.target.closest('.rc-item');
         if (!a) return;
+        if (travadoEm && a !== travadoEm && a.dataset.fone !== travadoEm.dataset.fone) {
+          e.preventDefault();
+          avisar('Este lead é de ' + travadoEm.dataset.nome + '. Envie para ele (ou toque em "Liberar todos").');
+          return;
+        }
         var d = {
           nome: el.nome.value.trim(), telefone: P.normalizarFone(el.telefone.value), email: el.email.value.trim(),
           negocio: el.negocio.value, imovel: el.imovel.value.trim(), origem: el.origem.value.trim(),
