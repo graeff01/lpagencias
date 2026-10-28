@@ -835,6 +835,7 @@
     }
     if(window.fbq){ fbq('track','Lead',{content_name:EMP}); fbq('track','CompleteRegistration',{content_name:EMP}); }
     var extra=window.__utm?'&'+new URLSearchParams(window.__utm).toString():'';
+    if(window.__corTag) extra+='&cor='+encodeURIComponent(window.__corTag);   // link do corretor: vai direto para ele
     var G=window.__leadGate, lead={ nome:String(d.get('nome')||'').trim(), tel:String(d.get('tel')||'').trim(), int:d.get('interesse')||'' };
     // Com o formulário padrão ligado, nome e WhatsApp vão estruturados (auditoria + mensagem padrão).
     if(G && G.valido(lead.tel) && lead.nome.length>1){
