@@ -263,7 +263,8 @@
   function aplicar(c){
     cam=c;
     palco.style.transform='translate('+c.x.toFixed(2)+'px,'+c.y.toFixed(2)+'px) scale('+c.s.toFixed(5)+')';
-    giro.style.transform=c.r?'rotate('+c.r.toFixed(3)+'deg)':'';
+    // ry: a câmera girando para o lado (guinada), com perspectiva
+    giro.style.transform=(c.ry?'perspective(1400px) rotateY('+c.ry.toFixed(3)+'deg) ':'')+(c.r?'rotate('+c.r.toFixed(3)+'deg)':'');
   }
   // ponto da fachada na tela
   function naTela(px,py,c){ c=c||cam; return { x:c.x+(FX+px)*c.s, y:c.y+(FY+py)*c.s }; }
@@ -337,7 +338,7 @@
   function anima(ms,fn){ return new Promise(function(ok){ var t0=performance.now(); (function f(){ var k=Math.min(1,(performance.now()-t0)/ms); fn(k); k<1?requestAnimationFrame(f):ok(); })(); }); }
   // zoom de drone: a escala anda em progressão geométrica (aproximação constante), não linear
   function lerpLog(a,b,e){ return a*Math.pow(b/a,e); }
-  function camAlvo(s,px,py,fx,fy,r){ return { s:s, x:fx-(FX+px)*s, y:fy-(FY+py)*s, r:r||0 }; }
+  function camAlvo(s,px,py,fx,fy,r,ry){ return { s:s, x:fx-(FX+px)*s, y:fy-(FY+py)*s, r:r||0, ry:ry||0 }; }
   function esperarImg(img,ms){ return new Promise(function(ok){ if(img.complete&&img.naturalWidth) return ok(); img.addEventListener('load',ok,{once:true}); img.addEventListener('error',ok,{once:true}); setTimeout(ok,ms); }); }
 
   var kb=null;
@@ -347,24 +348,24 @@
     var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1];
     var tira=carregarTira(k);
     var vw=innerWidth, vh=innerHeight, c0=cam, ini=naTela(px,py,c0);
-    // o drone chega só até onde a fachada continua nítida (andar ~1/4 da tela) e faz uma curva de lado;
-    // a sala entra deslizando no mesmo sentido, como um único movimento de câmera
-    var s2=vh*0.26/P, T=CALMO?1:4400, CURVA=.55, ENTRA=.70;
+    // o drone se aproxima sem chegar nas janelas; no caminho a câmera vai girando para dentro do prédio
+    // e a sala entra no mesmo giro, como se a câmera virasse para dentro do apartamento
+    var s2=vh*0.17/P, T=CALMO?1:3900, GIRA=.38, ENTRA=.52, lado=ini.x<vw/2?1:-1;
     var dentroP=null;
     prepararDentro();
     return esperarImg(tira,900).then(function(){
       return anima(T,function(q){
         var e=-(Math.cos(Math.PI*q)-1)/2, s=lerpLog(c0.s,s2,e);
         var m=ease.io2(Math.min(1,q/.7));
-        var d=Math.max(0,(q-CURVA)/(1-CURVA)), lat=d*d;              // a curva começa devagar e ganha velocidade
-        var X=ini.x+(vw/2-ini.x)*m-lat*vw*0.30, Y=ini.y+(vh/2-ini.y)*m-Math.sin(Math.PI*Math.min(1,q/.7))*vh*0.03;
-        aplicar(camAlvo(s,px,py,X,Y,Math.sin(Math.PI*Math.min(1,q/.7))*0.9+lat*0.8));
+        var g=Math.max(0,(q-GIRA)/(1-GIRA)), gg=g*g*(3-2*g);
+        var X=ini.x+(vw/2-ini.x)*m-gg*vw*0.12*lado, Y=ini.y+(vh/2-ini.y)*m-Math.sin(Math.PI*Math.min(1,q/.7))*vh*0.03;
+        aplicar(camAlvo(s,px,py,X,Y,Math.sin(Math.PI*Math.min(1,q/.7))*0.8+gg*1.2*lado,-gg*34*lado));
         tira.style.opacity=Math.max(0,Math.min(1,(s/c0.s-1.8)/1.5)).toFixed(3);
-        palco.style.filter=lat>.05?'blur('+(lat*5).toFixed(1)+'px)':'';
-        if(q>=ENTRA && !dentroP){ dentroP=mostrarDentro(); setTimeout(revelarInfo, CALMO?0:1000); }
+        palco.style.filter=gg>.1?'blur('+(gg*3).toFixed(1)+'px)':'';
+        if(q>=ENTRA && !dentroP){ dentroP=mostrarDentro(lado); setTimeout(revelarInfo, CALMO?0:1100); }
       });
     }).then(function(){ return dentroP; }).then(function(){
-      cena.style.visibility='hidden'; palco.style.filter=''; tira.style.opacity=0; estado.animando=false; revelarInfo();
+      cena.style.visibility='hidden'; palco.style.filter=''; tira.style.opacity=0; aplicar({s:cam.s,x:cam.x,y:cam.y,r:0,ry:0}); estado.animando=false; revelarInfo();
     });
   }
   function prepararDentro(){
@@ -377,14 +378,16 @@
     document.getElementById('quero').href='/wa/nimbus-place-life?src=andar&vi='+encodeURIComponent('Escolha seu andar: '+(a===0?'térreo (garden)':a+'º andar'));
     trocar('estar',true);
   }
-  function mostrarDentro(){
+  function mostrarDentro(lado){
+    lado=lado||1;
     dentro.classList.add('on');
     var img=dentro.querySelector('.amb-img.ativo');
-    return anima(CALMO?1:1500,function(q){
+    // a sala chega girando junto com a câmera e se assenta de frente
+    return anima(CALMO?1:1900,function(q){
       var e=ease.out3(q);
-      dentro.style.opacity=Math.min(1,q*1.6).toFixed(3);
-      img.style.transform='scale('+(1.14-0.06*e).toFixed(4)+') translateX('+((1-e)*7).toFixed(2)+'%)';
-      img.style.filter='blur('+((1-e)*5).toFixed(1)+'px)';
+      dentro.style.opacity=Math.min(1,q*1.5).toFixed(3);
+      img.style.transform='perspective(1400px) rotateY('+((1-e)*26*lado).toFixed(2)+'deg) scale('+(1.20-0.12*e).toFixed(4)+') translateX('+((1-e)*9*lado).toFixed(2)+'%)';
+      img.style.filter='blur('+((1-e)*3).toFixed(1)+'px)';
     }).then(function(){ img.style.filter=''; kenBurns(img,1.08); });
   }
   function revelarInfo(){ estado.dentro=true; document.body.classList.remove('indo'); document.body.classList.add('dentro'); }
@@ -412,7 +415,7 @@
     estado.animando=true; document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
     var img=dentro.querySelector('.amb-img.ativo'), alvo=base;
     var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1], tira=tiras[k];
-    var vw=innerWidth, vh=innerHeight, s0=vh*0.26/P, fim=naTela(px,py,alvo);
+    var vw=innerWidth, vh=innerHeight, s0=vh*0.17/P, fim=naTela(px,py,alvo);
     cena.style.visibility='';
     anima(CALMO?1:600,function(q){
       var e=ease.in2(q); dentro.style.opacity=(1-e).toFixed(3);
