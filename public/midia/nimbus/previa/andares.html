@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Nimbus Place Life · Escolha seu andar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="/vitrine/nimbus/img/fachada.webp">
+<style>
+  :root{--ink:#fff;--vidro:rgba(16,20,26,.30);--borda:rgba(255,255,255,.18);--ouro:#f3c98b;--serif:"Cormorant Garamond",Georgia,serif;--sans:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0b0e12;color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- palco da torre ---------- */
+  .cena{position:fixed;inset:0;overflow:hidden;cursor:default}
+  .fundo{position:absolute;inset:-60px;background:url(/vitrine/nimbus/img/fachada.webp) center/cover;filter:blur(38px) brightness(.55) saturate(1.1);transform:scale(1.1);opacity:0;transition:opacity .8s}
+  .on .fundo{opacity:1}
+  .palco{position:absolute;left:0;top:0;width:1920px;height:1081px;transform-origin:0 0;will-change:transform}
+  .borda .palco{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 140px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 140px),transparent)}
+  .retrato .palco{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent);mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent)}
+  .palco img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-drag:none;pointer-events:none}
+  .palco .luz,.palco .amb{mix-blend-mode:plus-lighter}
+  @supports not (mix-blend-mode:plus-lighter){.palco .luz,.palco .amb{mix-blend-mode:screen}}
+  .palco .amb{opacity:0;transition:opacity 2.4s ease}
+  .on .palco .amb{opacity:1}
+  .palco .luz{opacity:0;clip-path:inset(50% 0 50% 0);transition:clip-path .55s cubic-bezier(.22,.8,.2,1),opacity .4s ease}
+  .palco .luz.on{opacity:1}
+  .palco .faixa{position:absolute;left:368px;width:1120px;border-top:1px solid rgba(255,230,190,.0);border-bottom:1px solid rgba(255,230,190,.0);background:none;opacity:0;transition:top .55s cubic-bezier(.22,.8,.2,1),opacity .4s;pointer-events:none}
+  .palco .faixa.on{opacity:1;box-shadow:0 0 70px 4000px rgba(4,7,12,.28)}
+  .palco .faixa{box-shadow:0 0 70px 4000px rgba(4,7,12,0);transition:top .55s cubic-bezier(.22,.8,.2,1),height .55s,opacity .4s,box-shadow .6s}
+  .vinheta{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.45));}
+  .degrade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(6,10,16,.55),transparent 18%,transparent 70%,rgba(6,10,16,.5))}
+  .grao{position:absolute;inset:-50%;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grao 1.2s steps(6) infinite}
+  @keyframes grao{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}}
+
+  /* etiqueta do andar ao lado da torre */
+  .etq{position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;pointer-events:none;opacity:0;transition:opacity .35s, transform .55s cubic-bezier(.22,.8,.2,1);will-change:transform}
+  .etq.on{opacity:1}
+  .etq i{width:44px;height:1px;background:linear-gradient(90deg,rgba(255,236,205,.9),rgba(255,236,205,.15))}
+  .etq b{font-family:var(--serif);font-weight:300;font-size:30px;line-height:1;letter-spacing:.01em;text-shadow:0 2px 18px rgba(0,0,0,.45)}
+  .etq small{display:block;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;opacity:.75;margin-top:4px}
+
+  /* ---------- topo ---------- */
+  .topo{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;padding-top:max(22px,env(safe-area-inset-top));pointer-events:none}
+  .topo>*{pointer-events:auto}
+  .marca{display:flex;align-items:baseline;gap:12px;font-size:12px;letter-spacing:.32em;text-transform:uppercase;font-weight:500}
+  .marca em{font-family:var(--serif);font-style:italic;font-size:20px;letter-spacing:.02em;text-transform:none;font-weight:300;opacity:.85}
+  .voltar{display:none;align-items:center;gap:10px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;opacity:.9}
+  .voltar svg{width:18px;height:18px}
+  .dentro .voltar{display:inline-flex}
+  .dentro .marca{display:none}
+  .pill{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:11px 18px;border-radius:40px;background:rgba(255,255,255,.12);border:1px solid var(--borda);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+
+  /* ---------- painel "Escolha seu andar" ---------- */
+  .painel{position:fixed;z-index:20;right:clamp(20px,4vw,64px);top:50%;transform:translateY(-50%);width:min(360px,calc(100vw - 40px));padding:30px 28px 26px;border-radius:26px;
+    background:var(--vidro);border:1px solid var(--borda);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18);transition:opacity .6s ease, transform .8s cubic-bezier(.22,.8,.2,1)}
+  .painel.fora{opacity:0;transform:translate(30px,-50%);pointer-events:none}
+  .painel h1{font-family:var(--serif);font-weight:300;font-size:44px;line-height:.98;letter-spacing:-.01em}
+  .painel .ajuda{font-size:13px;line-height:1.55;opacity:.78;margin-top:12px;font-weight:300}
+  .nivel{display:flex;align-items:flex-end;gap:14px;margin-top:26px}
+  .nivel>span{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;opacity:.7;padding-bottom:12px}
+  .num{font-family:var(--serif);font-weight:300;font-size:86px;line-height:.8;color:var(--ouro);min-width:1.4ch;display:inline-flex;overflow:hidden;height:72px}
+  .num .rolo{display:inline-block;transition:transform .45s cubic-bezier(.22,.8,.2,1),opacity .3s}
+  .tipo{margin-top:14px}
+  .tipo b{display:block;font-weight:500;font-size:15px}
+  .tipo p{font-size:13px;opacity:.75;margin-top:4px;line-height:1.5;font-weight:300}
+  .barra{margin-top:22px;display:flex;align-items:center;gap:12px}
+  .barra small{font-size:10px;letter-spacing:.18em;opacity:.6}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:2px;background:linear-gradient(90deg,var(--ouro) var(--p,50%),rgba(255,255,255,.25) var(--p,50%));border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(243,201,139,.25),0 4px 12px rgba(0,0,0,.4);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(243,201,139,.25);cursor:grab}
+  .entrar{margin-top:24px;width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-radius:16px;background:linear-gradient(135deg,#f6d7a6,#e7b26e);color:#1b1408;font-weight:600;font-size:14px;letter-spacing:.02em;box-shadow:0 14px 34px -14px rgba(231,178,110,.8);transition:transform .2s, box-shadow .2s}
+  .entrar:hover{transform:translateY(-1px);box-shadow:0 18px 40px -14px rgba(231,178,110,.95)}
+  .entrar svg{width:20px;height:20px}
+  .dica{position:fixed;left:32px;bottom:28px;z-index:10;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;opacity:.75;display:flex;align-items:center;gap:10px;transition:opacity .5s}
+  .dica i{width:7px;height:7px;border-radius:50%;background:var(--ouro);box-shadow:0 0 0 0 rgba(243,201,139,.6);animation:pulso 2s infinite}
+  @keyframes pulso{70%{box-shadow:0 0 0 10px rgba(243,201,139,0)}100%{box-shadow:0 0 0 0 rgba(243,201,139,0)}}
+  .dentro .dica,.indo .dica{opacity:0}
+
+  /* ---------- transição "através do vidro" ---------- */
+  .clarao{position:fixed;inset:0;z-index:15;pointer-events:none;opacity:0;background:radial-gradient(60% 60% at var(--cx,50%) var(--cy,50%),rgba(255,236,206,.95),rgba(255,210,150,.55) 40%,rgba(30,20,10,0) 80%)}
+  .reflexo{position:fixed;inset:-20%;z-index:16;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 48%,rgba(255,255,255,.05) 52%,transparent 60%);transform:translateX(-30%)}
+
+  /* ---------- dentro do apartamento ---------- */
+  .dentro-cena{position:fixed;inset:0;z-index:12;opacity:0;pointer-events:none;background:#0b0e12}
+  .dentro-cena.on{pointer-events:auto}
+  .amb-img{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1s ease;will-change:transform,opacity}
+  .amb-img.ativo{opacity:1}
+  .amb-img.planta{background-size:contain;background-repeat:no-repeat;background-color:#e9e6e1}
+  .dentro-cena .degrade2{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(6,8,12,.5),transparent 22%,transparent 52%,rgba(6,8,12,.78))}
+  .info{position:absolute;left:clamp(22px,4vw,64px);bottom:clamp(28px,7vh,72px);max-width:560px;opacity:0;transform:translateY(16px);transition:opacity .8s ease .15s,transform .9s cubic-bezier(.22,.8,.2,1) .15s}
+  .dentro .info{opacity:1;transform:none}
+  .info .kick{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.75}
+  .info h2{font-family:var(--serif);font-weight:300;font-size:clamp(48px,7vw,92px);line-height:.95;margin-top:10px;letter-spacing:-.01em}
+  .info h2 em{font-style:italic;color:var(--ouro)}
+  .info p{font-size:14.5px;line-height:1.6;opacity:.85;margin-top:14px;font-weight:300;max-width:440px}
+  .acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  .btn-ouro{display:inline-flex;align-items:center;gap:10px;padding:15px 22px;border-radius:14px;background:linear-gradient(135deg,#f6d7a6,#e7b26e);color:#1b1408;font-weight:600;font-size:14px;box-shadow:0 14px 34px -14px rgba(231,178,110,.8)}
+  .btn-vidro{display:inline-flex;align-items:center;gap:10px;padding:15px 20px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid var(--borda);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-weight:500;font-size:14px}
+  .abas{position:absolute;right:clamp(22px,4vw,64px);bottom:clamp(28px,7vh,72px);display:flex;gap:8px;opacity:0;transition:opacity .8s ease .35s}
+  .dentro .abas{opacity:1}
+  .abas button{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:11px 15px;border-radius:40px;background:rgba(10,14,20,.28);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:.82;transition:all .25s}
+  .abas button.on{background:rgba(255,255,255,.92);color:#15110b;opacity:1}
+  .legenda{position:absolute;right:clamp(22px,4vw,64px);top:max(78px,calc(env(safe-area-inset-top) + 64px));font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:0;transition:opacity .6s .5s}
+  .dentro .legenda{opacity:.6}
+
+  /* ---------- celular em pé ---------- */
+  @media (max-width:820px){
+    .topo{padding:16px 18px;padding-top:max(16px,env(safe-area-inset-top))}
+    .marca{font-size:10.5px;letter-spacing:.26em}.marca em{font-size:16px}
+    .pill{padding:9px 13px;font-size:10px}
+    .painel{left:12px;right:12px;width:auto;top:auto;bottom:max(12px,env(safe-area-inset-bottom));transform:none;padding:20px 20px 18px;border-radius:24px}
+    .painel.fora{transform:translateY(30px)}
+    .painel h1{font-size:28px}
+    .painel .ajuda{display:none}
+    .nivel{margin-top:12px}
+    .num{font-size:64px;height:54px}
+    .tipo{margin-top:8px}.tipo p{display:none}
+    .barra{margin-top:14px}
+    .entrar{margin-top:16px;padding:14px 18px}
+    .dica{display:none}
+    .etq b{font-size:22px}.etq i{width:26px}
+    .info{right:18px;left:18px;bottom:calc(84px + env(safe-area-inset-bottom))}
+    .info p{font-size:13.5px}
+    .abas{left:18px;right:18px;bottom:max(18px,env(safe-area-inset-bottom));overflow-x:auto;scrollbar-width:none}
+    .abas::-webkit-scrollbar{display:none}
+    .abas button{flex:0 0 auto;padding:10px 13px;font-size:10px}
+    .acoes .btn-vidro{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){.grao{animation:none}}
+</style>
+</head>
+<body>
+  <div class="cena" id="cena">
+    <div class="fundo"></div>
+    <div class="palco" id="palco">
+      <img src="/vitrine/nimbus/img/fachada.webp" alt="Fachada do Nimbus Place Life">
+      <img class="amb" src="/midia/nimbus/andares/luz-amb.webp" alt="">
+      <div class="faixa" id="faixa"></div>
+      <img class="luz" id="luz" src="/midia/nimbus/andares/luz.webp" alt="">
+    </div>
+    <div class="degrade"></div>
+    <div class="vinheta"></div>
+    <div class="grao"></div>
+    <div class="etq" id="etq"><i></i><div><b id="etqNum">6º</b><small id="etqTxt">andar</small></div></div>
+  </div>
+
+  <header class="topo">
+    <div class="marca">Nimbus <em>Place Life</em></div>
+    <button class="voltar" id="voltar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 5l-7 7 7 7"/></svg>Voltar à torre</button>
+    <a class="pill" href="/nimbus-place-life#contato">Agendar visita</a>
+  </header>
+
+  <aside class="painel fora" id="painel" aria-label="Escolha seu andar">
+    <h1>Escolha<br>seu andar</h1>
+    <p class="ajuda">Passa o mouse num andar e as luzes dele acendem. Clica, ou desliza até um andar e toca em entrar, e tu atravessa o vidro.</p>
+    <div class="nivel"><div class="num"><span class="rolo" id="num">6</span></div><span id="numTxt">º andar</span></div>
+    <div class="tipo"><b id="tipoT">2 e 3 dormitórios com suíte</b><p id="tipoP">8 apartamentos por andar, todos com sacada e churrasqueira.</p></div>
+    <div class="barra"><small>TÉRREO</small><input type="range" id="barra" min="0" max="12" step="1" value="6" aria-label="Andar"><small>12º</small></div>
+    <button class="entrar" id="entrar" type="button"><span id="entrarTxt">Entrar no 6º andar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </aside>
+  <div class="dica"><i></i>Passa o mouse num andar para explorar</div>
+
+  <div class="clarao" id="clarao"></div>
+  <div class="reflexo" id="reflexo"></div>
+
+  <section class="dentro-cena" id="dentro" aria-label="Dentro do apartamento">
+    <div class="amb-img" data-amb="estar" style="background-image:url(/vitrine/nimbus/img/decorado.webp)"></div>
+    <div class="amb-img planta" data-amb="planta"></div>
+    <div class="amb-img" data-amb="gourmet" style="background-image:url(/vitrine/nimbus/img/gourmet.webp)"></div>
+    <div class="amb-img" data-amb="piscina" style="background-image:url(/vitrine/nimbus/img/piscina.webp)"></div>
+    <div class="degrade2"></div>
+    <div class="legenda" id="legenda">Apartamento decorado · imagem ilustrativa</div>
+    <div class="info">
+      <div class="kick">Nimbus Place Life · Igara, Canoas</div>
+      <h2 id="titulo">6º <em>andar</em></h2>
+      <p id="desc">Apartamentos de 2 e 3 dormitórios com suíte, sacada com churrasqueira e vista para o clube.</p>
+      <div class="acoes">
+        <a class="btn-ouro" id="quero" href="/wa/nimbus-place-life?src=andar">Quero conhecer este andar</a>
+        <a class="btn-vidro" href="/nimbus-place-life#plantas">Ver plantas e metragens</a>
+      </div>
+    </div>
+    <div class="abas" id="abas">
+      <button type="button" data-ir="estar" class="on">Estar e jantar</button>
+      <button type="button" data-ir="planta">Planta</button>
+      <button type="button" data-ir="gourmet">Gourmet</button>
+      <button type="button" data-ir="piscina">Piscina</button>
+    </div>
+  </section>
+
+<script>
+(function(){
+  // ---------- geometria da fachada (pixels da imagem 1920×1081) ----------
+  var W=1920, H=1081, Y0=128, P=853/12, NIV=13, TX0=365, TX1=1490;
+  // sacadas por onde a câmera entra: x central e centro vertical relativo ao topo do andar
+  var SACADAS=[[515,30],[662,26],[1140,27],[1303,10]];
+  var topoDe=function(i){ return Y0+i*P; };                 // i=0 é o 12º andar; i=12 é o térreo
+  var andarDe=function(i){ return 12-i; };
+  var rot=function(a){ return a===0?'Térreo':a+'º'; };
+
+  var cena=document.getElementById('cena'), palco=document.getElementById('palco'), luz=document.getElementById('luz'),
+      faixa=document.getElementById('faixa'), etq=document.getElementById('etq'), painel=document.getElementById('painel'),
+      barra=document.getElementById('barra'), dentro=document.getElementById('dentro'), clarao=document.getElementById('clarao'),
+      reflexo=document.getElementById('reflexo');
+  var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var toque=matchMedia('(hover: none)').matches;
+
+  // ---------- câmera ----------
+  var cam={s:1,x:0,y:0}, base={s:1,x:0,y:0};
+  function enquadrar(){
+    var vw=innerWidth, vh=innerHeight, retrato=vw/vh<0.95;
+    document.body.classList.toggle('retrato',retrato);
+    var s,cx,cy;
+    if(retrato){
+      s=Math.min(vw*0.98/(TX1-TX0+40), vh*0.62/(1052-40));
+      cx=(TX0+TX1)/2; base={s:s,x:vw/2-cx*s,y:Math.max(70,(vh-330-1040*s)/2)-20*s};
+    } else {
+      s=Math.max(vw/W,vh/H)*1.02;
+      var painelW=vw>900?Math.min(360,vw*0.3)+64:0;
+      cx=(TX0+TX1)/2; base={s:s,x:(vw-painelW)/2-cx*s+(painelW?20:0),y:vh/2-(H/2+10)*s};
+      // a torre vai para o lado livre; atrás do painel o fundo desfocado completa a borda da foto
+      base.x=Math.min(0,Math.max(vw-W*s-painelW,base.x)); base.y=Math.min(0,Math.max(vh-H*s,base.y));
+      document.body.classList.toggle('borda', base.x+W*s<vw-1);
+    }
+    if(!estado.dentro && !estado.animando) aplicar(base);
+    posEtiqueta();
+  }
+  function aplicar(c){ cam=c; palco.style.transform='translate('+c.x+'px,'+c.y+'px) scale('+c.s+')'; }
+
+  // ---------- andar aceso ----------
+  var estado={i:6, dentro:false, animando:false, sacada:2};
+  function acender(i,suave){
+    estado.i=i;
+    var t=topoDe(i)-18, b=topoDe(i)+P+4;
+    luz.style.clipPath='inset('+(t/H*100)+'% 0 '+((H-b)/H*100)+'% 0)';
+    luz.classList.add('on');
+    faixa.style.top=(topoDe(i)-4)+'px'; faixa.style.height=(P+2)+'px'; faixa.classList.add('on');
+    var a=andarDe(i);
+    rolar(a===0?'T':String(a)); document.getElementById('numTxt').textContent=a===0?'Térreo · garden':'º andar';
+    document.getElementById('entrarTxt').textContent=a===0?'Entrar no térreo':'Entrar no '+a+'º andar';
+    document.getElementById('tipoT').textContent=a===0?'Garden · 2 e 3 dormitórios':'2 e 3 dormitórios com suíte';
+    document.getElementById('tipoP').textContent=a===0?'Apartamentos com pátio privativo, direto do apartamento para o jardim.':'8 apartamentos por andar, todos com sacada e churrasqueira.';
+    barra.value=a; barra.style.setProperty('--p',(a/12*100)+'%');
+    document.getElementById('etqNum').textContent=rot(a);
+    document.getElementById('etqTxt').textContent=a===0?'garden':'andar';
+    etq.classList.add('on'); posEtiqueta();
+  }
+  var ultimoNum='';
+  function rolar(txt){
+    var el=document.getElementById('num'); if(txt===ultimoNum) return;
+    var desce=ultimoNum && (txt==='T'?0:+txt) < (ultimoNum==='T'?0:+ultimoNum);
+    el.style.transition='none'; el.style.transform='translateY('+(desce?'-':'')+'60%)'; el.style.opacity='0'; el.textContent=txt;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.style.transition=''; el.style.transform='none'; el.style.opacity='1'; }); });
+    ultimoNum=txt;
+  }
+  function posEtiqueta(){
+    var y=cam.y+(topoDe(estado.i)+P/2)*cam.s, x=cam.x+(TX1+14)*cam.s;
+    // só aparece se couber ao lado da torre (o painel já mostra o número)
+    var limite=document.body.classList.contains('retrato')?innerWidth:painel.getBoundingClientRect().left;
+    etq.style.visibility=x+96<limite?'':'hidden';
+    etq.style.transform='translate('+x+'px,'+(y-16)+'px)';
+  }
+
+  // ---------- ponteiro sobre a torre ----------
+  function noPalco(ev){ return { x:(ev.clientX-cam.x)/cam.s, y:(ev.clientY-cam.y)/cam.s }; }
+  function andarNoPonto(p){
+    if(p.x<TX0||p.x>TX1||p.y<Y0-20||p.y>topoDe(12)+P) return -1;
+    return Math.max(0,Math.min(12,Math.floor((p.y-Y0+10)/P)));
+  }
+  function sacadaPerto(x){ var m=0; SACADAS.forEach(function(s,k){ if(Math.abs(s[0]-x)<Math.abs(SACADAS[m][0]-x)) m=k; }); return m; }
+  cena.addEventListener('pointermove',function(ev){
+    if(estado.dentro||estado.animando||ev.pointerType==='touch') return;
+    var p=noPalco(ev), i=andarNoPonto(p);
+    cena.style.cursor=i>=0?'pointer':'default';
+    if(i>=0){ estado.sacada=sacadaPerto(p.x); if(i!==estado.i) acender(i); }
+  });
+  cena.addEventListener('click',function(ev){
+    if(estado.dentro||estado.animando) return;
+    var p=noPalco(ev), i=andarNoPonto(p); if(i<0) return;
+    estado.sacada=sacadaPerto(p.x);
+    if(toque && i!==estado.i){ acender(i); return; }      // no celular: 1º toque acende, 2º entra
+    acender(i); entrar();
+  });
+  barra.addEventListener('input',function(){ acender(12-(+barra.value)); });
+  document.getElementById('entrar').addEventListener('click',function(){ entrar(); });
+  addEventListener('keydown',function(e){
+    if(estado.animando) return;
+    if(!estado.dentro && (e.key==='ArrowUp'||e.key==='ArrowDown')){ e.preventDefault(); acender(Math.max(0,Math.min(12,estado.i+(e.key==='ArrowUp'?-1:1)))); }
+    else if(!estado.dentro && e.key==='Enter') entrar();
+    else if(estado.dentro && (e.key==='Escape'||e.key==='Backspace')) sair();
+  });
+
+  // ---------- animação ----------
+  var ease={ io:function(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}, in2:function(t){return t*t;}, out3:function(t){return 1-Math.pow(1-t,3);} };
+  function anima(ms,fn){ return new Promise(function(ok){ var t0=performance.now(); (function f(t){ var k=Math.min(1,(t-t0)/ms); fn(k); k<1?requestAnimationFrame(f):ok(); })(t0); }); }
+  function camAlvo(s,px,py,fx,fy){ return { s:s, x:fx-px*s, y:fy-py*s }; }
+
+  var kb=null;
+  function entrar(){
+    if(estado.dentro||estado.animando) return;
+    estado.animando=true; document.body.classList.add('indo'); painel.classList.add('fora'); etq.classList.remove('on');
+    var sc=SACADAS[estado.sacada], px=sc[0], py=topoDe(estado.i)+sc[1];
+    var vw=innerWidth, vh=innerHeight, c0=cam;
+    var fx=vw/2, fy=vh/2;
+    // ponto da sacada na tela no início: a câmera traz ele para o centro enquanto aproxima
+    var sx0=c0.x+px*c0.s, sy0=c0.y+py*c0.s;
+    var s1=c0.s*3.1, s2=c0.s*7.5;
+    clarao.style.setProperty('--cx','50%'); clarao.style.setProperty('--cy','50%');
+    prepararDentro();
+    var t1=CALMO?1:1150;
+    var p1=anima(t1,function(k){
+      var e=ease.io(k), s=c0.s+(s1-c0.s)*e;
+      var X=sx0+(fx-sx0)*e, Y=sy0+(fy-sy0)*e;
+      aplicar(camAlvo(s,px,py,X,Y));
+      palco.style.filter='blur('+(Math.max(0,k-.75)*6).toFixed(2)+'px)';
+    });
+    return p1.then(function(){
+      // atravessando o vidro: aproxima mais rápido, desfoca, clarão quente e reflexo cruzando
+      return Promise.all([
+        anima(CALMO?1:520,function(k){
+          var e=ease.in2(k);
+          aplicar(camAlvo(s1+(s2-s1)*e,px,py,fx,fy));
+          palco.style.filter='blur('+(1.5+e*22).toFixed(1)+'px) brightness('+(1+e*0.9).toFixed(2)+')';
+          clarao.style.opacity=(e*0.95).toFixed(3);
+          reflexo.style.opacity=(Math.sin(k*Math.PI)*0.9).toFixed(3); reflexo.style.transform='translateX('+(-30+k*60)+'%)';
+        }),
+        new Promise(function(ok){ setTimeout(ok, CALMO?0:300); }).then(function(){ setTimeout(revelarInfo, CALMO?0:650); return mostrarDentro(); })
+      ]);
+    }).then(function(){
+      return anima(CALMO?1:700,function(k){ clarao.style.opacity=((1-ease.out3(k))*0.95).toFixed(3); });
+    }).then(function(){
+      cena.style.visibility='hidden'; palco.style.filter=''; estado.animando=false; revelarInfo();
+    });
+  }
+  function prepararDentro(){
+    var a=andarDe(estado.i);
+    document.getElementById('titulo').innerHTML=a===0?'Térreo <em>garden</em>':a+'º <em>andar</em>';
+    document.getElementById('desc').textContent=a===0
+      ? 'Apartamentos de 2 e 3 dormitórios com suíte e garden privativo: a sala abre direto para o jardim.'
+      : 'Apartamentos de 2 e 3 dormitórios com suíte, sacada com churrasqueira e vista para o clube.';
+    document.querySelector('[data-amb="planta"]').style.backgroundImage='url(/vitrine/nimbus/img/'+(a===0?'planta-3d-garden':'planta-3d')+'.webp)';
+    document.getElementById('quero').href='/wa/nimbus-place-life?src=andar&vi='+encodeURIComponent('Escolha seu andar: '+(a===0?'térreo (garden)':a+'º andar'));
+    trocar('estar',true);
+  }
+  function mostrarDentro(){
+    dentro.classList.add('on');
+    var img=dentro.querySelector('.amb-img.ativo');
+    return anima(CALMO?1:1300,function(k){
+      var e=ease.out3(k);
+      dentro.style.opacity=Math.min(1,k*1.6).toFixed(3);
+      img.style.transform='scale('+(1.32-0.24*e).toFixed(4)+')';
+      img.style.filter='blur('+((1-e)*14).toFixed(1)+'px)';
+    }).then(function(){ img.style.filter=''; kenBurns(img,1.08); });
+  }
+  function revelarInfo(){ estado.dentro=true; document.body.classList.remove('indo'); document.body.classList.add('dentro'); }
+  function kenBurns(img,de){
+    if(kb) cancelAnimationFrame(kb); if(CALMO) return;
+    var t0=performance.now(), dx=(Math.random()<.5?-1:1)*1.6;
+    (function f(t){ var k=Math.min(1,(t-t0)/16000), e=ease.out3(k);
+      img.style.transform='scale('+(de-(de-1.0)*e).toFixed(4)+') translateX('+(dx*e).toFixed(2)+'%)';
+      if(k<1) kb=requestAnimationFrame(f); })(t0);
+  }
+  var LEG={estar:'Apartamento decorado · imagem ilustrativa',planta:'Planta humanizada · imagem ilustrativa',gourmet:'Espaço gourmet do clube · imagem ilustrativa',piscina:'Piscina do clube · imagem ilustrativa'};
+  function trocar(nome,inicio){
+    dentro.querySelectorAll('.amb-img').forEach(function(d){
+      var on=d.dataset.amb===nome;
+      if(on && !inicio){ d.style.transform='scale(1.12) translateX(2%)'; requestAnimationFrame(function(){ kenBurns(d,1.12); }); }
+      d.classList.toggle('ativo',on);
+    });
+    document.querySelectorAll('#abas button').forEach(function(b){ b.classList.toggle('on',b.dataset.ir===nome); });
+    document.getElementById('legenda').textContent=LEG[nome];
+  }
+  document.getElementById('abas').addEventListener('click',function(e){ var b=e.target.closest('[data-ir]'); if(b) trocar(b.dataset.ir); });
+
+  function sair(){
+    if(!estado.dentro||estado.animando) return;
+    estado.animando=true; document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
+    var img=dentro.querySelector('.amb-img.ativo'), c0=cam, alvo=base;
+    cena.style.visibility='';
+    anima(CALMO?1:650,function(k){
+      var e=ease.in2(k); dentro.style.opacity=(1-e).toFixed(3);
+      img.style.transform='scale('+(1+e*0.25).toFixed(4)+')'; img.style.filter='blur('+(e*12).toFixed(1)+'px)';
+    }).then(function(){ dentro.classList.remove('on'); img.style.filter=''; });
+    var sc=SACADAS[estado.sacada], px=sc[0], py=topoDe(estado.i)+sc[1];
+    var sIni=c0.s*0.42*1, sx1=alvo.x+px*alvo.s, sy1=alvo.y+py*alvo.s;
+    palco.style.filter='blur(10px)';
+    anima(CALMO?1:1250,function(k){
+      var e=ease.out3(k), s=sIni+(alvo.s-sIni)*e;
+      var X=innerWidth/2+(sx1-innerWidth/2)*e, Y=innerHeight/2+(sy1-innerHeight/2)*e;
+      aplicar(camAlvo(s,px,py,X,Y)); palco.style.filter='blur('+((1-e)*10).toFixed(1)+'px)';
+    }).then(function(){
+      palco.style.filter=''; aplicar(base); estado.dentro=false; estado.animando=false;
+      painel.classList.remove('fora'); etq.classList.add('on'); posEtiqueta();
+    });
+  }
+  document.getElementById('voltar').addEventListener('click',sair);
+
+  // ---------- abertura: a torre aparece e as luzes vão acendendo ----------
+  addEventListener('resize',enquadrar);
+  enquadrar();
+  var fachada=palco.querySelector('img');
+  function abrir(){
+    var b=base, c0={s:b.s*1.08,x:b.x-(innerWidth*0.04),y:b.y-(innerHeight*0.03)};
+    palco.style.opacity='0';
+    anima(CALMO?1:1600,function(k){
+      var e=ease.out3(k); palco.style.opacity=Math.min(1,k*1.8).toFixed(3);
+      aplicar({s:c0.s+(b.s-c0.s)*e,x:c0.x+(b.x-c0.x)*e,y:c0.y+(b.y-c0.y)*e});
+    }).then(function(){ aplicar(base); });
+    setTimeout(function(){ document.body.classList.add('on'); }, CALMO?0:500);
+    setTimeout(function(){ painel.classList.remove('fora'); acender(6); }, CALMO?0:1100);
+    // as imagens de dentro já carregam em segundo plano
+    ['decorado','planta-3d','planta-3d-garden','gourmet','piscina'].forEach(function(n){ var i=new Image(); i.src='/vitrine/nimbus/img/'+n+'.webp'; });
+  }
+  fachada.complete?abrir():fachada.addEventListener('load',abrir);
+})();
+</script>
+</body>
+</html>
