@@ -7,7 +7,8 @@
 <title>Nimbus Place Life · Escolha seu andar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="/vitrine/nimbus/img/fachada.webp">
+<link rel="preload" as="image" href="/midia/nimbus/andares/pano.webp" media="(min-width:821px)">
+<link rel="preload" as="image" href="/midia/nimbus/andares/pano-m.webp" media="(max-width:820px)">
 <style>
   :root{--ink:#fff;--vidro:rgba(16,20,26,.30);--borda:rgba(255,255,255,.18);--ouro:#f3c98b;--serif:"Cormorant Garamond",Georgia,serif;--sans:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -17,12 +18,17 @@
 
   /* ---------- palco da torre ---------- */
   .cena{position:fixed;inset:0;overflow:hidden;cursor:default}
-  .fundo{position:absolute;inset:-60px;background:url(/vitrine/nimbus/img/fachada.webp) center/cover;filter:blur(38px) brightness(.55) saturate(1.1);transform:scale(1.1);opacity:0;transition:opacity .8s}
+  .fundo{position:absolute;inset:-60px;background:url(/midia/nimbus/andares/pano-m.webp) center/cover;filter:blur(38px) brightness(.55) saturate(1.1);transform:scale(1.1);opacity:0;transition:opacity .8s}
   .on .fundo{opacity:1}
-  .palco{position:absolute;left:0;top:0;width:1920px;height:1081px;transform-origin:0 0;will-change:transform}
-  .borda .palco{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 140px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 140px),transparent)}
-  .retrato .palco{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent);mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent)}
+  /* giro: inclinação do drone, em volta do centro da tela */
+  .giro{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
+  .palco{position:absolute;left:0;top:0;width:3072px;height:2048px;transform-origin:0 0}
+  .retrato .palco{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 6%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent 0,#000 6%,#000 92%,transparent)}
   .palco img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-drag:none;pointer-events:none}
+  .palco .pano{object-fit:cover}
+  /* a torre: camadas na geometria da foto original (1920×1081), dentro da vista aberta */
+  .torre{position:absolute;left:576px;top:600px;width:1920px;height:1081px}
+  .palco .tira{left:auto;width:360px;opacity:0;transition:none}
   .palco .luz,.palco .amb{mix-blend-mode:plus-lighter}
   @supports not (mix-blend-mode:plus-lighter){.palco .luz,.palco .amb{mix-blend-mode:screen}}
   .palco .amb{opacity:0;transition:opacity 2.4s ease}
@@ -92,6 +98,13 @@
   .amb-img{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1s ease;will-change:transform,opacity}
   .amb-img.ativo{opacity:1}
   .amb-img.planta{background-size:contain;background-repeat:no-repeat;background-color:#e9e6e1}
+  /* porta de correr da sacada: esquadria escura + folha de vidro fixa à esquerda, que passa pela câmera */
+  .porta{position:absolute;inset:0;pointer-events:none;opacity:0;transform-origin:56% 50%;will-change:transform,opacity;
+    box-shadow:inset 0 0 0 clamp(18px,2.6vw,38px) #1b1d20, inset 0 0 0 calc(clamp(18px,2.6vw,38px) + 2px) rgba(255,255,255,.08)}
+  .porta .fixo{position:absolute;left:0;top:0;bottom:0;width:46%;border-right:clamp(12px,1.6vw,24px) solid #1b1d20;
+    background:linear-gradient(118deg,rgba(190,215,235,.10) 0,rgba(255,255,255,.26) 26%,rgba(190,215,235,.06) 34%,rgba(120,150,170,.16) 70%,rgba(255,255,255,.14));
+    backdrop-filter:blur(1.5px) saturate(.85);-webkit-backdrop-filter:blur(1.5px) saturate(.85)}
+  .porta .trilho{position:absolute;left:0;right:0;bottom:0;height:clamp(22px,3vw,42px);background:linear-gradient(#26292d,#141619)}
   .dentro-cena .degrade2{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(6,8,12,.5),transparent 22%,transparent 52%,rgba(6,8,12,.78))}
   .info{position:absolute;left:clamp(22px,4vw,64px);bottom:clamp(28px,7vh,72px);max-width:560px;opacity:0;transform:translateY(16px);transition:opacity .8s ease .15s,transform .9s cubic-bezier(.22,.8,.2,1) .15s}
   .dentro .info{opacity:1;transform:none}
@@ -138,12 +151,15 @@
 <body>
   <div class="cena" id="cena">
     <div class="fundo"></div>
-    <div class="palco" id="palco">
-      <img src="/vitrine/nimbus/img/fachada.webp" alt="Fachada do Nimbus Place Life">
-      <img class="amb" src="/midia/nimbus/andares/luz-amb.webp" alt="">
-      <div class="faixa" id="faixa"></div>
-      <img class="luz" id="luz" src="/midia/nimbus/andares/luz.webp" alt="">
-    </div>
+    <div class="giro" id="giro"><div class="palco" id="palco">
+      <img class="pano" id="pano" alt="Nimbus Place Life visto de longe, em Igara, Canoas">
+      <div class="torre">
+        <img class="tira" data-k="0" alt=""><img class="tira" data-k="1" alt=""><img class="tira" data-k="2" alt=""><img class="tira" data-k="3" alt="">
+        <img class="amb" src="/midia/nimbus/andares/luz-amb.webp" alt="">
+        <div class="faixa" id="faixa"></div>
+        <img class="luz" id="luz" src="/midia/nimbus/andares/luz.webp" alt="">
+      </div>
+    </div></div>
     <div class="degrade"></div>
     <div class="vinheta"></div>
     <div class="grao"></div>
@@ -174,6 +190,7 @@
     <div class="amb-img planta" data-amb="planta"></div>
     <div class="amb-img" data-amb="gourmet" style="background-image:url(/vitrine/nimbus/img/gourmet.webp)"></div>
     <div class="amb-img" data-amb="piscina" style="background-image:url(/vitrine/nimbus/img/piscina.webp)"></div>
+    <div class="porta" id="porta" aria-hidden="true"><i class="fixo"></i><i class="trilho"></i></div>
     <div class="degrade2"></div>
     <div class="legenda" id="legenda">Apartamento decorado · imagem ilustrativa</div>
     <div class="info">
@@ -195,46 +212,65 @@
 
 <script>
 (function(){
-  // ---------- geometria da fachada (pixels da imagem 1920×1081) ----------
-  var W=1920, H=1081, Y0=128, P=853/12, NIV=13, TX0=365, TX1=1490;
-  // sacadas por onde a câmera entra: x central e centro vertical relativo ao topo do andar
-  var SACADAS=[[515,30],[662,26],[1140,27],[1303,10]];
+  // ---------- geometria ----------
+  // vista aberta (pano) 3072×2048; a foto original da fachada (1920×1081) fica em FX,FY dentro dela
+  var PW=3072, PH=2048, FX=576, FY=600;
+  // na fachada: topo do 12º andar, altura de um andar, quantos níveis e a largura da torre
+  var W=1920, H=1081, Y0=128, P=853/12, TX0=365, TX1=1490, TOPO=20, BASE=1060;
+  // sacadas por onde o drone entra: x central e centro vertical relativo ao topo do andar
+  var SACADAS=[[515,30],[662,26],[1140,27],[1303,10]], TIRA=360;
   var topoDe=function(i){ return Y0+i*P; };                 // i=0 é o 12º andar; i=12 é o térreo
   var andarDe=function(i){ return 12-i; };
   var rot=function(a){ return a===0?'Térreo':a+'º'; };
 
-  var cena=document.getElementById('cena'), palco=document.getElementById('palco'), luz=document.getElementById('luz'),
-      faixa=document.getElementById('faixa'), etq=document.getElementById('etq'), painel=document.getElementById('painel'),
-      barra=document.getElementById('barra'), dentro=document.getElementById('dentro'), clarao=document.getElementById('clarao'),
-      reflexo=document.getElementById('reflexo');
+  var cena=document.getElementById('cena'), giro=document.getElementById('giro'), palco=document.getElementById('palco'),
+      luz=document.getElementById('luz'), faixa=document.getElementById('faixa'), etq=document.getElementById('etq'),
+      painel=document.getElementById('painel'), barra=document.getElementById('barra'), dentro=document.getElementById('dentro'),
+      clarao=document.getElementById('clarao'), reflexo=document.getElementById('reflexo'), porta=document.getElementById('porta'),
+      pano=document.getElementById('pano'), tiras=[].slice.call(document.querySelectorAll('.tira'));
   var CALMO=matchMedia('(prefers-reduced-motion: reduce)').matches;
   var toque=matchMedia('(hover: none)').matches;
+  var celular=matchMedia('(max-width:820px)').matches;
+
+  // tiras em alta (super-resolução) com a coluna de sacadas de cima a baixo: entram quando o drone chega perto
+  tiras.forEach(function(t,k){ t.style.left=(SACADAS[k][0]-TIRA/2)+'px'; });
+  function carregarTira(k){ var t=tiras[k]; if(!t.src) t.src='/midia/nimbus/andares/tira-'+k+'.webp'; return t; }
 
   // ---------- câmera ----------
-  var cam={s:1,x:0,y:0}, base={s:1,x:0,y:0};
+  var cam={s:1,x:0,y:0,r:0}, base={s:1,x:0,y:0,r:0};
   function enquadrar(){
     var vw=innerWidth, vh=innerHeight, retrato=vw/vh<0.95;
     document.body.classList.toggle('retrato',retrato);
-    var s,cx,cy;
+    var cx=FX+(TX0+TX1)/2, alto=BASE-TOPO, s, y;
     if(retrato){
-      s=Math.min(vw*0.98/(TX1-TX0+40), vh*0.62/(1052-40));
-      cx=(TX0+TX1)/2; base={s:s,x:vw/2-cx*s,y:Math.max(70,(vh-330-1040*s)/2)-20*s};
+      // celular em pé: a torre inteira de longe, acima do painel
+      var livre=vh-300-70;
+      s=Math.min(vw*0.80/(TX1-TX0), livre*0.82/alto);
+      y=70+livre/2-(FY+(TOPO+BASE)/2)*s;
+      base={s:s,x:vw/2-cx*s,y:y,r:0};
     } else {
-      s=Math.max(vw/W,vh/H)*1.02;
+      // de longe: a torre ocupa pouco mais da metade da altura, com céu e rua em volta
       var painelW=vw>900?Math.min(360,vw*0.3)+64:0;
-      cx=(TX0+TX1)/2; base={s:s,x:(vw-painelW)/2-cx*s+(painelW?20:0),y:vh/2-(H/2+10)*s};
-      // a torre vai para o lado livre; atrás do painel o fundo desfocado completa a borda da foto
-      base.x=Math.min(0,Math.max(vw-W*s-painelW,base.x)); base.y=Math.min(0,Math.max(vh-H*s,base.y));
-      document.body.classList.toggle('borda', base.x+W*s<vw-1);
+      s=Math.min(vh*0.60/alto,(vw-painelW)*0.66/(TX1-TX0));
+      s=Math.max(s,vw/PW,vh/PH);                            // a vista aberta sempre cobre a tela
+      var x=(vw-painelW)/2-cx*s; y=vh*0.53-(FY+(TOPO+BASE)/2)*s;
+      x=Math.min(0,Math.max(vw-PW*s,x)); y=Math.min(0,Math.max(vh-PH*s,y));
+      base={s:s,x:x,y:y,r:0};
     }
     if(!estado.dentro && !estado.animando) aplicar(base);
     posEtiqueta();
   }
-  function aplicar(c){ cam=c; palco.style.transform='translate('+c.x+'px,'+c.y+'px) scale('+c.s+')'; }
+  function aplicar(c){
+    cam=c;
+    palco.style.transform='translate('+c.x.toFixed(2)+'px,'+c.y.toFixed(2)+'px) scale('+c.s.toFixed(5)+')';
+    giro.style.transform=c.r?'rotate('+c.r.toFixed(3)+'deg)':'';
+  }
+  // ponto da fachada na tela
+  function naTela(px,py,c){ c=c||cam; return { x:c.x+(FX+px)*c.s, y:c.y+(FY+py)*c.s }; }
 
   // ---------- andar aceso ----------
   var estado={i:6, dentro:false, animando:false, sacada:2};
-  function acender(i,suave){
+  function acender(i){
     estado.i=i;
     var t=topoDe(i)-18, b=topoDe(i)+P+4;
     luz.style.clipPath='inset('+(t/H*100)+'% 0 '+((H-b)/H*100)+'% 0)';
@@ -259,15 +295,15 @@
     ultimoNum=txt;
   }
   function posEtiqueta(){
-    var y=cam.y+(topoDe(estado.i)+P/2)*cam.s, x=cam.x+(TX1+14)*cam.s;
+    var p=naTela(TX1+14,topoDe(estado.i)+P/2);
     // só aparece se couber ao lado da torre (o painel já mostra o número)
     var limite=document.body.classList.contains('retrato')?innerWidth:painel.getBoundingClientRect().left;
-    etq.style.visibility=x+96<limite?'':'hidden';
-    etq.style.transform='translate('+x+'px,'+(y-16)+'px)';
+    etq.style.visibility=p.x+96<limite?'':'hidden';
+    etq.style.transform='translate('+p.x+'px,'+(p.y-16)+'px)';
   }
 
   // ---------- ponteiro sobre a torre ----------
-  function noPalco(ev){ return { x:(ev.clientX-cam.x)/cam.s, y:(ev.clientY-cam.y)/cam.s }; }
+  function noPalco(ev){ return { x:(ev.clientX-cam.x)/cam.s-FX, y:(ev.clientY-cam.y)/cam.s-FY }; }
   function andarNoPonto(p){
     if(p.x<TX0||p.x>TX1||p.y<Y0-20||p.y>topoDe(12)+P) return -1;
     return Math.max(0,Math.min(12,Math.floor((p.y-Y0+10)/P)));
@@ -277,13 +313,13 @@
     if(estado.dentro||estado.animando||ev.pointerType==='touch') return;
     var p=noPalco(ev), i=andarNoPonto(p);
     cena.style.cursor=i>=0?'pointer':'default';
-    if(i>=0){ estado.sacada=sacadaPerto(p.x); if(i!==estado.i) acender(i); }
+    if(i>=0){ estado.sacada=sacadaPerto(p.x); carregarTira(estado.sacada); if(i!==estado.i) acender(i); }
   });
   cena.addEventListener('click',function(ev){
     if(estado.dentro||estado.animando) return;
     var p=noPalco(ev), i=andarNoPonto(p); if(i<0) return;
     estado.sacada=sacadaPerto(p.x);
-    if(toque && i!==estado.i){ acender(i); return; }      // no celular: 1º toque acende, 2º entra
+    if(toque && i!==estado.i){ acender(i); carregarTira(estado.sacada); return; }   // no celular: 1º toque acende, 2º entra
     acender(i); entrar();
   });
   barra.addEventListener('input',function(){ acender(12-(+barra.value)); });
@@ -296,45 +332,51 @@
   });
 
   // ---------- animação ----------
-  var ease={ io:function(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}, in2:function(t){return t*t;}, out3:function(t){return 1-Math.pow(1-t,3);} };
-  function anima(ms,fn){ return new Promise(function(ok){ var t0=performance.now(); (function f(t){ var k=Math.min(1,(t-t0)/ms); fn(k); k<1?requestAnimationFrame(f):ok(); })(t0); }); }
-  function camAlvo(s,px,py,fx,fy){ return { s:s, x:fx-px*s, y:fy-py*s }; }
+  var ease={ io:function(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}, io2:function(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;},
+             in2:function(t){return t*t;}, in3:function(t){return t*t*t;}, out3:function(t){return 1-Math.pow(1-t,3);} };
+  function anima(ms,fn){ return new Promise(function(ok){ var t0=performance.now(); (function f(){ var k=Math.min(1,(performance.now()-t0)/ms); fn(k); k<1?requestAnimationFrame(f):ok(); })(); }); }
+  // zoom de drone: a escala anda em progressão geométrica (aproximação constante), não linear
+  function lerpLog(a,b,e){ return a*Math.pow(b/a,e); }
+  function camAlvo(s,px,py,fx,fy,r){ return { s:s, x:fx-(FX+px)*s, y:fy-(FY+py)*s, r:r||0 }; }
+  function esperarImg(img,ms){ return new Promise(function(ok){ if(img.complete&&img.naturalWidth) return ok(); img.addEventListener('load',ok,{once:true}); img.addEventListener('error',ok,{once:true}); setTimeout(ok,ms); }); }
 
   var kb=null;
   function entrar(){
     if(estado.dentro||estado.animando) return;
     estado.animando=true; document.body.classList.add('indo'); painel.classList.add('fora'); etq.classList.remove('on');
-    var sc=SACADAS[estado.sacada], px=sc[0], py=topoDe(estado.i)+sc[1];
-    var vw=innerWidth, vh=innerHeight, c0=cam;
-    var fx=vw/2, fy=vh/2;
-    // ponto da sacada na tela no início: a câmera traz ele para o centro enquanto aproxima
-    var sx0=c0.x+px*c0.s, sy0=c0.y+py*c0.s;
-    var s1=c0.s*3.1, s2=c0.s*7.5;
-    clarao.style.setProperty('--cx','50%'); clarao.style.setProperty('--cy','50%');
+    var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1];
+    var tira=carregarTira(k);
+    var vw=innerWidth, vh=innerHeight, c0=cam, ini=naTela(px,py,c0);
+    // chegada: o andar ocupa ~40% da altura da tela; depois a porta da sacada enche a tela
+    var s1=vh*0.40/P, s2=vh*1.25/P;
+    var lado=ini.x<vw/2?1:-1;                                   // o drone inclina para o lado da curva
     prepararDentro();
-    var t1=CALMO?1:1150;
-    var p1=anima(t1,function(k){
-      var e=ease.io(k), s=c0.s+(s1-c0.s)*e;
-      var X=sx0+(fx-sx0)*e, Y=sy0+(fy-sy0)*e;
-      aplicar(camAlvo(s,px,py,X,Y));
-      palco.style.filter='blur('+(Math.max(0,k-.75)*6).toFixed(2)+'px)';
-    });
-    return p1.then(function(){
-      // atravessando o vidro: aproxima mais rápido, desfoca, clarão quente e reflexo cruzando
+    var t1=CALMO?1:2300;
+    return esperarImg(tira,900).then(function(){
+      return anima(t1,function(q){
+        var e=q<.5?4*q*q*q:1-Math.pow(-2*q+2,2.2)/2, s=lerpLog(c0.s,s1,e);
+        // trajetória em arco: o ponto alvo vem para o centro, com uma leve subida no meio do voo
+        var X=ini.x+(vw/2-ini.x)*ease.io2(q), Y=ini.y+(vh/2-ini.y)*ease.io2(q)-Math.sin(q*Math.PI)*vh*0.05;
+        aplicar(camAlvo(s,px,py,X,Y,Math.sin(q*Math.PI)*1.8*lado));
+        // a tira em alta definição aparece conforme a câmera se aproxima
+        tira.style.opacity=Math.max(0,Math.min(1,(s/c0.s-1.8)/1.5)).toFixed(3);
+      });
+    }).then(function(){
+      // atravessando o vidro da porta: aproxima mais rápido, desfoca, clarão quente e reflexo cruzando
       return Promise.all([
-        anima(CALMO?1:520,function(k){
-          var e=ease.in2(k);
-          aplicar(camAlvo(s1+(s2-s1)*e,px,py,fx,fy));
-          palco.style.filter='blur('+(1.5+e*22).toFixed(1)+'px) brightness('+(1+e*0.9).toFixed(2)+')';
-          clarao.style.opacity=(e*0.95).toFixed(3);
-          reflexo.style.opacity=(Math.sin(k*Math.PI)*0.9).toFixed(3); reflexo.style.transform='translateX('+(-30+k*60)+'%)';
+        anima(CALMO?1:780,function(q){
+          var e=ease.in3(q);
+          aplicar(camAlvo(lerpLog(s1,s2,e),px,py,vw/2,vh/2,0));
+          palco.style.filter='blur('+(e*16).toFixed(1)+'px) brightness('+(1+e*0.7).toFixed(2)+')';
+          clarao.style.opacity=(Math.max(0,q-.35)/.65*0.6).toFixed(3);
+          reflexo.style.opacity=(Math.sin(q*Math.PI)*0.85).toFixed(3); reflexo.style.transform='translateX('+(-30+q*60)+'%)';
         }),
-        new Promise(function(ok){ setTimeout(ok, CALMO?0:300); }).then(function(){ setTimeout(revelarInfo, CALMO?0:650); return mostrarDentro(); })
+        new Promise(function(ok){ setTimeout(ok, CALMO?0:520); }).then(function(){ setTimeout(revelarInfo, CALMO?0:900); return mostrarDentro(); })
       ]);
     }).then(function(){
-      return anima(CALMO?1:700,function(k){ clarao.style.opacity=((1-ease.out3(k))*0.95).toFixed(3); });
+      return anima(CALMO?1:600,function(q){ clarao.style.opacity=((1-ease.out3(q))*0.6).toFixed(3); });
     }).then(function(){
-      cena.style.visibility='hidden'; palco.style.filter=''; estado.animando=false; revelarInfo();
+      cena.style.visibility='hidden'; palco.style.filter=''; tira.style.opacity=0; estado.animando=false; revelarInfo();
     });
   }
   function prepararDentro(){
@@ -350,20 +392,23 @@
   function mostrarDentro(){
     dentro.classList.add('on');
     var img=dentro.querySelector('.amb-img.ativo');
-    return anima(CALMO?1:1300,function(k){
-      var e=ease.out3(k);
-      dentro.style.opacity=Math.min(1,k*1.6).toFixed(3);
-      img.style.transform='scale('+(1.32-0.24*e).toFixed(4)+')';
-      img.style.filter='blur('+((1-e)*14).toFixed(1)+'px)';
-    }).then(function(){ img.style.filter=''; kenBurns(img,1.08); });
+    // a sala aparece pela porta de correr; a esquadria passa pela câmera e some
+    return anima(CALMO?1:1700,function(q){
+      var e=ease.out3(q), ep=ease.io(Math.max(0,Math.min(1,(q-.18)/.7)));
+      dentro.style.opacity=Math.min(1,q*2.2).toFixed(3);
+      img.style.transform='scale('+(1.30-0.22*e).toFixed(4)+')';
+      img.style.filter='blur('+((1-e)*10).toFixed(1)+'px)';
+      porta.style.opacity=(Math.min(1,q*5)*(1-ep*ep)).toFixed(3);
+      porta.style.transform='scale('+(1.0+ep*2.2).toFixed(4)+')';
+    }).then(function(){ img.style.filter=''; porta.style.opacity=0; kenBurns(img,1.08); });
   }
   function revelarInfo(){ estado.dentro=true; document.body.classList.remove('indo'); document.body.classList.add('dentro'); }
   function kenBurns(img,de){
     if(kb) cancelAnimationFrame(kb); if(CALMO) return;
     var t0=performance.now(), dx=(Math.random()<.5?-1:1)*1.6;
-    (function f(t){ var k=Math.min(1,(t-t0)/16000), e=ease.out3(k);
+    (function f(){ var k=Math.min(1,(performance.now()-t0)/16000), e=ease.out3(k);
       img.style.transform='scale('+(de-(de-1.0)*e).toFixed(4)+') translateX('+(dx*e).toFixed(2)+'%)';
-      if(k<1) kb=requestAnimationFrame(f); })(t0);
+      if(k<1) kb=requestAnimationFrame(f); })();
   }
   var LEG={estar:'Apartamento decorado · imagem ilustrativa',planta:'Planta humanizada · imagem ilustrativa',gourmet:'Espaço gourmet do clube · imagem ilustrativa',piscina:'Piscina do clube · imagem ilustrativa'};
   function trocar(nome,inicio){
@@ -380,43 +425,48 @@
   function sair(){
     if(!estado.dentro||estado.animando) return;
     estado.animando=true; document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
-    var img=dentro.querySelector('.amb-img.ativo'), c0=cam, alvo=base;
+    var img=dentro.querySelector('.amb-img.ativo'), alvo=base;
+    var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1], tira=tiras[k];
+    var vw=innerWidth, vh=innerHeight, s0=vh*0.9/P, fim=naTela(px,py,alvo);
     cena.style.visibility='';
-    anima(CALMO?1:650,function(k){
-      var e=ease.in2(k); dentro.style.opacity=(1-e).toFixed(3);
+    anima(CALMO?1:600,function(q){
+      var e=ease.in2(q); dentro.style.opacity=(1-e).toFixed(3);
       img.style.transform='scale('+(1+e*0.25).toFixed(4)+')'; img.style.filter='blur('+(e*12).toFixed(1)+'px)';
     }).then(function(){ dentro.classList.remove('on'); img.style.filter=''; });
-    var sc=SACADAS[estado.sacada], px=sc[0], py=topoDe(estado.i)+sc[1];
-    var sIni=c0.s*0.42*1, sx1=alvo.x+px*alvo.s, sy1=alvo.y+py*alvo.s;
-    palco.style.filter='blur(10px)';
-    anima(CALMO?1:1250,function(k){
-      var e=ease.out3(k), s=sIni+(alvo.s-sIni)*e;
-      var X=innerWidth/2+(sx1-innerWidth/2)*e, Y=innerHeight/2+(sy1-innerHeight/2)*e;
-      aplicar(camAlvo(s,px,py,X,Y)); palco.style.filter='blur('+((1-e)*10).toFixed(1)+'px)';
+    // o drone recua da sacada até a vista aberta
+    anima(CALMO?1:2100,function(q){
+      var e=ease.io(q), s=lerpLog(s0,alvo.s,e);
+      var X=vw/2+(fim.x-vw/2)*ease.io2(q), Y=vh/2+(fim.y-vh/2)*ease.io2(q)+Math.sin(q*Math.PI)*vh*0.04;
+      aplicar(camAlvo(s,px,py,X,Y,-Math.sin(q*Math.PI)*1.2));
+      palco.style.filter=q<.3?'blur('+((1-q/.3)*8).toFixed(1)+'px)':'';
+      tira.style.opacity=Math.max(0,Math.min(1,(s/alvo.s-1.8)/1.5)).toFixed(3);
     }).then(function(){
-      palco.style.filter=''; aplicar(base); estado.dentro=false; estado.animando=false;
+      palco.style.filter=''; tira.style.opacity=0; aplicar(base); estado.dentro=false; estado.animando=false;
       painel.classList.remove('fora'); etq.classList.add('on'); posEtiqueta();
     });
   }
   document.getElementById('voltar').addEventListener('click',sair);
 
-  // ---------- abertura: a torre aparece e as luzes vão acendendo ----------
+  // ---------- abertura: o drone desce do céu até a vista da torre e as luzes vão acendendo ----------
   addEventListener('resize',enquadrar);
   enquadrar();
-  var fachada=palco.querySelector('img');
+  pano.src='/midia/nimbus/andares/'+(celular?'pano-m':'pano')+'.webp';
   function abrir(){
-    var b=base, c0={s:b.s*1.08,x:b.x-(innerWidth*0.04),y:b.y-(innerHeight*0.03)};
+    var b=base, c0={s:b.s*1.35,x:0,y:0,r:-1.2};
+    // começa mais perto e mais alto, olhando o topo da torre
+    var topo=naTela((TX0+TX1)/2,TOPO+120,b);
+    c0.x=innerWidth/2-((topo.x-b.x)/b.s)*c0.s; c0.y=innerHeight*0.62-((topo.y-b.y)/b.s)*c0.s;
     palco.style.opacity='0';
-    anima(CALMO?1:1600,function(k){
-      var e=ease.out3(k); palco.style.opacity=Math.min(1,k*1.8).toFixed(3);
-      aplicar({s:c0.s+(b.s-c0.s)*e,x:c0.x+(b.x-c0.x)*e,y:c0.y+(b.y-c0.y)*e});
+    anima(CALMO?1:2600,function(q){
+      var e=ease.out3(q); palco.style.opacity=Math.min(1,q*2).toFixed(3);
+      aplicar({s:lerpLog(c0.s,b.s,e),x:c0.x+(b.x-c0.x)*e,y:c0.y+(b.y-c0.y)*e,r:c0.r*(1-e)});
     }).then(function(){ aplicar(base); });
-    setTimeout(function(){ document.body.classList.add('on'); }, CALMO?0:500);
-    setTimeout(function(){ painel.classList.remove('fora'); acender(6); }, CALMO?0:1100);
+    setTimeout(function(){ document.body.classList.add('on'); }, CALMO?0:700);
+    setTimeout(function(){ painel.classList.remove('fora'); acender(6); carregarTira(estado.sacada); }, CALMO?0:1900);
     // as imagens de dentro já carregam em segundo plano
     ['decorado','planta-3d','planta-3d-garden','gourmet','piscina'].forEach(function(n){ var i=new Image(); i.src='/vitrine/nimbus/img/'+n+'.webp'; });
   }
-  fachada.complete?abrir():fachada.addEventListener('load',abrir);
+  pano.complete&&pano.naturalWidth?abrir():pano.addEventListener('load',abrir,{once:true});
 })();
 </script>
 </body>
