@@ -97,7 +97,6 @@
   .dentro-cena.on{pointer-events:auto}
   .amb-img{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1s ease;will-change:transform,opacity}
   .amb-img.ativo{opacity:1}
-  .amb-img.planta{background-size:contain;background-repeat:no-repeat;background-color:#e9e6e1}
   /* porta de correr da sacada: esquadria escura + folha de vidro fixa à esquerda, que passa pela câmera */
   .porta{position:absolute;inset:0;pointer-events:none;opacity:0;transform-origin:56% 50%;will-change:transform,opacity;
     box-shadow:inset 0 0 0 clamp(18px,2.6vw,38px) #1b1d20, inset 0 0 0 calc(clamp(18px,2.6vw,38px) + 2px) rgba(255,255,255,.08)}
@@ -187,9 +186,12 @@
 
   <section class="dentro-cena" id="dentro" aria-label="Dentro do apartamento">
     <div class="amb-img" data-amb="estar" style="background-image:url(/vitrine/nimbus/img/decorado.webp)"></div>
-    <div class="amb-img planta" data-amb="planta"></div>
-    <div class="amb-img" data-amb="gourmet" style="background-image:url(/vitrine/nimbus/img/gourmet.webp)"></div>
-    <div class="amb-img" data-amb="piscina" style="background-image:url(/vitrine/nimbus/img/piscina.webp)"></div>
+    <div class="amb-img" data-amb="cozinha" data-src="/midia/nimbus/andares/amb/cozinha.webp"></div>
+    <div class="amb-img" data-amb="suite" data-src="/midia/nimbus/andares/amb/suite.webp"></div>
+    <div class="amb-img" data-amb="dormitorio" data-src="/midia/nimbus/andares/amb/dormitorio.webp"></div>
+    <div class="amb-img" data-amb="escritorio" data-src="/midia/nimbus/andares/amb/escritorio.webp"></div>
+    <div class="amb-img" data-amb="banheiro" data-src="/midia/nimbus/andares/amb/banheiro.webp"></div>
+    <div class="amb-img" data-amb="sacada" data-src="/midia/nimbus/andares/amb/sacada.webp"></div>
     <div class="porta" id="porta" aria-hidden="true"><i class="fixo"></i><i class="trilho"></i></div>
     <div class="degrade2"></div>
     <div class="legenda" id="legenda">Apartamento decorado · imagem ilustrativa</div>
@@ -199,14 +201,16 @@
       <p id="desc">Apartamentos de 2 e 3 dormitórios com suíte, sacada com churrasqueira e vista para o clube.</p>
       <div class="acoes">
         <a class="btn-ouro" id="quero" href="/wa/nimbus-place-life?src=andar">Quero conhecer este andar</a>
-        <a class="btn-vidro" href="/nimbus-place-life#plantas">Ver plantas e metragens</a>
       </div>
     </div>
     <div class="abas" id="abas">
       <button type="button" data-ir="estar" class="on">Estar e jantar</button>
-      <button type="button" data-ir="planta">Planta</button>
-      <button type="button" data-ir="gourmet">Gourmet</button>
-      <button type="button" data-ir="piscina">Piscina</button>
+      <button type="button" data-ir="cozinha" hidden>Cozinha</button>
+      <button type="button" data-ir="suite" hidden>Suíte</button>
+      <button type="button" data-ir="dormitorio" hidden>Dormitório</button>
+      <button type="button" data-ir="escritorio" hidden>Home office</button>
+      <button type="button" data-ir="banheiro" hidden>Banheiro</button>
+      <button type="button" data-ir="sacada" id="abaSacada" hidden>Sacada</button>
     </div>
   </section>
 
@@ -374,7 +378,10 @@
     document.getElementById('desc').textContent=a===0
       ? 'Apartamentos de 2 e 3 dormitórios com suíte e garden privativo: a sala abre direto para o jardim.'
       : 'Apartamentos de 2 e 3 dormitórios com suíte, sacada com churrasqueira e vista para o clube.';
-    document.querySelector('[data-amb="planta"]').style.backgroundImage='url(/vitrine/nimbus/img/'+(a===0?'planta-3d-garden':'planta-3d')+'.webp)';
+    // no térreo a sacada dá lugar ao garden privativo
+    var sac=document.querySelector('[data-amb="sacada"]');
+    sac.dataset.src='/midia/nimbus/andares/amb/'+(a===0?'garden':'sacada')+'.webp'; sac.style.backgroundImage='';
+    document.getElementById('abaSacada').textContent=a===0?'Garden':'Sacada';
     document.getElementById('quero').href='/wa/nimbus-place-life?src=andar&vi='+encodeURIComponent('Escolha seu andar: '+(a===0?'térreo (garden)':a+'º andar'));
     trocar('estar',true);
   }
@@ -398,15 +405,17 @@
       img.style.transform='scale('+(de-(de-1.0)*e).toFixed(4)+') translateX('+(dx*e).toFixed(2)+'%)';
       if(k<1) kb=requestAnimationFrame(f); })();
   }
-  var LEG={estar:'Apartamento decorado · imagem ilustrativa',planta:'Planta humanizada · imagem ilustrativa',gourmet:'Espaço gourmet do clube · imagem ilustrativa',piscina:'Piscina do clube · imagem ilustrativa'};
+  var LEG={estar:'Apartamento decorado',cozinha:'Cozinha integrada',suite:'Suíte',dormitorio:'Dormitório',escritorio:'Dormitório com home office',banheiro:'Banheiro',sacada:'Sacada com churrasqueira',garden:'Garden privativo'};
   function trocar(nome,inicio){
     dentro.querySelectorAll('.amb-img').forEach(function(d){
       var on=d.dataset.amb===nome;
       if(on && !inicio){ d.style.transform='scale(1.12) translateX(2%)'; requestAnimationFrame(function(){ kenBurns(d,1.12); }); }
+      if(on && d.dataset.src && !d.style.backgroundImage) d.style.backgroundImage='url('+d.dataset.src+')';
       d.classList.toggle('ativo',on);
     });
     document.querySelectorAll('#abas button').forEach(function(b){ b.classList.toggle('on',b.dataset.ir===nome); });
-    document.getElementById('legenda').textContent=LEG[nome];
+    var sac=nome==='sacada'&&andarDe(estado.i)===0?'garden':nome;
+    document.getElementById('legenda').textContent=LEG[sac]+' · imagem ilustrativa';
   }
   document.getElementById('abas').addEventListener('click',function(e){ var b=e.target.closest('[data-ir]'); if(b) trocar(b.dataset.ir); });
 
@@ -452,7 +461,11 @@
     setTimeout(function(){ document.body.classList.add('on'); }, CALMO?0:700);
     setTimeout(function(){ painel.classList.remove('fora'); acender(6); carregarTira(estado.sacada); }, CALMO?0:1900);
     // as imagens de dentro já carregam em segundo plano
-    ['decorado','planta-3d','planta-3d-garden','gourmet','piscina'].forEach(function(n){ var i=new Image(); i.src='/vitrine/nimbus/img/'+n+'.webp'; });
+    var i0=new Image(); i0.src='/vitrine/nimbus/img/decorado.webp';
+    // cada aba de ambiente só aparece quando a foto dele existe e carregou
+    ['cozinha','suite','dormitorio','escritorio','banheiro','sacada'].forEach(function(n){
+      var i=new Image(); i.onload=function(){ document.querySelector('[data-ir="'+n+'"]').hidden=false; }; i.src='/midia/nimbus/andares/amb/'+n+'.webp';
+    });
   }
   pano.complete&&pano.naturalWidth?abrir():pano.addEventListener('load',abrir,{once:true});
 })();
