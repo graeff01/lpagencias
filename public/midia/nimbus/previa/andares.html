@@ -186,13 +186,12 @@
 
   <section class="dentro-cena" id="dentro" aria-label="Dentro do apartamento">
     <div class="amb-img" data-amb="estar" style="background-image:url(/vitrine/nimbus/img/decorado.webp)"></div>
-    <div class="amb-img" data-amb="cozinha" data-src="/midia/nimbus/andares/amb/cozinha.webp"></div>
-    <div class="amb-img" data-amb="suite" data-src="/midia/nimbus/andares/amb/suite.webp"></div>
-    <div class="amb-img" data-amb="dormitorio" data-src="/midia/nimbus/andares/amb/dormitorio.webp"></div>
-    <div class="amb-img" data-amb="escritorio" data-src="/midia/nimbus/andares/amb/escritorio.webp"></div>
-    <div class="amb-img" data-amb="banheiro" data-src="/midia/nimbus/andares/amb/banheiro.webp"></div>
-    <div class="amb-img" data-amb="sacada" data-src="/midia/nimbus/andares/amb/sacada.webp"></div>
-    <div class="porta" id="porta" aria-hidden="true"><i class="fixo"></i><i class="trilho"></i></div>
+    <div class="amb-img" data-amb="fachada" data-src="/img/nimbus/fachada-noturna.webp"></div>
+    <div class="amb-img" data-amb="chegada" data-src="/img/nimbus/perspectiva-externa.webp"></div>
+    <div class="amb-img" data-amb="openmall" data-src="/img/nimbus/open-mall.webp"></div>
+    <div class="amb-img" data-amb="beachpool" data-src="/img/nimbus/beach-pool.webp"></div>
+    <div class="amb-img" data-amb="rooftop" data-src="/img/nimbus/rooftop.webp"></div>
+    <div class="amb-img" data-amb="fitness" data-src="/img/nimbus/fitness-center.webp"></div>
     <div class="degrade2"></div>
     <div class="legenda" id="legenda">Apartamento decorado · imagem ilustrativa</div>
     <div class="info">
@@ -205,12 +204,12 @@
     </div>
     <div class="abas" id="abas">
       <button type="button" data-ir="estar" class="on">Estar e jantar</button>
-      <button type="button" data-ir="cozinha" hidden>Cozinha</button>
-      <button type="button" data-ir="suite" hidden>Suíte</button>
-      <button type="button" data-ir="dormitorio" hidden>Dormitório</button>
-      <button type="button" data-ir="escritorio" hidden>Home office</button>
-      <button type="button" data-ir="banheiro" hidden>Banheiro</button>
-      <button type="button" data-ir="sacada" id="abaSacada" hidden>Sacada</button>
+      <button type="button" data-ir="fachada">Fachada</button>
+      <button type="button" data-ir="chegada">Chegada</button>
+      <button type="button" data-ir="openmall">Open mall</button>
+      <button type="button" data-ir="beachpool">Beach pool</button>
+      <button type="button" data-ir="rooftop">Rooftop</button>
+      <button type="button" data-ir="fitness">Fitness</button>
     </div>
   </section>
 
@@ -378,10 +377,6 @@
     document.getElementById('desc').textContent=a===0
       ? 'Apartamentos de 2 e 3 dormitórios com suíte e garden privativo: a sala abre direto para o jardim.'
       : 'Apartamentos de 2 e 3 dormitórios com suíte, sacada com churrasqueira e vista para o clube.';
-    // no térreo a sacada dá lugar ao garden privativo
-    var sac=document.querySelector('[data-amb="sacada"]');
-    sac.dataset.src='/midia/nimbus/andares/amb/'+(a===0?'garden':'sacada')+'.webp'; sac.style.backgroundImage='';
-    document.getElementById('abaSacada').textContent=a===0?'Garden':'Sacada';
     document.getElementById('quero').href='/wa/nimbus-place-life?src=andar&vi='+encodeURIComponent('Escolha seu andar: '+(a===0?'térreo (garden)':a+'º andar'));
     trocar('estar',true);
   }
@@ -397,7 +392,7 @@
       img.style.filter='blur('+((1-e)*3).toFixed(1)+'px)';
     }).then(function(){ img.style.filter=''; kenBurns(img,1.08); });
   }
-  function revelarInfo(){ estado.dentro=true; document.body.classList.remove('indo'); document.body.classList.add('dentro'); }
+  function revelarInfo(){ if(!estado.dentro) setTimeout(function(){ if(estado.dentro) passear(true); }, 3500); estado.dentro=true; document.body.classList.remove('indo'); document.body.classList.add('dentro'); }
   function kenBurns(img,de){
     if(kb) cancelAnimationFrame(kb); if(CALMO) return;
     var t0=performance.now(), dx=(Math.random()<.5?-1:1)*1.6;
@@ -405,7 +400,7 @@
       img.style.transform='scale('+(de-(de-1.0)*e).toFixed(4)+') translateX('+(dx*e).toFixed(2)+'%)';
       if(k<1) kb=requestAnimationFrame(f); })();
   }
-  var LEG={estar:'Apartamento decorado',cozinha:'Cozinha integrada',suite:'Suíte',dormitorio:'Dormitório',escritorio:'Dormitório com home office',banheiro:'Banheiro',sacada:'Sacada com churrasqueira',garden:'Garden privativo'};
+  var LEG={estar:'Apartamento decorado',fachada:'Fachada',chegada:'Chegada e portaria',openmall:'Open mall',beachpool:'Beach pool do clube',rooftop:'Rooftop',fitness:'Fitness center'};
   function trocar(nome,inicio){
     dentro.querySelectorAll('.amb-img').forEach(function(d){
       var on=d.dataset.amb===nome;
@@ -414,14 +409,21 @@
       d.classList.toggle('ativo',on);
     });
     document.querySelectorAll('#abas button').forEach(function(b){ b.classList.toggle('on',b.dataset.ir===nome); });
-    var sac=nome==='sacada'&&andarDe(estado.i)===0?'garden':nome;
-    document.getElementById('legenda').textContent=LEG[sac]+' · imagem ilustrativa';
+    document.getElementById('legenda').textContent=LEG[nome]+' · imagem ilustrativa';
   }
-  document.getElementById('abas').addEventListener('click',function(e){ var b=e.target.closest('[data-ir]'); if(b) trocar(b.dataset.ir); });
+  var ORDEM=[].map.call(document.querySelectorAll('#abas [data-ir]'),function(b){ return b.dataset.ir; }), passeio=null;
+  function passear(on){
+    clearInterval(passeio); passeio=null;
+    if(on && !CALMO) passeio=setInterval(function(){
+      var at=document.querySelector('#abas .on').dataset.ir, prox=ORDEM[(ORDEM.indexOf(at)+1)%ORDEM.length];
+      trocar(prox); var b=document.querySelector('#abas [data-ir="'+prox+'"]'); var ab=document.getElementById('abas'); ab.scrollTo({left:b.offsetLeft-ab.clientWidth/2+b.offsetWidth/2,behavior:'smooth'});
+    }, 5200);
+  }
+  document.getElementById('abas').addEventListener('click',function(e){ var b=e.target.closest('[data-ir]'); if(b){ passear(false); trocar(b.dataset.ir); } });
 
   function sair(){
     if(!estado.dentro||estado.animando) return;
-    estado.animando=true; document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
+    estado.animando=true; passear(false); document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
     var img=dentro.querySelector('.amb-img.ativo'), alvo=base;
     var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1], tira=tiras[k];
     var vw=innerWidth, vh=innerHeight, s0=vh*0.17/P, fim=naTela(px,py,alvo);
@@ -462,10 +464,7 @@
     setTimeout(function(){ painel.classList.remove('fora'); acender(6); carregarTira(estado.sacada); }, CALMO?0:1900);
     // as imagens de dentro já carregam em segundo plano
     var i0=new Image(); i0.src='/vitrine/nimbus/img/decorado.webp';
-    // cada aba de ambiente só aparece quando a foto dele existe e carregou
-    ['cozinha','suite','dormitorio','escritorio','banheiro','sacada'].forEach(function(n){
-      var i=new Image(); i.onload=function(){ document.querySelector('[data-ir="'+n+'"]').hidden=false; }; i.src='/midia/nimbus/andares/amb/'+n+'.webp';
-    });
+    dentro.querySelectorAll('.amb-img[data-src]').forEach(function(d){ var i=new Image(); i.src=d.dataset.src; });
   }
   pano.complete&&pano.naturalWidth?abrir():pano.addEventListener('load',abrir,{once:true});
 })();
