@@ -82,17 +82,33 @@ router.post('/plantao', async (req, res, next) => {
       const a = await db.getAgencia(d.agencia_id);
       if (a) d = { nome: a.nome, telefone: a.telefone };
     }
+    if (req.session.adminPor && d.telefone) {
+      const dono = await db.donoDaEquipe(d.telefone);
+      if (dono && dono.gestor_id !== req.session.adminPor) {
+        return res.status(403).render('admin/negado', { title: 'Sem permissão', msg: `Este corretor é da equipe de ${dono.gestor_nome || 'outro gestor'}. Só o gestor dele ou o admin master podem alterar.` });
+      }
+    }
     const ok = await sdr.salvarPlantao(d);
     res.redirect('/admin/sdr?' + (ok ? 'plantao=ok' : 'erro=plantao') + '#plantao');
   } catch (e) { next(e); }
 });
 
+// Admin pelo próprio login não mexe no plantão de corretor de outra equipe.
+async function plantaoDeOutraEquipe(req, res) {
+  if (!req.session.adminPor) return false;
+  const { rows } = await db.query('SELECT telefone FROM sdr_plantao WHERE id=$1', [Number(req.params.id)]);
+  const dono = rows[0] ? await db.donoDaEquipe(rows[0].telefone) : null;
+  if (!dono || dono.gestor_id === req.session.adminPor) return false;
+  res.status(403).render('admin/negado', { title: 'Sem permissão', msg: `Este corretor é da equipe de ${dono.gestor_nome || 'outro gestor'}. Só o gestor dele ou o admin master podem alterar.` });
+  return true;
+}
+
 router.post('/plantao/:id/toggle', async (req, res, next) => {
-  try { await sdr.alternarPlantao(req.params.id); res.redirect('/admin/sdr#plantao'); } catch (e) { next(e); }
+  try { if (await plantaoDeOutraEquipe(req, res)) return; await sdr.alternarPlantao(req.params.id); res.redirect('/admin/sdr#plantao'); } catch (e) { next(e); }
 });
 
 router.post('/plantao/:id/remover', async (req, res, next) => {
-  try { await sdr.removerPlantao(req.params.id); res.redirect('/admin/sdr#plantao'); } catch (e) { next(e); }
+  try { if (await plantaoDeOutraEquipe(req, res)) return; await sdr.removerPlantao(req.params.id); res.redirect('/admin/sdr#plantao'); } catch (e) { next(e); }
 });
 
 // ---- Roteiro ----

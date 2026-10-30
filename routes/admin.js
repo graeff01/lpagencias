@@ -26,9 +26,20 @@ const equipes = require('../lib/equipes');
 const caixa = require('../lib/caixa-leads');
 
 // ---- Middleware de autenticação ----
-function requireAuth(req, res, next) {
-  if (req.session && req.session.admin) return next();
-  return res.redirect('/admin/login');
+async function requireAuth(req, res, next) {
+  if (!(req.session && req.session.admin)) return res.redirect('/admin/login');
+  // Entrou pelo próprio login da equipe: o acesso vale enquanto ele estiver ativo e liberado.
+  if (req.session.adminPor) {
+    try {
+      const g = await db.getGestor(req.session.adminPor);
+      if (!g || !g.ativo || !g.acesso_admin) {
+        req.session.admin = false; delete req.session.adminPor;
+        return res.redirect('/gestor/login');
+      }
+      res.locals.adminNome = g.nome;
+    } catch (e) { return next(e); }
+  }
+  return next();
 }
 
 // ---- Login ----
@@ -37,7 +48,7 @@ router.get('/login', (req, res) => {
   res.render('admin/login', { title: 'Entrar · Painel', error: null });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const ip = ipDe(req);
   const minutos = bloqueado(ip);
   if (minutos) {
@@ -46,9 +57,14 @@ router.post('/login', (req, res) => {
       error: `Muitas tentativas. Tente novamente em ${minutos} minuto(s).`,
     });
   }
-  const senha = req.body.password;
-  const papel = senha === ADMIN_PASSWORD ? 'admin'
-    : (CADASTRO_PASSWORD && senha === CADASTRO_PASSWORD ? 'cadastro' : null);
+  const senha = String(req.body.password || '');
+  // A senha do admin master pode ser trocada pelo painel (fica só o hash no banco);
+  // enquanto não trocar, vale a variável ADMIN_PASSWORD.
+  const hashMaster = await db.getConfig('admin_senha_hash').catch(() => null);
+  const ehMaster = hashMaster ? equipes.confereSenha(senha, hashMaster) : senha === ADMIN_PASSWORD;
+  const cadastroOn = CADASTRO_PASSWORD && (await db.getConfig('cadastro_desativado').catch(() => null)) !== '1';
+  const papel = ehMaster ? 'admin' : (cadastroOn && senha === CADASTRO_PASSWORD ? 'cadastro' : null);
+  db.registrarAdminLog({ quem_nome: papel === 'admin' ? 'Admin master' : papel === 'cadastro' ? 'Acesso de cadastro' : 'Tentativa de login', metodo: 'POST', caminho: '/login', acao: papel ? 'Entrou no painel' : 'Senha errada no login do painel', status: papel ? 200 : 401, ip_hash: require('../lib/roleta').hashIp(ip) });
   if (papel) {
     limparTentativas(ip);
     return req.session.regenerate((err) => {   // evita fixação de sessão
@@ -72,6 +88,7 @@ router.use((req, res, next) => {
   // Sessões abertas antes dos perfis existirem eram todas de administrador.
   res.locals.papel = req.session.papel || 'admin';
   res.locals.ehAdmin = res.locals.papel === 'admin';
+  res.locals.ehMaster = res.locals.ehAdmin && !req.session.adminPor;
   next();
 });
 
@@ -79,6 +96,73 @@ function soAdmin(req, res, next) {
   if (res.locals.ehAdmin) return next();
   return res.status(403).render('404', { title: 'Acesso restrito ao administrador' });
 }
+
+// Admin master = senha do painel. Admin pelo próprio login (ex.: um gestor com
+// acesso liberado) vê tudo, mas não mexe em usuários nem em corretores de outra equipe.
+function negar(res, msg) {
+  return res.status(403).render('admin/negado', { title: 'Sem permissão', msg });
+}
+function soMaster(req, res, next) {
+  if (res.locals.ehMaster) return next();
+  return negar(res, 'Só o admin master pode fazer isso.');
+}
+// Corretor de outra equipe (pelo WhatsApp): devolve { gestor_nome } se o admin delegado não pode mexer.
+async function deOutraEquipe(req, ...telefones) {
+  if (!req.session.adminPor) return null;
+  for (const t of telefones) {
+    const dono = t ? await db.donoDaEquipe(t) : null;
+    if (dono && dono.gestor_id !== req.session.adminPor) return dono;
+  }
+  return null;
+}
+const msgEquipe = (dono) => `Este corretor é da equipe de ${dono.gestor_nome || 'outro gestor'}. Só o gestor dele ou o admin master podem alterar.`;
+
+// ---- Histórico: cada tela aberta e cada alteração, com quem e quando ----
+const ROTULOS = [
+  [/^POST \/salvar$/, 'Salvou empreendimento'], [/^POST \/excluir\//, 'Excluiu empreendimento'],
+  [/^POST \/corretores\/\d+\/salvar/, 'Salvou corretor na roleta'], [/^POST \/corretores\/\d+\/excluir/, 'Excluiu corretor da roleta'],
+  [/^POST \/corretores\/\d+\/toggle/, 'Pausou/reativou corretor na roleta'], [/^POST \/corretores\/\d+\/zerar/, 'Zerou a fila da roleta'],
+  [/^POST \/links\/\d+\/excluir/, 'Excluiu link de corretor'], [/^POST \/links\/\d+\/ativo/, 'Ativou/desativou link de corretor'],
+  [/^POST \/equipes\/gestor$/, 'Salvou usuário'], [/^POST \/equipes\/gestor\/\d+\/toggle/, 'Bloqueou/liberou usuário'],
+  [/^POST \/equipes\/gestor\/\d+\/excluir/, 'Excluiu usuário'], [/^POST \/equipes\/membros/, 'Alterou as equipes'],
+  [/^POST \/recepcao\/corretor$/, 'Salvou corretor da recepção'], [/^POST \/recepcao\/corretor\/\d+\/toggle/, 'Pausou/reativou corretor da recepção'],
+  [/^POST \/recepcao\/corretor\/\d+\/excluir/, 'Excluiu corretor da recepção'], [/^POST \/recepcao\/importar/, 'Importou corretores para a recepção'],
+  [/^POST \/recepcao\/campanha/, 'Alterou campanhas da recepção'], [/^POST \/recepcao/, 'Alterou a recepção'],
+  [/^POST \/portal$/, 'Salvou o portal'], [/^POST \/sdr/, 'Alterou o SDR'], [/^POST \/upload/, 'Enviou arquivo'],
+  [/^POST \/minha-senha/, 'Trocou a senha do admin master'], [/^POST \/cadastro-acesso/, 'Ativou/desativou o acesso de cadastro'],
+  [/^GET .*(csv)/, 'Exportou planilha'],
+];
+const TELAS = [[/^\/$/, 'Empreendimentos'], [/^\/editar\//, 'Edição de empreendimento'], [/^\/novo/, 'Novo empreendimento'],
+  [/^\/corretores\//, 'Roleta de corretores'], [/^\/leads\//, 'Relatório de leads'], [/^\/links/, 'Links de corretores'],
+  [/^\/equipes\/\d+/, 'Painel de um gestor'], [/^\/equipes/, 'Equipes'], [/^\/recepcao/, 'Recepção'], [/^\/sdr/, 'SDR'],
+  [/^\/auditoria/, 'Auditoria de leads'], [/^\/portal/, 'Portal'], [/^\/historico/, 'Histórico do admin'], [/^\/minha-senha/, 'Trocar senha']];
+const CAMPOS_LOG = ['nome', 'slug', 'telefone', 'usuario', 'papel', 'ativo', 'published', 'acesso_admin', 'destaque', 'peso', 'motivo', 'empreendimento_id'];
+function detalheDo(req) {
+  const b = req.body || {};
+  const partes = CAMPOS_LOG.filter((k) => b[k] !== undefined && b[k] !== '').map((k) => k + ': ' + String(b[k]).slice(0, 80));
+  if (req.path === '/equipes/membros') partes.push(Object.keys(b).filter((k) => k.startsWith('eq_')).length + ' corretores na tela');
+  return partes.join(' · ');
+}
+router.use((req, res, next) => {
+  const caminho = req.path;
+  const ehTela = req.method === 'GET' && !/\.(csv|json)$|^\/(geo|pois-proximos)/.test(caminho) && (req.headers.accept || '').includes('text/html');
+  const ehExport = req.method === 'GET' && /csv/.test(caminho);
+  if (req.method === 'GET' && !ehTela && !ehExport) return next();
+  res.on('finish', () => {
+    const chave = req.method + ' ' + caminho;
+    const r = ROTULOS.find(([re]) => re.test(chave));
+    const tela = TELAS.find(([re]) => re.test(caminho));
+    db.registrarAdminLog({
+      quem_id: req.session.adminPor || null,
+      quem_nome: res.locals.adminNome || (res.locals.papel === 'cadastro' ? 'Acesso de cadastro' : 'Admin master'),
+      metodo: req.method, caminho: req.originalUrl.split('?')[0].replace(/^\/admin/, '') || '/',
+      acao: r ? r[1] : req.method === 'GET' ? 'Abriu ' + (tela ? tela[1] : caminho) : 'Alteração em ' + caminho,
+      detalhe: req.method === 'GET' ? '' : detalheDo(req) + (res.statusCode === 403 ? ' · BLOQUEADO (sem permissão)' : ''),
+      status: res.statusCode, ip_hash: require('../lib/roleta').hashIp(String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim()),
+    });
+  });
+  next();
+});
 
 // ---- Lista de empreendimentos ----
 router.get('/', async (req, res, next) => {
@@ -237,7 +321,7 @@ router.get('/pois-proximos', async (req, res) => {
 });
 
 // ---- Excluir ----
-router.post('/excluir/:id', soAdmin, async (req, res, next) => {
+router.post('/excluir/:id', soMaster, async (req, res, next) => {
   try { await db.remove(req.params.id); dominios.limparCache(); res.redirect('/admin?del=1'); }
   catch (e) { next(e); }
 });
@@ -267,7 +351,11 @@ router.get('/corretores/:id', async (req, res, next) => {
     const corretores = await db.listCorretores(emp.id);
     // Link pessoal "Meus leads" de cada corretor (criado na primeira vez).
     const base = baseUrl(req);
-    for (const c of corretores) c.linkMeus = base + '/meus/' + await db.linkDoCorretor(c.telefone);
+    for (const c of corretores) {
+      c.linkMeus = base + '/meus/' + await db.linkDoCorretor(c.telefone);
+      const dono = await deOutraEquipe(req, c.telefone);
+      c.outraEquipe = dono ? (dono.gestor_nome || 'outro gestor').split(' ')[0] : null;   // admin delegado: só leitura
+    }
     res.render('admin/corretores', {
       title: `Corretores · ${emp.nome}`, emp, corretores, q: req.query,
     });
@@ -299,6 +387,10 @@ router.post('/corretores/:id/salvar', async (req, res, next) => {
       .some(c => c.id !== idAtual && roleta.digitos(c.telefone) === numero);
     if (jaExiste) return res.redirect(`/admin/corretores/${empId}?erro=duplicado`);
 
+    const antes = idAtual ? await db.getCorretor(idAtual) : null;
+    const dono = await deOutraEquipe(req, numero, antes && antes.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
+
     if (idAtual) await db.updateCorretor(idAtual, dados);
     else await db.createCorretor(empId, dados);
 
@@ -308,6 +400,9 @@ router.post('/corretores/:id/salvar', async (req, res, next) => {
 
 router.post('/corretores/:id/excluir/:corretorId', async (req, res, next) => {
   try {
+    const c = await db.getCorretor(Number(req.params.corretorId));
+    const dono = c && await deOutraEquipe(req, c.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
     await db.removeCorretor(Number(req.params.corretorId));
     res.redirect(`/admin/corretores/${req.params.id}?del=1`);
   } catch (e) { next(e); }
@@ -317,13 +412,15 @@ router.post('/corretores/:id/excluir/:corretorId', async (req, res, next) => {
 router.post('/corretores/:id/toggle/:corretorId', async (req, res, next) => {
   try {
     const c = await db.getCorretor(Number(req.params.corretorId));
+    const dono = c && await deOutraEquipe(req, c.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
     if (c) await db.updateCorretor(c.id, { ...c, ativo: !c.ativo });
     res.redirect(`/admin/corretores/${req.params.id}?ok=1`);
   } catch (e) { next(e); }
 });
 
 // Zera os contadores da fila (recomeça o rodízio do zero, o histórico fica)
-router.post('/corretores/:id/zerar', async (req, res, next) => {
+router.post('/corretores/:id/zerar', soMaster, async (req, res, next) => {
   try {
     await db.zerarContadores(Number(req.params.id));
     res.redirect(`/admin/corretores/${req.params.id}?zerado=1`);
@@ -337,8 +434,15 @@ router.get('/links', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+async function tagDeOutraEquipe(req) {
+  const { rows } = await db.query('SELECT telefone FROM corretor_tags WHERE id=$1', [Number(req.params.id)]);
+  return rows[0] ? deOutraEquipe(req, rows[0].telefone) : null;
+}
+
 router.post('/links/:id/excluir', async (req, res, next) => {
   try {
+    const dono = await tagDeOutraEquipe(req);
+    if (dono) return negar(res, msgEquipe(dono));
     await db.excluirTag(req.params.id);
     res.redirect('/admin/links');
   } catch (e) { next(e); }
@@ -346,6 +450,8 @@ router.post('/links/:id/excluir', async (req, res, next) => {
 
 router.post('/links/:id/ativo', async (req, res, next) => {
   try {
+    const dono = await tagDeOutraEquipe(req);
+    if (dono) return negar(res, msgEquipe(dono));
     await db.setTagAtiva(req.params.id, req.body.ativo === '1');
     res.redirect('/admin/links');
   } catch (e) { next(e); }
@@ -476,11 +582,12 @@ router.get('/equipes', async (req, res, next) => {
     });
     unicos.sort((a, b) => a.nomes[0].localeCompare(b.nomes[0], 'pt-BR'));
     usuarios.forEach((g) => { g.membros = membros.filter(m => m.gestor_id === g.id).length; });
-    res.render('admin/equipes', { title: 'Equipes · Painel', usuarios, gestores, corretores: unicos, q: req.query });
+    const cadastro = { existe: !!CADASTRO_PASSWORD, ativo: !!CADASTRO_PASSWORD && (await db.getConfig('cadastro_desativado')) !== '1' };
+    res.render('admin/equipes', { title: 'Equipes · Painel', usuarios, gestores, corretores: unicos, q: req.query, cadastro, eu: req.session.adminPor || null });
   } catch (e) { next(e); }
 });
 
-router.post('/equipes/gestor', async (req, res, next) => {
+router.post('/equipes/gestor', soMaster, async (req, res, next) => {
   try {
     const b = req.body;
     const id = b.id ? Number(b.id) : null;
@@ -495,13 +602,14 @@ router.post('/equipes/gestor', async (req, res, next) => {
     const papel = ['recepcao', 'sdr'].includes(b.papel) ? b.papel : 'gestor';
     // Senha definida pelo administrador é temporária: a pessoa troca no próximo acesso.
     const trocar_senha = senha ? true : undefined;
-    if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel, trocar_senha });
-    else await db.createGestor({ nome, usuario, senha_hash, papel, trocar_senha: true });
+    const acesso_admin = b.acesso_admin === '1';
+    if (id) await db.updateGestor(id, { nome, usuario, senha_hash, papel, trocar_senha, acesso_admin });
+    else await db.createGestor({ nome, usuario, senha_hash, papel, trocar_senha: true, acesso_admin });
     res.redirect('/admin/equipes?ok=gestor');
   } catch (e) { next(e); }
 });
 
-router.post('/equipes/gestor/:id/toggle', async (req, res, next) => {
+router.post('/equipes/gestor/:id/toggle', soMaster, async (req, res, next) => {
   try {
     const g = await db.getGestor(req.params.id);
     if (g) await db.updateGestor(g.id, { ativo: !g.ativo });
@@ -509,7 +617,7 @@ router.post('/equipes/gestor/:id/toggle', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/equipes/gestor/:id/excluir', async (req, res, next) => {
+router.post('/equipes/gestor/:id/excluir', soMaster, async (req, res, next) => {
   try {
     await db.removeGestor(req.params.id);
     res.redirect('/admin/equipes?del=1');
@@ -526,6 +634,14 @@ router.post('/equipes/membros', async (req, res, next) => {
       const tel = k.slice(3);
       const gid = Number(v) || null;
       mapa[tel] = { gestor_id: gid && validos.has(gid) ? gid : null, nome: String(req.body['nm_' + tel] || '').trim() };
+    }
+    if (req.session.adminPor) {
+      const eu = req.session.adminPor;
+      for (const tel of Object.keys(mapa)) {
+        const dono = await db.donoDaEquipe(tel);
+        const novo = mapa[tel].gestor_id;
+        if ((dono && dono.gestor_id !== eu) || (novo && novo !== eu)) delete mapa[tel];   // de outra equipe: fica como está
+      }
     }
     await db.salvarEquipes(mapa);
     res.redirect('/admin/equipes?ok=equipes');
@@ -583,6 +699,41 @@ router.get('/recepcao', async (req, res, next) => {
       duracao: equipes.duracao, baseUrl: baseUrl(req),
       lpFormulario: (await db.getConfig('lp_formulario')) !== '0', fech, caixaAlerta,
     });
+  } catch (e) { next(e); }
+});
+
+// ---- Só o admin master: histórico, senha do painel e acesso de cadastro ----
+router.get('/historico', soMaster, async (req, res, next) => {
+  try {
+    const [log, usuarios] = await Promise.all([
+      db.listAdminLog({ quem: req.query.quem, alteracoes: req.query.so === 'alteracoes' }),
+      db.listGestores(),
+    ]);
+    res.render('admin/historico', { title: 'Histórico do admin · Painel', log, usuarios, q: req.query });
+  } catch (e) { next(e); }
+});
+
+router.get('/minha-senha', soMaster, (req, res) => {
+  res.render('admin/minha-senha', { title: 'Minha senha · Painel', q: req.query });
+});
+
+router.post('/minha-senha', soMaster, async (req, res, next) => {
+  try {
+    const atual = String(req.body.atual || ''), nova = String(req.body.nova || ''), conf = String(req.body.confirmar || '');
+    const hash = await db.getConfig('admin_senha_hash');
+    const confere = hash ? equipes.confereSenha(atual, hash) : atual === ADMIN_PASSWORD;
+    if (!confere) return res.redirect('/admin/minha-senha?erro=atual');
+    if (nova.length < 10) return res.redirect('/admin/minha-senha?erro=curta');
+    if (nova !== conf) return res.redirect('/admin/minha-senha?erro=diferente');
+    await db.setConfig('admin_senha_hash', equipes.hashSenha(nova));
+    res.redirect('/admin/minha-senha?ok=1');
+  } catch (e) { next(e); }
+});
+
+router.post('/cadastro-acesso', soMaster, async (req, res, next) => {
+  try {
+    await db.setConfig('cadastro_desativado', req.body.ativo === '1' ? null : '1');
+    res.redirect('/admin/equipes?ok=cadastro');
   } catch (e) { next(e); }
 });
 
@@ -704,6 +855,9 @@ router.post('/recepcao/corretor', async (req, res, next) => {
     if (!numero) return res.redirect('/admin/recepcao?erro=telefone');
     const outro = await db.getAgenciaPorFone(numero);
     if (outro && outro.id !== id) return res.redirect('/admin/recepcao?erro=duplicado');
+    const antes = id ? await db.getAgencia(id) : null;
+    const dono = await deOutraEquipe(req, numero, antes && antes.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
     await db.salvarAgencia(id, { nome, telefone: numero, ativo: b.ativo === 'on', destaque: b.destaque === 'on' });
     res.redirect('/admin/recepcao?ok=1');
   } catch (e) { next(e); }
@@ -712,6 +866,8 @@ router.post('/recepcao/corretor', async (req, res, next) => {
 router.post('/recepcao/corretor/:id/toggle', async (req, res, next) => {
   try {
     const c = await db.getAgencia(req.params.id);
+    const dono = c && await deOutraEquipe(req, c.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
     if (c) await db.salvarAgencia(c.id, { ...c, ativo: !c.ativo });
     res.redirect('/admin/recepcao?ok=1');
   } catch (e) { next(e); }
@@ -719,13 +875,16 @@ router.post('/recepcao/corretor/:id/toggle', async (req, res, next) => {
 
 router.post('/recepcao/corretor/:id/excluir', async (req, res, next) => {
   try {
+    const c = await db.getAgencia(req.params.id);
+    const dono = c && await deOutraEquipe(req, c.telefone);
+    if (dono) return negar(res, msgEquipe(dono));
     await db.removeAgencia(req.params.id);
     res.redirect('/admin/recepcao?del=1');
   } catch (e) { next(e); }
 });
 
 // Traz para a lista da recepção quem já está em alguma roleta (pelo WhatsApp).
-router.post('/recepcao/importar', async (req, res, next) => {
+router.post('/recepcao/importar', soMaster, async (req, res, next) => {
   try {
     let n = 0;
     for (const u of await db.corretoresUnicos()) {

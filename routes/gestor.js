@@ -92,10 +92,26 @@ function exigeEquipe(papel) {
       if (g.trocar_senha) return res.redirect('/gestor/senha');
       if ((g.papel || 'gestor') !== papel) return res.redirect(destino(g));
       req.gestor = g;
+      res.locals.podeAdmin = !!g.acesso_admin;
       next();
     } catch (e) { next(e); }
   };
 }
+
+// Acesso total ao painel admin pelo próprio login (liberado por pessoa em Equipes).
+router.get('/admin', async (req, res, next) => {
+  try {
+    const id = req.session && req.session.gestorId;
+    const g = id ? await db.getGestor(id) : null;
+    if (!g || !g.ativo) return res.redirect('/gestor/login');
+    if (!g.acesso_admin) return res.redirect(destino(g));
+    req.session.admin = true;
+    req.session.papel = 'admin';
+    req.session.adminPor = g.id;
+    db.registrarAdminLog({ quem_id: g.id, quem_nome: g.nome, metodo: 'GET', caminho: '/gestor/admin', acao: 'Entrou no painel admin pelo próprio login', status: 200 });
+    res.redirect('/admin');
+  } catch (e) { next(e); }
+});
 
 router.use(exigeEquipe('gestor'));
 

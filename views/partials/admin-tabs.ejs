@@ -1,0 +1,7 @@
+<%
+  // Menu do painel admin. ativo: aba atual. Histórico só para o admin master.
+  var abas = [['/admin', 'Empreendimentos']];
+  if (typeof ehAdmin === 'undefined' || ehAdmin) abas.push(['/admin/portal', 'Portal'], ['/admin/equipes', 'Equipes'], ['/admin/recepcao', 'Recepção'], ['/admin/sdr', 'SDR'], ['/admin/auditoria', 'Auditoria']);
+  if (typeof ehMaster !== 'undefined' && ehMaster) abas.push(['/admin/historico', 'Histórico']);
+%>
+<nav class="tabs"><% abas.forEach(function(a){ %><a href="<%= a[0] %>"<%- ativo === a[1] ? ' class="on"' : '' %>><%= a[1] %></a><% }); %></nav>

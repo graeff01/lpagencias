@@ -61,6 +61,7 @@
                   <b><%= c.nome %></b>
                   <% if (!c.ativo) { %><span class="tag pause">pausado</span><% } %>
                   <% if (c.creci) { %><span class="sub">CRECI <%= c.creci %></span><% } %>
+                  <% if (c.outraEquipe) { %><span class="tag adm" title="Só o gestor dele ou o admin master alteram">equipe <%= c.outraEquipe %></span><% } %>
                 </td>
                 <td class="mono"><%= c.telefone %></td>
                 <td class="num"><%= c.peso %>x</td>
@@ -70,7 +71,7 @@
                   <a class="btn btn-ghost btn-sm" href="https://wa.me/<%= h.onlyDigits(c.telefone) %>" target="_blank" rel="noopener" title="Abrir conversa para conferir se o número existe">Testar</a>
                   <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" title="Manda para o corretor o link onde ele vê os leads dele e conta o andamento de cada um"
                      href="https://wa.me/<%= h.onlyDigits(c.telefone) %>?text=<%= encodeURIComponent('Oi, ' + String(c.nome).split(' ')[0] + '! Este é o seu link de leads da Auxiliadora Predial: ' + c.linkMeus + '\n\nGuarde nos favoritos. Lá aparecem os leads que chegam para você e, depois de falar com cada cliente, é só tocar em como foi (conversando, visita, proposta…). Leva 5 segundos e ajuda a gente a mandar mais leads bons pra você.') %>">Link "Meus leads"</a>
-                  <button class="btn btn-ghost btn-sm" type="button"
+                  <% if (!c.outraEquipe) { %><button class="btn btn-ghost btn-sm" type="button"
                     onclick='editar(<%- JSON.stringify({id:c.id,nome:c.nome,telefone:c.telefone,email:c.email,creci:c.creci,peso:c.peso,ordem:c.ordem,ativo:c.ativo}) %>)'>Editar</button>
                   <form method="POST" action="/admin/corretores/<%= emp.id %>/toggle/<%= c.id %>">
                     <button class="btn btn-ghost btn-sm" type="submit"><%= c.ativo ? 'Pausar' : 'Reativar' %></button>
@@ -79,7 +80,7 @@
                     <button class="btn btn-danger btn-sm" type="submit" title="Remover">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
                     </button>
-                  </form>
+                  </form><% } %>
                 </td>
               </tr>
             <% }); %>
@@ -93,9 +94,9 @@
             Pausar não apaga nada, e quem volta de uma pausa reentra no nível de quem está ativo hoje —
             não recebe de uma vez tudo o que perdeu.
           </p>
-          <form method="POST" action="/admin/corretores/<%= emp.id %>/zerar" onsubmit="return confirm('Zerar os contadores da fila? O histórico de leads é mantido.')">
+<% if (typeof ehMaster === 'undefined' || ehMaster) { %>          <form method="POST" action="/admin/corretores/<%= emp.id %>/zerar" onsubmit="return confirm('Zerar os contadores da fila? O histórico de leads é mantido.')">
             <button class="btn btn-ghost btn-sm" type="submit">Zerar contadores da fila</button>
-          </form>
+          </form><% } %>
         </div>
       </div>
 

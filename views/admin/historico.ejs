@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <%- include('../partials/admin-tabs', { ativo: 'Histórico' }) %>
+    <div class="sp"></div>
+    <div class="top-links">
+      <a class="btn btn-ghost btn-sm" href="/admin/minha-senha">Minha senha</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow">Só o admin master vê esta página</div>
+        <h1>Histórico do admin</h1>
+        <p>Cada tela aberta e cada alteração feita no painel: quem, o quê e quando. Tentativas bloqueadas por falta de permissão e senhas erradas no login também ficam aqui.</p>
+      </div>
+    </div>
+
+    <form class="hist-filtro" method="GET">
+      <select name="quem" class="sel" onchange="this.form.submit()">
+        <option value="">Todas as pessoas</option>
+        <option value="master" <%= q.quem === 'master' ? 'selected' : '' %>>Admin master e acesso de cadastro (senha do painel)</option>
+        <% usuarios.filter(function(u){ return u.acesso_admin; }).forEach(function(u){ %><option value="<%= u.id %>" <%= String(q.quem) === String(u.id) ? 'selected' : '' %>><%= u.nome %></option><% }); %>
+      </select>
+      <label class="chk-inline"><input type="checkbox" name="so" value="alteracoes" <%= q.so === 'alteracoes' ? 'checked' : '' %> onchange="this.form.submit()"> Só alterações e exportações</label>
+    </form>
+
+    <div class="panel">
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Detalhes</th></tr></thead>
+        <tbody>
+          <% if (!log.length) { %><tr><td colspan="4" class="empty">Nada registrado ainda.</td></tr><% } %>
+          <% log.forEach(function(l){ var bloq = l.status === 403 || l.status === 401; %>
+            <tr class="<%= l.metodo === 'GET' && !/^Exportou/.test(l.acao) ? 'hist-ver' : '' %>">
+              <td class="sub" style="white-space:nowrap"><%= new Date(l.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) %></td>
+              <td><b><%= l.quem_nome || '—' %></b></td>
+              <td><%= l.acao %><% if (bloq) { %> <span class="tag pause"><%= l.status === 401 ? 'senha errada' : 'bloqueado' %></span><% } %><span class="sub mono"><%= l.caminho %></span></td>
+              <td class="sub"><%= l.detalhe || '' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <div class="panel-foot"><p class="hint">Mostra os 500 registros mais recentes do filtro escolhido. Senhas nunca são gravadas aqui.</p></div>
+    </div>
+  </div>
+</body>
+</html>

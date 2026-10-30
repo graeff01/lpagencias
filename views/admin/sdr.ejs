@@ -17,9 +17,10 @@
   %>
   <header class="topbar">
     <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
-    <nav class="tabs"><a href="/admin">Empreendimentos</a><a href="/admin/portal">Portal</a><a href="/admin/equipes">Equipes</a><a href="/admin/recepcao">Recepção</a><a href="/admin/sdr" class="on">SDR</a><a href="/admin/auditoria">Auditoria</a></nav>
+    <%- include('../partials/admin-tabs', { ativo: 'SDR' }) %>
     <div class="sp"></div>
     <div class="top-links">
+      <% if (typeof ehMaster !== "undefined" && ehMaster) { %><a class="btn btn-ghost btn-sm" href="/admin/minha-senha">Minha senha</a><% } else if (typeof adminNome !== "undefined" && adminNome) { %><span class="quem-adm"><%= adminNome %> · admin</span><% } %>
       <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
     </div>
   </header>

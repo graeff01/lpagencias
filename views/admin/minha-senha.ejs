@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/admin.css?v=<%= v %>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><span class="m"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" fill="#fff"/></svg></span><span>Auxiliadora<small>Painel de empreendimentos</small></span></a>
+    <%- include('../partials/admin-tabs', { ativo: '' }) %>
+    <div class="sp"></div>
+    <div class="top-links">
+      <form method="POST" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sair</button></form>
+    </div>
+  </header>
+
+  <div class="wrap" style="max-width:560px">
+    <div class="page-head"><div>
+      <div class="eyebrow">Admin master</div>
+      <h1>Trocar minha senha</h1>
+      <p>É a senha que entra no painel com acesso total. Depois de trocar, a senha antiga para de funcionar.</p>
+    </div></div>
+    <% var E = { atual: 'A senha atual não confere.', curta: 'A nova senha precisa ter pelo menos 10 caracteres.', diferente: 'A confirmação não é igual à nova senha.' }; %>
+    <% if (q.ok) { %><div class="flash">Senha trocada. Use a nova no próximo acesso.</div><% } %>
+    <% if (E[q.erro]) { %><div class="flash" style="background:#fdf0ee;border-color:#f3c9c1;color:#b5432f"><%= E[q.erro] %></div><% } %>
+    <form class="panel frm" method="POST" action="/admin/minha-senha" style="padding:22px">
+      <div class="fg"><label>Senha atual</label><input name="atual" type="password" required autocomplete="current-password"></div>
+      <div class="fg"><label>Nova senha</label><input name="nova" type="password" required minlength="10" autocomplete="new-password"><span class="hint">Mínimo 10 caracteres. Não usa a mesma de outros sistemas.</span></div>
+      <div class="fg"><label>Confirmar nova senha</label><input name="confirmar" type="password" required minlength="10" autocomplete="new-password"></div>
+      <div class="frm-acts"><button class="btn btn-green" type="submit">Trocar senha</button></div>
+    </form>
+  </div>
+</body>
+</html>
