@@ -347,35 +347,27 @@
     var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1];
     var tira=carregarTira(k);
     var vw=innerWidth, vh=innerHeight, c0=cam, ini=naTela(px,py,c0);
-    // chegada: o andar ocupa ~40% da altura da tela; depois a porta da sacada enche a tela
-    var s1=vh*0.40/P, s2=vh*1.25/P;
-    var lado=ini.x<vw/2?1:-1;                                   // o drone inclina para o lado da curva
+    // um voo só, sem parar na frente da janela: a meia distância a câmera já entra no apartamento
+    var sFim=vh*0.62/P, T=CALMO?1:4800, ENTRA=.64, lado=ini.x<vw/2?1:-1;
+    var dentroP=null;
     prepararDentro();
-    var t1=CALMO?1:2300;
     return esperarImg(tira,900).then(function(){
-      return anima(t1,function(q){
-        var e=q<.5?4*q*q*q:1-Math.pow(-2*q+2,2.2)/2, s=lerpLog(c0.s,s1,e);
-        // trajetória em arco: o ponto alvo vem para o centro, com uma leve subida no meio do voo
-        var X=ini.x+(vw/2-ini.x)*ease.io2(q), Y=ini.y+(vh/2-ini.y)*ease.io2(q)-Math.sin(q*Math.PI)*vh*0.05;
-        aplicar(camAlvo(s,px,py,X,Y,Math.sin(q*Math.PI)*1.8*lado));
-        // a tira em alta definição aparece conforme a câmera se aproxima
+      return anima(T,function(q){
+        var e=-(Math.cos(Math.PI*q)-1)/2, s=lerpLog(c0.s,sFim,e);
+        // o andar vem para o centro antes do fim, numa curva com leve subida e inclinação
+        var m=ease.io2(Math.min(1,q/.8));
+        var X=ini.x+(vw/2-ini.x)*m, Y=ini.y+(vh/2-ini.y)*m-Math.sin(Math.PI*Math.min(1,q/.8))*vh*0.035;
+        aplicar(camAlvo(s,px,py,X,Y,Math.sin(Math.PI*q)*1.3*lado));
         tira.style.opacity=Math.max(0,Math.min(1,(s/c0.s-1.8)/1.5)).toFixed(3);
+        // entrando: a fachada desfoca e clareia enquanto a sala aparece por trás da porta de vidro
+        var d=Math.max(0,(q-ENTRA)/(1-ENTRA));
+        palco.style.filter=d?'blur('+(d*12).toFixed(1)+'px) brightness('+(1+d*0.35).toFixed(2)+')':'';
+        clarao.style.opacity=(Math.sin(Math.PI*d)*0.42).toFixed(3);
+        reflexo.style.opacity=(Math.sin(Math.PI*d)*0.7).toFixed(3); reflexo.style.transform='translateX('+(-30+d*60)+'%)';
+        if(d>0 && !dentroP){ dentroP=mostrarDentro(); setTimeout(revelarInfo, CALMO?0:1100); }
       });
-    }).then(function(){
-      // atravessando o vidro da porta: aproxima mais rápido, desfoca, clarão quente e reflexo cruzando
-      return Promise.all([
-        anima(CALMO?1:780,function(q){
-          var e=ease.in3(q);
-          aplicar(camAlvo(lerpLog(s1,s2,e),px,py,vw/2,vh/2,0));
-          palco.style.filter='blur('+(e*16).toFixed(1)+'px) brightness('+(1+e*0.7).toFixed(2)+')';
-          clarao.style.opacity=(Math.max(0,q-.35)/.65*0.6).toFixed(3);
-          reflexo.style.opacity=(Math.sin(q*Math.PI)*0.85).toFixed(3); reflexo.style.transform='translateX('+(-30+q*60)+'%)';
-        }),
-        new Promise(function(ok){ setTimeout(ok, CALMO?0:520); }).then(function(){ setTimeout(revelarInfo, CALMO?0:900); return mostrarDentro(); })
-      ]);
-    }).then(function(){
-      return anima(CALMO?1:600,function(q){ clarao.style.opacity=((1-ease.out3(q))*0.6).toFixed(3); });
-    }).then(function(){
+    }).then(function(){ return dentroP; }).then(function(){
+      clarao.style.opacity=0; reflexo.style.opacity=0;
       cena.style.visibility='hidden'; palco.style.filter=''; tira.style.opacity=0; estado.animando=false; revelarInfo();
     });
   }
@@ -395,7 +387,7 @@
     // a sala aparece pela porta de correr; a esquadria passa pela câmera e some
     return anima(CALMO?1:1700,function(q){
       var e=ease.out3(q), ep=ease.io(Math.max(0,Math.min(1,(q-.18)/.7)));
-      dentro.style.opacity=Math.min(1,q*2.2).toFixed(3);
+      dentro.style.opacity=Math.min(1,q*1.5).toFixed(3);
       img.style.transform='scale('+(1.30-0.22*e).toFixed(4)+')';
       img.style.filter='blur('+((1-e)*10).toFixed(1)+'px)';
       porta.style.opacity=(Math.min(1,q*5)*(1-ep*ep)).toFixed(3);
@@ -427,15 +419,15 @@
     estado.animando=true; document.body.classList.remove('dentro'); if(kb) cancelAnimationFrame(kb);
     var img=dentro.querySelector('.amb-img.ativo'), alvo=base;
     var k=estado.sacada, sc=SACADAS[k], px=sc[0], py=topoDe(estado.i)+sc[1], tira=tiras[k];
-    var vw=innerWidth, vh=innerHeight, s0=vh*0.9/P, fim=naTela(px,py,alvo);
+    var vw=innerWidth, vh=innerHeight, s0=vh*0.5/P, fim=naTela(px,py,alvo);
     cena.style.visibility='';
     anima(CALMO?1:600,function(q){
       var e=ease.in2(q); dentro.style.opacity=(1-e).toFixed(3);
       img.style.transform='scale('+(1+e*0.25).toFixed(4)+')'; img.style.filter='blur('+(e*12).toFixed(1)+'px)';
     }).then(function(){ dentro.classList.remove('on'); img.style.filter=''; });
     // o drone recua da sacada até a vista aberta
-    anima(CALMO?1:2100,function(q){
-      var e=ease.io(q), s=lerpLog(s0,alvo.s,e);
+    anima(CALMO?1:2800,function(q){
+      var e=-(Math.cos(Math.PI*q)-1)/2, s=lerpLog(s0,alvo.s,e);
       var X=vw/2+(fim.x-vw/2)*ease.io2(q), Y=vh/2+(fim.y-vh/2)*ease.io2(q)+Math.sin(q*Math.PI)*vh*0.04;
       aplicar(camAlvo(s,px,py,X,Y,-Math.sin(q*Math.PI)*1.2));
       palco.style.filter=q<.3?'blur('+((1-q/.3)*8).toFixed(1)+'px)':'';
