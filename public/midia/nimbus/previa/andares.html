@@ -28,7 +28,7 @@
   .palco .pano{object-fit:cover}
   /* a torre: camadas na geometria da foto original (1920×1081), dentro da vista aberta */
   .torre{position:absolute;left:576px;top:600px;width:1920px;height:1081px}
-  .palco .tira{left:auto;width:360px;opacity:0;transition:none}
+  .palco .tira{left:auto;width:360px;opacity:0;transition:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
   .palco .luz,.palco .amb{mix-blend-mode:plus-lighter}
   @supports not (mix-blend-mode:plus-lighter){.palco .luz,.palco .amb{mix-blend-mode:screen}}
   .palco .amb{opacity:0;transition:opacity 2.4s ease}
