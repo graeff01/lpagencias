@@ -503,7 +503,10 @@ function compararCaminhos({ lp: cliques, rec, contatos = [] }) {
     retornos, rotulosRetorno: equipes.RETORNOS,
     ambos: new Set(rec.map((x) => x.lead_telefone).filter((t) => t && telsLp.has(t))).size,
     linksPor: conta(lnk, (x) => x.corretor_nome || x.corretor_fone || '?'),
-    anuncios: conta(lp, (x) => [x.utm_source || 'sem anúncio (orgânico/direto)', x.utm_campaign].filter(Boolean).join(' · ')),
+    anuncios: conta(lp, db.origemDoClique),
+    // para quem foram os contatos que vieram de anúncio ou do app do Facebook/Instagram
+    anuncioPorCorretor: conta(lp.filter((x) => !/^sem anúncio/.test(db.origemDoClique(x))),
+      (x) => (x.corretor_nome || x.corretor_fone || '?') + ' — ' + db.origemDoClique(x)),
     canais: conta(rec, (x) => x.canal || 'canal não informado'),
     porDia: [...dias].map(([d, v]) => ({ dia: d, ...v })).sort((a, b) => (a.dia < b.dia ? 1 : -1)).slice(0, 31),
     porCorretor: [...corretores.values()].sort((a, b) => (b.lp + b.rec) - (a.lp + a.rec)),
@@ -526,7 +529,7 @@ router.get('/leads/:id', async (req, res, next) => {
     caminhos.contatos = contatos;
     stats.forEach((s) => { s.nao_retornados = perdidos[s.id] || 0; });
     res.render('admin/leads', {
-      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos),
+      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos), origem: db.origemDoClique,
     });
   } catch (e) { next(e); }
 });

@@ -119,6 +119,14 @@
               <% cm.anuncios.forEach(function(a){ %><tr><td><%= a.nome %></td><td class="num"><%= a.n %></td></tr><% }); %>
             </tbody>
           </table>
+          <h3 style="margin-top:18px">Contatos de anúncio por corretor</h3>
+          <table class="tbl mini">
+            <thead><tr><th>Corretor — origem</th><th>Leads</th></tr></thead>
+            <tbody>
+              <% if (!cm.anuncioPorCorretor.length) { %><tr><td colspan="2" class="empty">—</td></tr><% } %>
+              <% cm.anuncioPorCorretor.forEach(function(a){ %><tr><td><%= a.nome %></td><td class="num"><%= a.n %></td></tr><% }); %>
+            </tbody>
+          </table>
           <h3 style="margin-top:18px">Canal informado (recepção)</h3>
           <table class="tbl mini">
             <thead><tr><th>Canal</th><th>Leads</th></tr></thead>
@@ -150,8 +158,9 @@
       </div>
       <div class="panel-foot"><p class="hint">
         <b>Landing:</b> cada pessoa que clicou no WhatsApp da página pela primeira vez e foi direto para o corretor da vez
-        (cliques repetidos e robôs não contam). Para separar por anúncio, o link do anúncio precisa ter
-        <code>utm_source</code> e <code>utm_campaign</code>.
+        (cliques repetidos e robôs não contam). Clique de anúncio do Meta ou do Google aparece como "Meta Ads" / "Google Ads" mesmo sem UTM;
+        os mais antigos, de quem abriu pelo app do Facebook/Instagram, aparecem como "Facebook/Instagram (app)".
+        Para separar anúncio por anúncio, o link precisa de <code>utm_campaign</code>.
         <b>Link do corretor:</b> quem entrou pelo link com a tag do corretor (cadastro em /corretor) e foi direto para ele, sem gastar a vez na roleta.
         <b>Recepção:</b> cada lead que a recepção encaminhou na tela da campanha; reencaminhado conta uma vez.
         O canal é o que ela marca no envio. Contatos que ela guarda na fila ou marca como "não encaminhar" também aparecem, com o motivo.
@@ -215,7 +224,7 @@
               </td>
               <td class="sub"><%= c.origem || '—' %></td>
               <td class="sub"><%= c.motivo || '—' %></td>
-              <td class="sub"><%= [c.utm_source, c.utm_campaign].filter(Boolean).join(' · ') || '—' %></td>
+              <td class="sub"><%= origem(c) %></td>
             </tr>
           <% }); %>
         </tbody>
