@@ -29,7 +29,8 @@
     function mostrarBalao(){ if(document.body.classList.contains('quiz-aberto')) return setTimeout(mostrarBalao,4000);
       // celular: não cobre os botões do topo com filme; espera a pessoa rolar
       var hv=document.querySelector('.pt-hero.com-video'); if(hv&&innerWidth<=760&&scrollY<hv.offsetHeight*0.5) return setTimeout(mostrarBalao,3000);
-      balao.classList.add('on'); setTimeout(fechar,11000); }
+      balao.classList.add('on'); setTimeout(fechar,7000);
+      var y0=scrollY; addEventListener('scroll',function sai(){ if(Math.abs(scrollY-y0)>innerHeight*0.6){ fechar(); removeEventListener('scroll',sai); } },{passive:true}); }
     if(!fechado){ setTimeout(mostrarBalao,5000); }
   })();
 </script>
