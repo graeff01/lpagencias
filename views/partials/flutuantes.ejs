@@ -45,7 +45,7 @@
       var alvo=document.getElementById('heroAcoes');
       var verBarra=function(){ var r=alvo?alvo.getBoundingClientRect():{bottom:-1}; var on=cel.matches&&r.bottom<0; barra.classList.toggle('on',on); document.body.classList.toggle('com-barra',on); };
       addEventListener('scroll',verBarra,{passive:true}); addEventListener('resize',verBarra); verBarra();
-      if(cel.matches) fechado=true;
+      if(cel.matches){ fechado=true; document.body.classList.add('tem-barra'); }
     }
     if(!fechado){ setTimeout(mostrarBalao,5000); }
   })();

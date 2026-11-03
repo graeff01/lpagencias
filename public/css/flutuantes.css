@@ -26,7 +26,7 @@
   .barra-cta__wa{background:#25D366;color:#06331b}
   .barra-cta__wa svg{width:20px;height:20px}
   .barra-cta__ag{background:#fff;color:#152219;border:1.5px solid rgba(0,0,0,.14)}
-  body.com-barra .wa-fab{opacity:0;pointer-events:none}
+  body.com-barra .wa-fab,body.tem-barra .wa-fab{opacity:0;pointer-events:none}
   body.com-barra .topo-btn{bottom:84px}
   body.com-barra{padding-bottom:70px}
 }

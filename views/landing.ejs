@@ -158,31 +158,18 @@
 
 <header class="hero">
   <% if (e.hero_video) { %><div class="bg com-video"><video class="hero-vid" muted loop playsinline preload="none" aria-hidden="true" <% var qv = "?v=" + v; %>data-src="<%= e.hero_video + qv %>" data-src-sm="<%= e._heroVideo.sm && e._heroVideo.sm + qv %>" data-webm="<%= e._heroVideo.webm && e._heroVideo.webm + qv %>" data-webm-sm="<%= e._heroVideo.webmSm && e._heroVideo.webmSm + qv %>"></video></div><% } else { %><div class="bg"></div><% } %>
-  <div class="hero-inner">
-    <div class="hero-grid">
-      <div>
-        <% var selo = [e.status, e.construtora].filter(Boolean).join(' · '); %><% if (selo) { %><span class="badge"><span class="d"></span><%= selo %></span><% } %>
-        <h1><%= e.nome %></h1>
-        <% var subBusca = h.subtituloBusca(e); %>
-        <% if (subBusca) { %><p class="sub-h1"><%= subBusca %></p><% } %>
-        <div class="loc"><%- icoPin %><%= [e.endereco, e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
-        <div class="hero-acoes" id="heroAcoes">
-          <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="btn primary hero-wa"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>Receber valores no WhatsApp</a>
-          <a href="#contato" class="btn hero-sec">Agendar visita</a>
-        </div>
-      </div>
-      <div class="hero-card">
-        <div class="hc-preco"><span class="pl"><%= e._precoFmt ? h.tipoImovel(e) + ' a partir de' : 'Valores e condições' %></span><span class="pv"><%= e._precoFmt || 'Sob consulta' %></span></div>
-        <div class="g4">
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19v-7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7M2 15h20M5 10V7.5A1.5 1.5 0 0 1 6.5 6h4A1.5 1.5 0 0 1 12 7.5V10M12 10V7.5A1.5 1.5 0 0 1 13.5 6h4A1.5 1.5 0 0 1 19 7.5V10"/></svg></span><b><%= e.dormitorios ? h.dormsTexto(e.dormitorios).replace(/ dorm\.$/, '') : '—' %></b><span>Dormitórios</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7M3 3v7M21 21h-7M21 21v-7M3 3l7 7M21 21l-7-7"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span><b><%= e.area ? e.area + ' m²' : 'Consulte' %></b><span>Área privativa</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V11l2-5h10l2 5v5M3 16h18v3H3zM6 19v2M18 19v2"/><circle cx="7.5" cy="13" r=".8" fill="currentColor"/><circle cx="16.5" cy="13" r=".8" fill="currentColor"/></svg></span><b><%= e.vagas || '—' %></b><span>Vagas</span></div>
-          <div class="st"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span><b><%= e.entrega || 'Consulte' %></b><span>Entrega</span></div>
-        </div>
-      </div>
+  <%# Topo: só o essencial. Nome, uma linha que diz o que é e onde, o preço quando existe e uma ação.
+      Endereço, vagas, área e entrega ficam nas seções de baixo; nada de "Consulte" no topo. %>
+  <div class="hero-inner hero2">
+    <h1><%= e.nome %></h1>
+    <% var subBusca = h.subtituloBusca(e); %>
+    <% if (subBusca) { %><p class="sub-h1"><%= subBusca %></p><% } %>
+    <% if (e._precoFmt) { %><p class="hero2-preco"><span><%= h.tipoImovel(e) %> a partir de</span> <b><%= e._precoFmt %></b></p><% } %>
+    <div class="hero-acoes" id="heroAcoes">
+      <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="btn primary hero-wa"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>Receber valores no WhatsApp</a>
+      <a href="#contato" class="hero-sec">Agendar visita <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
-  <div class="scroll-cue"><div class="m"></div>Explore</div>
 </header>
 
 <% if (e.construtora_stats && e.construtora_stats.length) { %>

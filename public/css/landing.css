@@ -679,3 +679,47 @@ button.poi-chip:hover,button.poi-chip.on{border-color:var(--green);background:co
   .hero-inner{display:flex;flex-direction:column;padding-top:104px}
   .hero-grid{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:28px}
 }
+
+/* ===================== Topo v2: só o essencial =====================
+   Nome, uma linha, preço quando existe e uma ação principal. Texto ancorado embaixo, sobre a foto/filme,
+   com sombra só onde o texto está. Sem cartão de vidro, sem etiquetas, sem faixa correndo. */
+.hero{min-height:88svh;align-items:flex-end}
+.hero::after{height:62%;background:linear-gradient(0deg,rgba(6,12,9,.86) 0%,rgba(6,12,9,.55) 45%,transparent 100%)}
+.hero::before{content:"";position:absolute;z-index:1;inset:0 0 auto 0;height:140px;pointer-events:none;background:linear-gradient(180deg,rgba(6,12,9,.45),transparent)}
+.hero-inner.hero2{z-index:2;max-width:1120px;padding:120px 24px 64px}
+.hero2 h1{font-size:clamp(44px,7.4vw,92px);font-weight:760;line-height:.96;letter-spacing:-.035em;margin:0;max-width:12ch;text-wrap:balance}
+.hero2 .sub-h1{font-size:clamp(16px,1.5vw,19px);font-weight:450;line-height:1.5;margin:16px 0 0;max-width:34ch;color:rgba(255,255,255,.9)}
+.hero2-preco{margin:18px 0 0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hero2-preco span{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.78)}
+.hero2-preco b{font-family:var(--font-display);font-size:clamp(24px,2.6vw,32px);font-weight:740;letter-spacing:-.02em}
+.hero2 .hero-acoes{display:flex;align-items:center;gap:22px;margin:30px 0 0;flex-wrap:wrap}
+.hero2 .hero-wa{min-height:54px;padding:0 26px;font-size:16px;border-radius:14px}
+.hero2 .hero-sec{display:inline-flex;align-items:center;gap:8px;min-height:48px;color:#fff;font-size:15.5px;font-weight:620;text-decoration:none;
+  background:none;border:0;backdrop-filter:none;padding:0;opacity:.92}
+.hero2 .hero-sec svg{width:18px;height:18px;transition:transform .2s}
+.hero2 .hero-sec:hover{opacity:1}.hero2 .hero-sec:hover svg{transform:translateX(3px)}
+
+/* barra de cima: transparente sobre o topo, ganha fundo só depois de rolar */
+.nav:not(.scrolled){background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* faixa da construtora: parada, discreta */
+.trust .row{animation:none!important}
+.trust .dup{display:none!important}
+
+@media(max-width:760px){
+  .hero{min-height:86svh}
+  .hero-inner.hero2{padding:96px 20px 34px}
+  .hero2 h1{font-size:clamp(40px,11.5vw,54px)}
+  .hero2 .sub-h1{font-size:15.5px;margin-top:12px}
+  .hero2 .hero-acoes{flex-direction:column;align-items:stretch;gap:6px;margin-top:24px}
+  .hero2 .hero-wa{justify-content:center;width:100%}
+  .hero2 .hero-sec{justify-content:center}
+  /* celular: só a seta para voltar; a ação mora no topo e depois na barra de baixo */
+  .nav-back{padding:0;width:44px;height:44px;justify-content:center;background:rgba(255,255,255,.92)}
+  .nav-back .tx{display:none}
+  .nav-cta{display:none}
+  .nav.scrolled .nav-cta{display:none}
+  .trust{overflow-x:auto;scrollbar-width:none}
+  .trust::-webkit-scrollbar{display:none}
+  .trust .row{flex-wrap:nowrap;width:max-content;padding:0 20px}
+}
