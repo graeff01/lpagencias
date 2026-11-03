@@ -106,7 +106,7 @@
     lista.querySelectorAll('button').forEach(function (el, j) { el.classList.toggle('ativo', j === i); });
     zoomPara(c.r); btVoltar.hidden = false; dica.style.opacity = 0;
     var a = area(c.r), med = esc1() ? fmt((c.r[2] - c.r[0]) / esc1()) + ' × ' + fmt((c.r[3] - c.r[1]) / esc1()) + ' m' : '';
-    ficha.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="k">Ambiente ' + (i + 1) + ' de ' + tipo.comodos.length + '</span><h3>' + esc(c.nome) + '</h3>' +
+    ficha.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="k">' + esc(tipo.rotulo || 'Ambiente') + ' ' + (i + 1) + ' de ' + tipo.comodos.length + '</span><h3>' + esc(c.nome) + '</h3>' +
       (a ? '<div class="ar"><b>≈ ' + fmt(a) + '</b><span>m² · ' + med + '</span></div>' : '') +
       (c.txt ? '<p>' + esc(c.txt) + '</p>' : '') + chips(c.chips) + foto(c.foto, c.fotoLeg) +
       '<div class="pi-nav pi-nav2">' + botaoQuero(tipo, 'cheio') + '<button type="button" data-p="-1">← Anterior</button><button type="button" data-p="1">Próximo →</button></div>';
