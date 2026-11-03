@@ -527,9 +527,15 @@ router.get('/leads/:id', async (req, res, next) => {
       db.contatosRecepcao(emp.id, dias),
     ]);
     caminhos.contatos = contatos;
+    // funil da página: visitas e marcos (landing_eventos) + quem chamou no WhatsApp pela landing
+    const funil = await db.funilLanding(emp.id, dias);
+    const pago = (x) => /^(meta-ads|google-ads|facebook|instagram|meta|fb|ig|google)$/i.test(x.utm_source || '') || /^(cpc|ppc|paid|pago|paid_social)$/i.test(x.utm_medium || '');
+    // só compara com o WhatsApp a partir de quando a página começou a contar visitas
+    const lpLeads = caminhos.lp.filter((x) => x.motivo !== 'link-corretor' && funil.inicio && new Date(x.created_at) >= new Date(funil.inicio));
+    funil.etapas.whatsapp = { anuncio: lpLeads.filter(pago).length, organico: lpLeads.filter((x) => !pago(x)).length };
     stats.forEach((s) => { s.nao_retornados = perdidos[s.id] || 0; });
     res.render('admin/leads', {
-      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos), origem: db.origemDoClique,
+      title: `Leads · ${emp.nome}`, emp, stats, cliques, resumo, dias, caminho: compararCaminhos(caminhos), origem: db.origemDoClique, funil,
     });
   } catch (e) { next(e); }
 });

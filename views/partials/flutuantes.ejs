@@ -12,6 +12,13 @@
     <span class="pulse"></span><span class="pulse p2"></span><%- waIco %><span class="badge" aria-hidden="true">1</span>
   </a>
 </div>
+<% if (typeof barra !== 'undefined' && barra) { %>
+<!-- celular: barra fixa com as duas ações, no lugar do balão (aparece quando os botões do topo saem da tela) -->
+<nav class="barra-cta" id="barraCta" aria-label="Falar com um consultor">
+  <a href="<%= wa %>?src=barra" target="_blank" rel="noopener nofollow" class="barra-cta__wa"><%- waIco %>Receber valores</a>
+  <a href="#contato" class="barra-cta__ag">Agendar visita</a>
+</nav>
+<% } %>
 <button type="button" class="topo-btn" id="topoBtn" aria-label="Voltar ao topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
 <script>
   (function(){
@@ -31,6 +38,15 @@
       var hv=document.querySelector('.pt-hero.com-video'); if(hv&&innerWidth<=760&&scrollY<hv.offsetHeight*0.5) return setTimeout(mostrarBalao,3000);
       balao.classList.add('on'); setTimeout(fechar,7000);
       var y0=scrollY; addEventListener('scroll',function sai(){ if(Math.abs(scrollY-y0)>innerHeight*0.6){ fechar(); removeEventListener('scroll',sai); } },{passive:true}); }
+    // com a barra fixa no celular, o balão não aparece: a barra já faz esse papel
+    var barra=document.getElementById('barraCta');
+    if(barra){
+      var cel=matchMedia('(max-width:760px)');
+      var alvo=document.getElementById('heroAcoes');
+      var verBarra=function(){ var r=alvo?alvo.getBoundingClientRect():{bottom:-1}; var on=cel.matches&&r.bottom<0; barra.classList.toggle('on',on); document.body.classList.toggle('com-barra',on); };
+      addEventListener('scroll',verBarra,{passive:true}); addEventListener('resize',verBarra); verBarra();
+      if(cel.matches) fechado=true;
+    }
     if(!fechado){ setTimeout(mostrarBalao,5000); }
   })();
 </script>

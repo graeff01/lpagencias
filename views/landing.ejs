@@ -166,6 +166,10 @@
         <% var subBusca = h.subtituloBusca(e); %>
         <% if (subBusca) { %><p class="sub-h1"><%= subBusca %></p><% } %>
         <div class="loc"><%- icoPin %><%= [e.endereco, e.bairro, e.cidade].filter(Boolean).join(' · ') %></div>
+        <div class="hero-acoes" id="heroAcoes">
+          <a href="<%= wa %>?src=hero" target="_blank" rel="noopener nofollow" class="btn primary hero-wa"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>Receber valores no WhatsApp</a>
+          <a href="#contato" class="btn hero-sec">Agendar visita</a>
+        </div>
       </div>
       <div class="hero-card">
         <div class="hc-preco"><span class="pl"><%= e._precoFmt ? h.tipoImovel(e) + ' a partir de' : 'Valores e condições' %></span><span class="pv"><%= e._precoFmt || 'Sob consulta' %></span></div>
@@ -269,6 +273,17 @@
     </div>
   </div>
 </section>
+<% } %>
+
+<% if (e.planta_interativa || e.plantas.length) { %>
+<div class="cta-meio rv">
+  <div class="wrap">
+    <div class="cta-meio__box">
+      <div><b>Gostou dessa planta?</b><span>Recebe a tabela de valores e a disponibilidade no WhatsApp.</span></div>
+      <a href="<%= wa %>?src=apos-planta" target="_blank" rel="noopener nofollow" class="btn primary" id="ctaPlanta"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>Receber a tabela</a>
+    </div>
+  </div>
+</div>
 <% } %>
 
 <% if (e.infra.length) { %>
@@ -507,7 +522,7 @@
   <div class="lbx-bar"><span class="cap" id="lbxCap"></span><span class="n" id="lbxN"></span></div>
 </div>
 
-<%- include('partials/flutuantes', { wa: wa, msgBalao: ' Quer saber valores e condições do ' + e.nome + '? Fale com um consultor.' }) %>
+<%- include('partials/flutuantes', { wa: wa, barra: true, msgBalao: ' Quer saber valores e condições do ' + e.nome + '? Fale com um consultor.' }) %>
 <%- include('partials/tag-corretor') %>
 
 <script>
@@ -553,6 +568,41 @@
       if(window.fbq) fbq('track','Contact',{content_name:EMP,source:origem});
     });
   });
+
+  // ---- Funil da página: marcos da visita, sem dado pessoal (relatório de leads + pixel) ----
+  (function(){
+    var vis; try{ vis=sessionStorage.getItem('ap_vis'); if(!vis){ vis=Math.random().toString(36).slice(2)+Date.now().toString(36); sessionStorage.setItem('ap_vis',vis); } }catch(_){ vis=Math.random().toString(36).slice(2); }
+    var u={}; try{ u=JSON.parse(sessionStorage.getItem('ap_utm')||'{}'); }catch(_){}
+    var anuncio=!!(u.fbclid||u.gclid||u.gbraid||u.wbraid||/^(cpc|ppc|paid|pago|paid_social)$/i.test(u.utm_medium||'')||/^(facebook|instagram|meta|fb|ig|google|google-ads|meta-ads)$/i.test(u.utm_source||''));
+    var feitos={};
+    function marca(ev,d){
+      var k=ev+'|'+(d||''); if(feitos[k]) return; feitos[k]=1;
+      var corpo=JSON.stringify({e:<%= e.id %>,v:vis,ev:ev,d:d||null,a:anuncio});
+      try{ if(!(navigator.sendBeacon&&navigator.sendBeacon('/ev',new Blob([corpo],{type:'application/json'})))) fetch('/ev',{method:'POST',headers:{'Content-Type':'application/json'},body:corpo,keepalive:true}); }catch(_){}
+    }
+    window.__marca=marca;
+    marca('visita');
+    var alvos=[['video','#video'],['planta','#plantas'],['mapa','#local'],['formulario','#contato']];
+    var io2=new IntersectionObserver(function(es){ es.forEach(function(x){ if(!x.isIntersecting) return;
+      var ev=x.target.getAttribute('data-ev'); marca(ev); io2.unobserve(x.target);
+      if(ev==='planta'&&window.fbq) fbq('track','ViewContent',{content_name:EMP,content_category:'planta'});
+    }); },{threshold:0.35});
+    alvos.forEach(function(a){ var el=document.querySelector(a[1]); if(el){ el.setAttribute('data-ev',a[0]); io2.observe(el); } });
+    // até onde rolou
+    addEventListener('scroll',function(){ var f=(scrollY+innerHeight)/document.documentElement.scrollHeight; if(f>=.5) marca('rolagem50'); if(f>=.9) marca('rolagem90'); },{passive:true});
+    // tipo de planta que a pessoa abriu e o filme que ela deu play
+    document.addEventListener('click',function(ev){
+      var t=ev.target.closest('.pi-tipo'); if(t) marca('planta_tipo',t.textContent.trim());
+      if(ev.target.closest('[data-filme],.video')) marca('filme');
+    });
+    // "Receber a tabela" leva a planta que estava aberta para a mensagem do WhatsApp
+    var cp=document.getElementById('ctaPlanta');
+    if(cp) cp.addEventListener('click',function(){
+      var t=document.querySelector('.pi-tipo[aria-pressed="true"]'); if(!t) return;
+      var url=new URL(cp.getAttribute('href'),location.origin); url.searchParams.set('vi','Planta: '+t.textContent.trim());
+      cp.setAttribute('href',url.pathname+url.search);
+    },true);
+  })();
 
   // ---- Visualizador em tela cheia ----
   (function(){
@@ -905,15 +955,20 @@
 <% if (e.hero_video) { %>
 <script>
   // Filme de fundo: versão leve no celular; fica só a foto com economia de dados ou movimento reduzido.
+  // A foto do topo aparece na hora; o filme só começa a baixar depois que a página terminou de carregar.
   (function(){
     var vd=document.querySelector('.hero-vid'); if(!vd) return;
     var c=navigator.connection||{};
     if(c.saveData||/2g/.test(c.effectiveType||'')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    var a=function(n){return vd.getAttribute(n)||'';}, pequeno=window.matchMedia&&matchMedia('(max-width:760px)').matches;
-    var h264=vd.canPlayType('video/mp4; codecs="avc1.640028"'), webm=a('data-webm')&&vd.canPlayType('video/webm; codecs="vp9"');
-    vd.src=(!h264&&webm)?((pequeno&&a('data-webm-sm'))||a('data-webm')):((pequeno&&a('data-src-sm'))||a('data-src'));
-    vd.muted=true; vd.addEventListener('playing',function(){vd.classList.add('on');},{once:true});
-    var p=vd.play(); if(p&&p.catch) p.catch(function(){});
+    function iniciar(){
+      var a=function(n){return vd.getAttribute(n)||'';}, pequeno=window.matchMedia&&matchMedia('(max-width:760px)').matches;
+      var h264=vd.canPlayType('video/mp4; codecs="avc1.640028"'), webm=a('data-webm')&&vd.canPlayType('video/webm; codecs="vp9"');
+      vd.src=(!h264&&webm)?((pequeno&&a('data-webm-sm'))||a('data-webm')):((pequeno&&a('data-src-sm'))||a('data-src'));
+      vd.muted=true; vd.addEventListener('playing',function(){vd.classList.add('on');},{once:true});
+      var p=vd.play(); if(p&&p.catch) p.catch(function(){});
+    }
+    if(document.readyState==='complete') setTimeout(iniciar,300);
+    else addEventListener('load',function(){ setTimeout(iniciar,300); },{once:true});
   })();
 </script>
 <% } %>

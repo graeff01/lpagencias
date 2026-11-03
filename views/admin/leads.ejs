@@ -205,6 +205,31 @@
       </p></div>
     </div>
 
+    <% var ET = [['visita','Abriram a página'],['video','Chegaram no vídeo'],['filme','Deram play no filme'],['planta','Chegaram na planta'],['mapa','Chegaram na localização'],['formulario','Chegaram no formulário'],['rolagem90','Rolaram até o fim'],['whatsapp','Chamaram no WhatsApp']];
+       var fe = funil.etapas, base = fe.visita || { anuncio: 0, organico: 0 };
+       var pct = function(n, b){ return b ? Math.round(n / b * 100) + '%' : '—'; }; %>
+    <div class="panel">
+      <h2 class="panel-h">Funil da página <span class="sub">pessoas em cada etapa da landing<%= dias ? ' · últimos ' + dias + ' dias' : '' %></span></h2>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Etapa</th><th class="num">Anúncio</th><th class="num">%</th><th class="num">Orgânico / direto</th><th class="num">%</th></tr></thead>
+        <tbody>
+          <% if (!base.anuncio && !base.organico) { %><tr><td colspan="5" class="empty">Ainda sem visitas registradas. A contagem começou com a nova versão da página.</td></tr><% } %>
+          <% ET.forEach(function(x){ var v = fe[x[0]] || { anuncio: 0, organico: 0 }; %>
+            <tr><td><%= x[1] %></td><td class="num"><b><%= v.anuncio %></b></td><td class="num sub"><%= pct(v.anuncio, base.anuncio) %></td><td class="num"><b><%= v.organico %></b></td><td class="num sub"><%= pct(v.organico, base.organico) %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+      <% if (funil.plantas.length) { %>
+      <h3 style="margin:18px 0 8px">Plantas mais abertas</h3>
+      <table class="tbl mini"><thead><tr><th>Planta</th><th class="num">Pessoas</th></tr></thead>
+        <tbody><% funil.plantas.forEach(function(p){ %><tr><td><%= p.detalhe %></td><td class="num"><%= p.n %></td></tr><% }); %></tbody></table>
+      <% } %>
+      <div class="panel-foot"><p class="hint">Cada pessoa conta uma vez por etapa e por visita. Sem nome nem telefone: só um código aleatório da visita.
+        "Anúncio" é quem chegou pelo link de um anúncio do Meta ou do Google. "Chamaram no WhatsApp" vem da roleta: pessoas novas que clicaram no WhatsApp da página.</p></div>
+    </div>
+
     <div class="panel">
       <h2 class="panel-h">Últimos cliques <span class="sub">(200 mais recentes)</span></h2>
       <div class="tbl-wrap">

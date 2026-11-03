@@ -381,9 +381,35 @@ async function renderLanding(req, res, row) {
     // Todo botão de WhatsApp passa pela roleta, nunca pelo número direto.
     wa: '/wa/' + e.slug,
     isPreview: !row.published,
-    outros: await outrosDe(row),
+    // quem clicou num anúncio deste empreendimento não é desviado para outros lançamentos
+    outros: veioDeAnuncio(req) ? [] : await outrosDe(row),
   });
 }
+
+function veioDeAnuncio(req) {
+  const q = req.query || {};
+  return !!(q.fbclid || q.gclid || q.gbraid || q.wbraid || /^(cpc|ppc|paid|pago|paid_social)$/i.test(q.utm_medium || '')
+    || /^(facebook|instagram|meta|fb|ig|google|google-ads|meta-ads)$/i.test(q.utm_source || ''));
+}
+
+// Marcos da visita na landing (navigator.sendBeacon). Sem dado pessoal; robôs e excesso são ignorados.
+const evLimite = new Map();
+router.post('/ev', async (req, res) => {
+  res.status(204).end();
+  try {
+    const b = req.body || {};
+    if (roleta.isBot(req.headers['user-agent'] || '')) return;
+    const ip = roleta.hashIp(req.ip || '');
+    const agora = Date.now(), j = evLimite.get(ip) || [];
+    const recentes = j.filter((t) => agora - t < 60000);
+    if (recentes.length >= 40) return;
+    recentes.push(agora); evLimite.set(ip, recentes);
+    if (evLimite.size > 5000) evLimite.clear();
+    const empId = Number(b.e);
+    if (!Number.isInteger(empId) || empId <= 0) return;
+    await db.registrarEventoLanding({ empId, visitante: String(b.v || '').replace(/[^a-z0-9]/gi, ''), evento: String(b.ev || ''), detalhe: b.d, anuncio: !!b.a });
+  } catch (e) { /* estatística nunca derruba a página */ }
+});
 
 // Destino de anúncio: abre o portal com o teste "Encontre seu imóvel" na
 // tela, mantendo a query string (UTMs, gclid).
