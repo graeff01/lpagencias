@@ -1,0 +1,31 @@
+<%# "Quanto tempo até o seu dia a dia?" — embaixo do mapa da localização (public/js/trajeto.js). %>
+<div class="traj rv" id="traj">
+  <div class="traj-cab">
+    <div class="traj-cab__tx">
+      <h3>Quanto tempo daqui até a sua rotina?</h3>
+      <p>Diga onde você trabalha, estuda ou leva as crianças e veja a rota a partir do <%= e.nome %>.</p>
+    </div>
+  </div>
+
+  <div class="traj-tipos" id="trajTipos" role="radiogroup" aria-label="Que lugar é esse?">
+    <button type="button" role="radio" aria-checked="true" data-t="trabalho"><span aria-hidden="true">💼</span>Trabalho</button>
+    <button type="button" role="radio" aria-checked="false" data-t="estudo"><span aria-hidden="true">🎓</span>Faculdade</button>
+    <button type="button" role="radio" aria-checked="false" data-t="escola"><span aria-hidden="true">🎒</span>Escola</button>
+    <button type="button" role="radio" aria-checked="false" data-t="familia"><span aria-hidden="true">❤️</span>Família</button>
+    <button type="button" role="radio" aria-checked="false" data-t="outro"><span aria-hidden="true">📍</span>Outro</button>
+  </div>
+
+  <div class="traj-busca">
+    <svg class="traj-busca__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="trajQ" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="trajSug" aria-label="Endereço ou nome do lugar"
+      placeholder="Endereço ou nome da empresa" autocomplete="off" enterkeyhint="search">
+    <button type="button" class="traj-geo" id="trajGeo" title="Usar minha localização atual" aria-label="Usar minha localização atual">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg>
+    </button>
+    <ul class="traj-sug" id="trajSug" role="listbox" aria-label="Lugares encontrados" hidden></ul>
+  </div>
+  <p class="traj-msg" id="trajMsg" hidden></p>
+
+  <div class="traj-lista" id="trajLista"></div>
+  <p class="traj-nota">Tempos sem trânsito, calculados com dados do OpenStreetMap. O de horário de pico é uma estimativa.</p>
+</div>

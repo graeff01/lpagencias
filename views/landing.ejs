@@ -39,6 +39,7 @@
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="stylesheet" href="/css/landing.css?v=<%= v %>">
   <link rel="stylesheet" href="/css/flutuantes.css?v=<%= v %>">
+  <link rel="stylesheet" href="/css/ferramentas.css?v=<%= v %>">
   <% if (e.planta_interativa || e.hero_video || e._filme) { %><link rel="stylesheet" href="/css/planta.css?v=<%= v %>"><% } %>
   <% if (outros && outros.length) { %><link rel="stylesheet" href="/css/vitrine.css?v=<%= v %>"><% } %>
   <style>
@@ -273,6 +274,8 @@
 </div>
 <% } %>
 
+<%- include('partials/simulador', { e: e, wa: wa, regras: regras }) %>
+
 <% if (e.infra.length) { %>
 <section class="sec alt" id="lazer">
   <div class="wrap">
@@ -386,6 +389,7 @@
     </div>
     <% if (pontos.some(function(p){ return /·\s*[\d,]+\s*(m|km)\b/.test(p.label || ''); })) { %><p class="poi-nota">Distâncias aproximadas, em linha reta a partir do empreendimento.</p><% } %>
     <% } %>
+    <% if (mapaProprio) { %><%- include('partials/trajeto', { e: e }) %><% } %>
   </div>
 </section>
 
@@ -799,11 +803,15 @@
         marcas[i]={el:d,ll:[p.lon,p.lat],p:p,m:new ml.Marker({element:d}).setLngLat([p.lon,p.lat]).addTo(mapa)};
         limites.extend([p.lon,p.lat]);
       });
+      // "load" dispara uma vez só. isStyleLoaded() fica falso de novo enquanto
+      // chegam os pedaços do mapa (depois de mover/aproximar) e esperar outro
+      // "load" nessa hora seria esperar para sempre.
+      var pronto=new Promise(function(ok){ if(mapa.loaded()) ok(); else mapa.once('load',ok); });
       var linhaPronta=false;
       function linha(ll){
         var dado={type:'Feature',geometry:{type:'LineString',coordinates:ll?[base,ll]:[]}};
         if(linhaPronta){ mapa.getSource('rota').setData(dado); return; }
-        if(!mapa.isStyleLoaded()) return mapa.once('load',function(){ linha(ll); });
+        if(!pronto.ok) return pronto.then(function(){ pronto.ok=true; linha(ll); });
         mapa.addSource('rota',{type:'geojson',data:dado});
         mapa.addLayer({id:'rota',type:'line',source:'rota',layout:{'line-cap':'round'},
           paint:{'line-color':getComputedStyle(el).getPropertyValue('--green').trim()||'#0E9E4A','line-width':2.5,'line-dasharray':[1.5,2.5]}});
@@ -825,6 +833,9 @@
         c.addEventListener('mouseenter',function(){ ativar(i,false); });
       });
       mapa.fitBounds(limites,{padding:margem(),maxZoom:16,duration:0});
+      // o trajeto ("Quanto tempo até o seu dia a dia?") desenha neste mesmo mapa
+      window.__mapaApi={mapa:mapa,ml:ml,base:base,margem:margem,limites:limites,pronto:pronto};
+      (window.__onMapa||[]).forEach(function(f){ try{ f(window.__mapaApi); }catch(e){} });
     }
     function carregar(){
       if(window.maplibregl) return montar();
@@ -873,6 +884,7 @@
     if(window.fbq){ fbq('track','Lead',{content_name:EMP}); fbq('track','CompleteRegistration',{content_name:EMP}); }
     var extra=window.__utm?'&'+new URLSearchParams(window.__utm).toString():'';
     if(window.__corTag) extra+='&cor='+encodeURIComponent(window.__corTag);   // link do corretor: vai direto para ele
+    if(window.__resumoLead){ var rs=window.__resumoLead(''); if(rs) extra+='&vi='+encodeURIComponent(rs); }   // simulação e trajetos para o corretor
     var G=window.__leadGate, lead={ nome:String(d.get('nome')||'').trim(), tel:String(d.get('tel')||'').trim(), int:d.get('interesse')||'' };
     // Com o formulário padrão ligado, nome e WhatsApp vão estruturados (auditoria + mensagem padrão).
     if(G && G.valido(lead.tel) && lead.nome.length>1){
@@ -887,6 +899,9 @@
 </script>
 <% if (leadGate) { %><%- include('partials/lead-gate', { titulo: 'Fale com um consultor do ' + e.nome, interesses: ['Conhecer o empreendimento', 'Valores e condições de pagamento', 'Agendar uma visita', 'Plantas e metragens'] }) %><% } %>
 <% if (e.planta_interativa) { %><script src="/js/planta.js?v=<%= v %>" defer></script><% } %>
+<script src="/js/simulador.js?v=<%= v %>" defer></script>
+<% if (mapaProprio) { %><script src="/js/trajeto.js?v=<%= v %>" defer></script><% } %>
+<script src="/js/resumos.js?v=<%= v %>" defer></script>
 <% if (e._filme) { %>
 <div class="fm-ov" id="fmOv" hidden>
   <button type="button" class="fm-x" id="fmX" aria-label="Fechar o vídeo">×</button>

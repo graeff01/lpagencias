@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const db = require('../lib/db');
+const { REGRAS: regrasFinanciamento } = require('../lib/financiamento');
 const { asArray, fmtPreco, shade, tituloBusca, slugify, dormsLista, linhaTipologia, imgVar } = require('../lib/helpers');
 const roleta = require('../lib/roleta');
 const portal = require('../lib/portal');
@@ -323,7 +324,7 @@ function leadDoFormulario(req) {
 
 // O que o visitante explorou na planta interativa (montado pelo navegador; só texto, curto).
 function vistoNoSite(req) {
-  return String(req.query.vi || '').replace(/[\u0000-\u001f*_~`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
+  return String(req.query.vi || '').replace(/[\u0000-\u001f*_~`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 700);
 }
 
 function foneBonito(d) { return String(d || '').replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3'); }
@@ -381,6 +382,7 @@ async function renderLanding(req, res, row) {
     // Todo botão de WhatsApp passa pela roleta, nunca pelo número direto.
     wa: '/wa/' + e.slug,
     isPreview: !row.published,
+    regras: regrasFinanciamento,
     // quem clicou num anúncio deste empreendimento não é desviado para outros lançamentos
     outros: veioDeAnuncio(req) ? [] : await outrosDe(row),
   });

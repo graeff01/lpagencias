@@ -1,0 +1,104 @@
+<%
+  // Simulador "Cabe no seu bolso?". Com preço cadastrado, mostra a parcela da
+  // unidade; sem preço, o poder de compra da pessoa. A conta roda no navegador
+  // (public/js/simulador.js) com as regras de lib/financiamento.js.
+  var pIni = Number(e.preco_inicial) || 0, pMax = Number(e.preco_maximo) || 0;
+  if (pMax && pMax <= pIni) pMax = 0;
+  var simCfg = { emp: e.nome, precoMin: pIni || null, precoMax: pMax || null, regras: regras };
+%>
+<section class="sec sim" id="simulador" aria-labelledby="simTit">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="kick">Simulador</div>
+      <h2 class="sec-h2" id="simTit">Cabe no seu bolso?</h2>
+      <p class="lead"><%= pIni ? 'Informe sua renda e quanto você tem de entrada e veja na hora a parcela do ' + e.nome + '.' : 'Informe sua renda e quanto você tem de entrada e descubra até quanto você pode financiar.' %></p>
+    </div>
+
+    <div class="sim-grid rv">
+      <form class="sim-ctl" id="simCtl" autocomplete="off" onsubmit="return false">
+        <div class="sim-campo">
+          <div class="sim-rot"><label for="simRendaTx">Renda bruta familiar</label><span class="sim-dica">por mês, somando quem vai comprar junto</span></div>
+          <div class="sim-valor"><span>R$</span><input id="simRendaTx" inputmode="numeric" value="6.000" aria-describedby="simRendaAj"></div>
+          <input type="range" class="sim-range" id="simRenda" min="1500" max="30000" step="100" value="6000" aria-label="Renda bruta familiar">
+          <div class="sim-atalhos" id="simRendaAj" role="group" aria-label="Valores rápidos de renda">
+            <button type="button" data-v="3000">R$ 3 mil</button><button type="button" data-v="5000">R$ 5 mil</button><button type="button" data-v="8000">R$ 8 mil</button><button type="button" data-v="12000">R$ 12 mil</button><button type="button" data-v="20000">R$ 20 mil</button>
+          </div>
+        </div>
+
+        <div class="sim-campo">
+          <div class="sim-rot"><label for="simEntTx">Entrada disponível</label><span class="sim-dica">dinheiro guardado para dar de entrada</span></div>
+          <div class="sim-valor"><span>R$</span><input id="simEntTx" inputmode="numeric" value="40.000"></div>
+          <input type="range" class="sim-range" id="simEnt" min="0" max="<%= Math.max(300000, Math.round((pMax || pIni) * 0.6 / 10000) * 10000) %>" step="1000" value="40000" aria-label="Entrada disponível">
+        </div>
+
+        <div class="sim-campo sim-fgts">
+          <label class="sim-chave"><input type="checkbox" id="simTemFgts"><span class="sim-chave__t"></span><span>Tenho saldo de FGTS para usar</span></label>
+          <div class="sim-fgts__in" id="simFgtsBox" hidden>
+            <div class="sim-valor sim-valor--sm"><span>R$</span><input id="simFgtsTx" inputmode="numeric" value="15.000" aria-label="Saldo de FGTS"></div>
+            <input type="range" class="sim-range" id="simFgts" min="0" max="200000" step="1000" value="15000" aria-label="Saldo de FGTS">
+          </div>
+        </div>
+
+        <% if (pIni && pMax) { %>
+        <div class="sim-campo">
+          <div class="sim-rot"><label for="simPreco">Valor da unidade</label><span class="sim-dica">as unidades vão de <%= h.fmtPreco(pIni) %> a <%= h.fmtPreco(pMax) %></span></div>
+          <div class="sim-valor sim-valor--sm"><span>R$</span><output id="simPrecoTx"></output></div>
+          <input type="range" class="sim-range" id="simPreco" min="<%= pIni %>" max="<%= pMax %>" step="1000" value="<%= pIni %>" aria-label="Valor da unidade">
+        </div>
+        <% } %>
+
+        <div class="sim-campo">
+          <div class="sim-rot"><span id="simPrazoRot">Prazo do financiamento</span></div>
+          <div class="sim-seg" role="radiogroup" aria-labelledby="simPrazoRot" id="simPrazo">
+            <% regras.prazos.forEach(function(a){ %><button type="button" role="radio" aria-checked="<%= a === regras.prazoPadrao ? 'true' : 'false' %>" data-a="<%= a %>"><%= a %> anos</button><% }); %>
+          </div>
+        </div>
+
+        <div class="sim-pill" id="simPill" aria-hidden="true"><span id="simPillA"></span><b id="simPillB"></b></div>
+      </form>
+
+      <div class="sim-res" id="simRes" aria-live="polite">
+        <div class="sim-res__brilho" aria-hidden="true"></div>
+        <div class="sim-prog" id="simProg"></div>
+
+        <div class="sim-top">
+          <div class="sim-num">
+            <span class="sim-num__rot" id="simRot"></span>
+            <b class="sim-num__v" id="simValor">—</b>
+            <span class="sim-num__sub" id="simSub"></span>
+          </div>
+          <div class="sim-gauge" id="simGauge" role="img">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="sim-gauge__bg" cx="60" cy="60" r="50"/>
+              <circle class="sim-gauge__lim" cx="60" cy="60" r="50" id="simGaugeLim"/>
+              <circle class="sim-gauge__v" cx="60" cy="60" r="50" id="simGaugeV"/>
+            </svg>
+            <div class="sim-gauge__tx"><b id="simPct">0%</b><span>da renda</span></div>
+          </div>
+        </div>
+
+        <div class="sim-comp" id="simComp" hidden>
+          <div class="sim-comp__barra" id="simBarra"></div>
+          <ul class="sim-comp__leg" id="simLeg"></ul>
+        </div>
+
+        <div class="sim-poder">
+          <div class="sim-poder__cab"><span>Seu poder de compra</span><b id="simPoder">—</b></div>
+          <div class="sim-trilho" id="simTrilho">
+            <div class="sim-trilho__faixa" id="simFaixa" hidden><span id="simFaixaTx"><%= e.nome %></span></div>
+            <div class="sim-trilho__voce" id="simVoce"><i></i><span>você</span></div>
+          </div>
+        </div>
+
+        <p class="sim-veredito" id="simVer"></p>
+
+        <a class="sim-cta" id="simCta" href="<%= wa %>?src=simulador" target="_blank" rel="noopener nofollow">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.6-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2 0 .4-.1.5l-.4.5c-.2.2-.3.3-.1.6.2.4.9 1.4 1.9 2.2 1.2 1.1 2.2 1.4 2.5 1.5.2.1.4.1.6-.1l.7-.9c.2-.3.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.3.1.9-.1 1.5Z"/></svg>
+          <span>Receber a simulação oficial</span>
+        </a>
+        <p class="sim-aviso">Estimativa com juros de mercado e as regras do Minha Casa Minha Vida. A aprovação e as condições finais dependem da análise de crédito do banco.</p>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="simCfg"><%- JSON.stringify(simCfg).replace(/</g, '\\u003c') %></script>
+</section>
